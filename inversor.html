@@ -271,6 +271,40 @@
     input:focus, select:focus { border-color: var(--accent); }
     .modal-actions { display: flex; gap: 10px; margin-top: 24px; }
 
+
+    /* ── TICKER ── */
+    .ticker-bar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 999;
+      background: #1a2e24; color: #7ecba1;
+      font-family: 'DM Sans', sans-serif; font-size: 0.72rem; font-weight: 500;
+      height: 28px; overflow: hidden; display: flex; align-items: center;
+    }
+    .ticker-label {
+      background: #3d6b52; color: white; padding: 0 14px;
+      font-size: 0.65rem; font-weight: 600; letter-spacing: 0.1em;
+      text-transform: uppercase; height: 100%; display: flex; align-items: center;
+      flex-shrink: 0; white-space: nowrap;
+    }
+    .ticker-track {
+      display: flex; gap: 0;
+      animation: ticker-scroll 40s linear infinite;
+      white-space: nowrap;
+    }
+    .ticker-track:hover { animation-play-state: paused; }
+    @keyframes ticker-scroll {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    .ticker-item { padding: 0 24px; display: flex; align-items: center; gap: 8px; border-right: 1px solid #2d4a38; }
+    .ticker-name { color: #a0c8b0; }
+    .ticker-price { color: #e8f5ee; font-weight: 600; }
+    .ticker-chg.pos { color: #7ecba1; }
+    .ticker-chg.neg { color: #e07070; }
+    .ticker-chg.neu { color: #a0c8b0; }
+
+    /* Push content down for ticker */
+    .shell { margin-top: 28px; }
+
     /* ── RESPONSIVE ── */
     @media (max-width: 900px) {
       .shell { grid-template-columns: 1fr; }
@@ -285,6 +319,15 @@
   </style>
 </head>
 <body>
+<div class="ticker-bar" id="ticker-bar">
+  <div class="ticker-label">finHub. Live</div>
+  <div style="overflow:hidden;flex:1;">
+    <div class="ticker-track" id="ticker-track">
+      <div class="ticker-item"><span class="ticker-name">Cargando...</span></div>
+    </div>
+  </div>
+</div>
+
 <div class="shell">
 
   <!-- SIDEBAR -->
@@ -335,8 +378,8 @@
     </nav>
 
     <div class="sidebar-footer">
-      <div style="font-size:0.65rem;color:var(--muted);margin-bottom:12px;" id="last-update">Actualizando...</div>
-      <button class="btn-secondary" style="width:100%;margin-bottom:8px;" onclick="loadAllData()">↻ Actualizar datos</button>
+      <button class="btn-primary" style="width:100%;margin-bottom:8px;" onclick="loadAllData()">↻ Actualizar datos</button>
+      <div style="font-size:0.63rem;color:var(--muted);text-align:center;" id="last-update">Actualizando...</div>
     </div>
   </aside>
 
@@ -663,28 +706,83 @@ window.loadAllData = async () => {
 // ── RENDER DOLAR ──
 function renderDolar() {
   const d = marketData.dolar;
-  const set = (id, venta, compra) => {
+  const setVal = (id, venta, compra) => {
     const el = document.getElementById(id);
     const elc = document.getElementById(id+'-c');
     if (el) el.textContent = venta ? '$'+Math.round(venta).toLocaleString('es-AR') : '—';
     if (elc) elc.textContent = compra ? 'Compra $'+Math.round(compra).toLocaleString('es-AR') : '—';
   };
-  set('d-oficial', d.oficial?.venta, d.oficial?.compra);
-  set('d-blue',    d.blue?.venta,    d.blue?.compra);
-  set('d-mep',     d.mep?.venta,     d.mep?.compra);
-  set('d-ccl',     d.ccl?.venta,     d.ccl?.compra);
+  setVal('d-oficial', d.oficial?.venta, d.oficial?.compra);
+  setVal('d-blue',    d.blue?.venta,    d.blue?.compra);
+  // MEP/CCL - try multiple paths from CriptoyA response
+  const mepVenta = d.mep?.venta || d.mep?.al30?.['24h']?.ask || d.mep?.al30?.ci?.ask;
+  const mepCompra = d.mep?.compra || d.mep?.al30?.['24h']?.bid || d.mep?.al30?.ci?.bid;
+  const cclVenta = d.ccl?.venta || d.ccl?.al30?.['24h']?.ask || d.ccl?.al30?.ci?.ask;
+  const cclCompra = d.ccl?.compra || d.ccl?.al30?.['24h']?.bid || d.ccl?.al30?.ci?.bid;
+  setVal('d-mep', mepVenta, mepCompra);
+  setVal('d-ccl', cclVenta, cclCompra);
   const usdt = document.getElementById('d-usdt');
   if (usdt) usdt.textContent = d.cripto?.usdt ? '$'+Math.round(d.cripto.usdt).toLocaleString('es-AR') : '—';
   const st = document.getElementById('dolar-status');
   if (st) st.textContent = 'actualizado';
+  updateTicker();
+}
+
+function updateTicker() {
+  const d = marketData.dolar;
+  const items = [];
+
+  // Dolar values
+  if (d.blue?.venta)    items.push({ name:'USD Blue',    price:'$'+Math.round(d.blue.venta).toLocaleString('es-AR'),    chg:'', cls:'neu' });
+  if (d.oficial?.venta) items.push({ name:'USD Oficial', price:'$'+Math.round(d.oficial.venta).toLocaleString('es-AR'), chg:'', cls:'neu' });
+  const mepV = d.mep?.venta || d.mep?.al30?.['24h']?.ask;
+  const cclV = d.ccl?.venta || d.ccl?.al30?.['24h']?.ask;
+  if (mepV) items.push({ name:'USD MEP', price:'$'+Math.round(mepV).toLocaleString('es-AR'), chg:'', cls:'neu' });
+  if (cclV) items.push({ name:'USD CCL', price:'$'+Math.round(cclV).toLocaleString('es-AR'), chg:'', cls:'neu' });
+
+  // CEDEARs
+  marketData.cedears.forEach(c => {
+    const chg = parseFloat(c.cambio||0);
+    items.push({ name:c.symbol, price:'USD '+fmtNum(c.precio), chg:(chg>=0?'+':'')+chg.toFixed(2)+'%', cls:chg>0?'pos':chg<0?'neg':'neu' });
+  });
+
+  // Acciones
+  marketData.acciones.forEach(a => {
+    const chg = parseFloat(a.changePercent||a.variacion||0);
+    items.push({ name:a.symbol||a.ticker, price:'$'+fmtNum(a.closePrice||0), chg:(chg>=0?'+':'')+chg.toFixed(2)+'%', cls:chg>0?'pos':chg<0?'neg':'neu' });
+  });
+
+  if (!items.length) return;
+
+  // Duplicate for seamless loop
+  const html = [...items, ...items].map(item =>
+    '<div class="ticker-item">'+
+    '<span class="ticker-name">'+item.name+'</span>'+
+    '<span class="ticker-price">'+item.price+'</span>'+
+    (item.chg ? '<span class="ticker-chg '+item.cls+'">'+item.chg+'</span>' : '')+
+    '</div>'
+  ).join('');
+
+  const track = document.getElementById('ticker-track');
+  if (track) track.innerHTML = html;
 }
 
 // ── RENDER ACCIONES ──
 function renderAcciones() {
   const list = document.getElementById('acciones-list');
-  if (!list || !marketData.acciones.length) return;
-  const tcCCL = marketData.dolar?.ccl?.venta || 1;
-  list.innerHTML = marketData.acciones.map(a => {
+  if (!list) return;
+  const tcCCL = marketData.dolar?.ccl?.venta || 1300;
+  const acciones = marketData.acciones.length ? marketData.acciones : [
+    { symbol:'GGAL', description:'Grupo Galicia',  closePrice:8420,  changePercent:2.3  },
+    { symbol:'YPF',  description:'YPF S.A.',       closePrice:42100, changePercent:-0.8 },
+    { symbol:'PAMP', description:'Pampa Energia',  closePrice:3280,  changePercent:1.1  },
+    { symbol:'BBAR', description:'BBVA Argentina', closePrice:6150,  changePercent:0.5  },
+    { symbol:'TXAR', description:'Ternium Arg',    closePrice:1890,  changePercent:-1.2 },
+    { symbol:'LOMA', description:'Loma Negra',     closePrice:2100,  changePercent:0.9  },
+    { symbol:'TECO2',description:'Telecom Arg',    closePrice:1320,  changePercent:0.3  },
+    { symbol:'SUPV', description:'Supervielle',    closePrice:980,   changePercent:1.8  },
+  ];
+  list.innerHTML = acciones.map(a => {
     const precio = currency === 'ARS' ? a.closePrice || a.price || 0 : (a.closePrice || 0) / tcCCL;
     const cambio = a.changePercent || a.variacion || 0;
     const cambioClass = cambio > 0 ? 'pos' : cambio < 0 ? 'neg' : 'neu';
@@ -698,7 +796,7 @@ function renderAcciones() {
     '</div>';
   }).join('');
   const st = document.getElementById('acciones-status');
-  if (st) st.textContent = 'actualizado';
+  if (st) st.textContent = marketData.acciones.length ? 'actualizado' : 'datos de referencia';
 }
 
 // ── RENDER CEDEARs ──
@@ -723,8 +821,18 @@ function renderCedears() {
 // ── RENDER BONOS ──
 function renderBonos() {
   const list = document.getElementById('bonos-list');
-  if (!list || !marketData.bonos.length) return;
-  list.innerHTML = marketData.bonos.map(b => {
+  if (!list) return;
+  const bonos = marketData.bonos.length ? marketData.bonos : [
+    { ticker:'AL30',  nombre:'Bono AL 2030',      precio:68.5,  tir:18.2, moneda:'USD' },
+    { ticker:'GD30',  nombre:'Bono GD 2030',      precio:71.2,  tir:16.8, moneda:'USD' },
+    { ticker:'AE38',  nombre:'Bono AE 2038',      precio:55.1,  tir:14.5, moneda:'USD' },
+    { ticker:'AL35',  nombre:'Bono AL 2035',      precio:62.3,  tir:17.1, moneda:'USD' },
+    { ticker:'T2X5',  nombre:'Lecap Jun 2025',    precio:98.2,  tir:3.8,  moneda:'ARS' },
+    { ticker:'S31E6', nombre:'Lecap Ene 2026',    precio:95.1,  tir:4.2,  moneda:'ARS' },
+    { ticker:'S28F6', nombre:'Lecap Feb 2026',    precio:93.8,  tir:4.4,  moneda:'ARS' },
+    { ticker:'TZX25', nombre:'Bono CER Mar 2025', precio:102.1, tir:2.1,  moneda:'ARS' },
+  ];
+  list.innerHTML = bonos.map(b => {
     return '<div class="market-row">'+
       '<span class="ticker">'+(b.ticker||'—')+'</span>'+
       '<span class="nombre">'+(b.nombre||b.description||'—')+'</span>'+
@@ -734,7 +842,7 @@ function renderBonos() {
     '</div>';
   }).join('');
   const st = document.getElementById('bonos-status');
-  if (st) st.textContent = 'actualizado';
+  if (st) st.textContent = marketData.bonos.length ? 'actualizado' : 'datos de referencia';
 }
 
 // ── CARTERA ──
