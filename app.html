@@ -377,6 +377,10 @@
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
         Resumen
       </div>
+      <div class="nav-item" onclick="goTo('networth')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Patrimonio
+      </div>
     </nav>
     <div class="sidebar-footer">
       <div class="user-email" id="user-email">—</div>
@@ -537,7 +541,90 @@
       <div id="summary-content"></div>
     </div>
 
+    <!-- NET WORTH -->
+    <div class="page" id="page-networth">
+      <div class="page-title">Patrimonio neto</div>
+      <div class="page-sub">Activos menos deudas</div>
+
+      <!-- Net worth summary card -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--accent);padding:32px;margin-bottom:28px;">
+        <div style="font-size:0.68rem;font-weight:500;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">Tu patrimonio neto</div>
+        <div style="font-family:'Playfair Display',serif;font-size:3.2rem;font-weight:400;line-height:1;" id="nw-total">$0</div>
+        <div style="display:flex;gap:40px;margin-top:20px;">
+          <div>
+            <div style="font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">Activos</div>
+            <div style="font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--green)" id="nw-assets">$0</div>
+          </div>
+          <div style="display:flex;align-items:center;font-size:1.5rem;color:var(--muted2)">−</div>
+          <div>
+            <div style="font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">Deudas</div>
+            <div style="font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--red)" id="nw-debts">$0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Assets -->
+      <div class="section-header">
+        <div class="section-title">Activos</div>
+        <button class="btn-primary" onclick="openModal('asset')">+ Agregar</button>
+      </div>
+      <div id="asset-list" style="margin-bottom:28px;"></div>
+
+      <!-- Debts -->
+      <div class="section-header" style="margin-top:8px;">
+        <div class="section-title">Deudas</div>
+        <button class="btn-primary" onclick="openModal('debt')">+ Agregar</button>
+      </div>
+      <div id="debt-list"></div>
+    </div>
+
   </main>
+</div>
+
+<!-- MODAL ACTIVO -->
+<div class="overlay" id="modal-asset" onclick="closeModal('asset')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">Nuevo activo</div>
+    <div class="field"><label>Nombre</label><input type="text" id="asset-name" placeholder="Ej: Ahorros, Auto, Depto…" /></div>
+    <div class="field">
+      <label>Categoría</label>
+      <select id="asset-cat">
+        <option>Efectivo y ahorros</option>
+        <option>Inversiones</option>
+        <option>Inmuebles</option>
+        <option>Vehículos</option>
+        <option>Otros activos</option>
+      </select>
+    </div>
+    <div class="field"><label>Valor ($)</label><input type="number" id="asset-value" placeholder="0.00" min="0" step="0.01" /></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('asset')" style="flex:1">Cancelar</button>
+      <button class="btn-primary" onclick="saveAsset()" style="flex:2">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DEUDA -->
+<div class="overlay" id="modal-debt" onclick="closeModal('debt')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">Nueva deuda</div>
+    <div class="field"><label>Nombre</label><input type="text" id="debt-name" placeholder="Ej: Tarjeta, Préstamo, Hipoteca…" /></div>
+    <div class="field">
+      <label>Categoría</label>
+      <select id="debt-cat">
+        <option>Tarjeta de crédito</option>
+        <option>Préstamo personal</option>
+        <option>Hipoteca</option>
+        <option>Cuotas</option>
+        <option>Otras deudas</option>
+      </select>
+    </div>
+    <div class="field"><label>Monto adeudado ($)</label><input type="number" id="debt-value" placeholder="0.00" min="0" step="0.01" /></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('debt')" style="flex:1">Cancelar</button>
+      <button class="btn-primary" onclick="saveDebt()" style="flex:2">Guardar</button>
+    </div>
+  </div>
 </div>
 
 <!-- MODAL EDITAR TRANSACCIÓN -->
@@ -704,7 +791,7 @@
   const db   = getDatabase(app);
 
   let uid = null;
-  let transactions = {}, budgets = {}, goals = {}, reminders = {}, globalBudgets = {};
+  let transactions = {}, budgets = {}, goals = {}, reminders = {}, globalBudgets = {}, assets = {}, debts = {};
   let txFilter = 'all', txType = 'income';
   let budgetPeriod = 'monthly';
   let monthlyChart, catChart;
@@ -727,6 +814,8 @@
     onValue(ref(db, `users/${uid}/goals`),         s => { goals        = s.val() || {}; renderGoals(); });
     onValue(ref(db, `users/${uid}/reminders`),     s => { reminders    = s.val() || {}; renderReminders(); updateReminderBadge(); });
     onValue(ref(db, `users/${uid}/globalBudgets`), s => { globalBudgets = s.val() || {}; renderBudgets(); });
+    onValue(ref(db, `users/${uid}/assets`),        s => { assets = s.val() || {}; renderNetWorth(); });
+    onValue(ref(db, `users/${uid}/debts`),         s => { debts  = s.val() || {}; renderNetWorth(); });
   }
 
   function renderAll() { renderDashboard(); renderTxList(); renderBudgets(); renderRecurring(); }
@@ -741,6 +830,7 @@
     });
     if (page === 'summary') renderSummary();
     if (page === 'recurring') renderRecurring();
+    if (page === 'networth') renderNetWorth();
   };
 
   // ── DASHBOARD ──
@@ -1094,6 +1184,12 @@
     if (name==='reminder') {
       ['rem-name','rem-amount','rem-day'].forEach(id => document.getElementById(id).value='');
     }
+    if (name==='asset') {
+      ['asset-name','asset-value'].forEach(id => document.getElementById(id).value='');
+    }
+    if (name==='debt') {
+      ['debt-name','debt-value'].forEach(id => document.getElementById(id).value='');
+    }
     document.getElementById(`modal-${name}`).classList.add('open');
   };
 
@@ -1201,6 +1297,93 @@
     container.innerHTML = html;
   }
 
+  // ── NET WORTH ──
+  function renderNetWorth() {
+    const assetArr = Object.entries(assets).map(([id,a]) => ({id,...a}));
+    const debtArr  = Object.entries(debts).map(([id,d]) => ({id,...d}));
+    const totalAssets = assetArr.reduce((s,a) => s+a.value, 0);
+    const totalDebts  = debtArr.reduce((s,d) => s+d.value, 0);
+    const netWorth    = totalAssets - totalDebts;
+
+    const nwEl = document.getElementById('nw-total');
+    const asEl = document.getElementById('nw-assets');
+    const deEl = document.getElementById('nw-debts');
+    if (!nwEl) return;
+
+    nwEl.textContent = fmt(netWorth);
+    nwEl.style.color = netWorth >= 0 ? 'var(--green)' : 'var(--red)';
+    asEl.textContent = fmt(totalAssets);
+    deEl.textContent = fmt(totalDebts);
+
+    // Render asset list
+    const assetList = document.getElementById('asset-list');
+    if (assetList) {
+      if (!assetArr.length) {
+        assetList.innerHTML = '<div class="tx-empty" style="background:var(--surface);border:1px solid var(--border)">Sin activos cargados</div>';
+      } else {
+        let html = '<div class="tx-list">';
+        assetArr.forEach(a => {
+          html += '<div class="tx-item">';
+          html += '<div><div class="tx-desc">' + esc(a.name) + '</div><div class="tx-cat">' + esc(a.category) + '</div></div>';
+          html += '<div class="tx-amount income">' + fmt(a.value) + '</div>';
+          html += '<button class="tx-delete" onclick="deleteAsset('' + a.id + '')">&#x2715;</button>';
+          html += '</div>';
+        });
+        html += '</div>';
+        assetList.innerHTML = html;
+      }
+    }
+
+    // Render debt list
+    const debtList = document.getElementById('debt-list');
+    if (debtList) {
+      if (!debtArr.length) {
+        debtList.innerHTML = '<div class="tx-empty" style="background:var(--surface);border:1px solid var(--border)">Sin deudas cargadas</div>';
+      } else {
+        let html = '<div class="tx-list">';
+        debtArr.forEach(d => {
+          html += '<div class="tx-item">';
+          html += '<div><div class="tx-desc">' + esc(d.name) + '</div><div class="tx-cat">' + esc(d.category) + '</div></div>';
+          html += '<div class="tx-amount expense">' + fmt(d.value) + '</div>';
+          html += '<button class="tx-delete" onclick="deleteDebt('' + d.id + '')">&#x2715;</button>';
+          html += '</div>';
+        });
+        html += '</div>';
+        debtList.innerHTML = html;
+      }
+    }
+  }
+
+  window.saveAsset = async () => {
+    const name  = document.getElementById('asset-name').value.trim();
+    const cat   = document.getElementById('asset-cat').value;
+    const value = parseFloat(document.getElementById('asset-value').value);
+    if (!name)             { alert('Ingresá un nombre'); return; }
+    if (!value || value<=0){ alert('Ingresá un valor válido'); return; }
+    await push(ref(db, 'users/'+uid+'/assets'), { name, category: cat, value });
+    closeModal('asset');
+  };
+
+  window.saveDebt = async () => {
+    const name  = document.getElementById('debt-name').value.trim();
+    const cat   = document.getElementById('debt-cat').value;
+    const value = parseFloat(document.getElementById('debt-value').value);
+    if (!name)             { alert('Ingresá un nombre'); return; }
+    if (!value || value<=0){ alert('Ingresá un valor válido'); return; }
+    await push(ref(db, 'users/'+uid+'/debts'), { name, category: cat, value });
+    closeModal('debt');
+  };
+
+  window.deleteAsset = async id => {
+    if (!confirm('¿Eliminar este activo?')) return;
+    await remove(ref(db, 'users/'+uid+'/assets/'+id));
+  };
+
+  window.deleteDebt = async id => {
+    if (!confirm('¿Eliminar esta deuda?')) return;
+    await remove(ref(db, 'users/'+uid+'/debts/'+id));
+  };
+
   // ── EDIT TX ──
   let editTxType = 'income';
 
@@ -1272,8 +1455,9 @@
     const balance  = totalIn - totalEx;
 
     // Category breakdown
+    const incomeCats = ['Sueldo','Freelance','Inversiones'];
     const catTotals = {};
-    expenses.forEach(t => { catTotals[t.category] = (catTotals[t.category]||0)+t.amount; });
+    expenses.filter(t => !incomeCats.includes(t.category)).forEach(t => { catTotals[t.category] = (catTotals[t.category]||0)+t.amount; });
     const topCats = Object.entries(catTotals).sort((a,b)=>b[1]-a[1]).slice(0,5);
 
     // vs previous period
