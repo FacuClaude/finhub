@@ -1048,53 +1048,92 @@ window.sendChat = async () => {
   const btn   = document.getElementById('chat-send-btn');
   const msg   = input.value.trim();
   if (!msg) return;
-
   input.value = '';
   btn.disabled = true;
   addChatMsg(msg, 'user');
-
-  const loading = addChatMsg('Analizando datos de mercado...', 'ai loading');
-
-  // Build context with real market data
-  const tcCCL = marketData.dolar?.ccl?.venta;
-  const context = [
-    'DATOS DE MERCADO ACTUALES (Argentina, ' + new Date().toLocaleDateString('es-AR') + '):',
-    tcCCL ? 'Dolar CCL: $'+Math.round(tcCCL) : '',
-    marketData.dolar?.blue?.venta ? 'Dolar Blue: $'+Math.round(marketData.dolar.blue.venta) : '',
-    marketData.dolar?.mep?.venta  ? 'Dolar MEP: $'+Math.round(marketData.dolar.mep.venta)  : '',
-    marketData.bonos?.length ? 'Bonos: ' + marketData.bonos.slice(0,3).map(b=>b.ticker+' TIR '+b.tir?.toFixed(1)+'%').join(', ') : '',
-    marketData.acciones?.length ? 'Acciones top: ' + marketData.acciones.slice(0,4).map(a=>a.symbol+' $'+Math.round(a.closePrice||0)).join(', ') : '',
-    '',
-    'CARTERA DEL USUARIO:',
-    Object.values(inversiones).length
-      ? Object.values(inversiones).map(i=>i.ticker+' '+i.tipo+' '+i.moneda+' $'+i.monto).join('\n')
-      : 'Sin posiciones cargadas.',
-    '',
-    'Sos un asesor financiero experto en el mercado argentino. Respond\u00e9 en espa\u00f1ol, con datos concretos y recomendaciones accionables. Us\u00e1 los datos de mercado provistos. Mantene un tono profesional pero accesible.'
-  ].filter(Boolean).join('\n');
-
-  chatHistory.push({ role: 'user', content: msg });
-
-  try {
-    const response = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ system: context, messages: chatHistory })
-    });
-
-    const data = await response.json();
-    const reply = data.reply || data.error || 'No pude procesar la respuesta.';
-    chatHistory.push({ role: 'assistant', content: reply });
-
-    loading.classList.remove('loading');
-    loading.textContent = reply;
-  } catch (err) {
-    loading.classList.remove('loading');
-    loading.textContent = 'Error al conectar. Verificá tu conexión e intentá nuevamente.';
-  }
-
+  const loading = addChatMsg('Analizando...', 'ai loading');
+  await new Promise(r => setTimeout(r, 700));
+  const reply = generateAdvisorReply(msg);
+  loading.classList.remove('loading');
+  loading.textContent = reply;
   btn.disabled = false;
 };
+
+function generateAdvisorReply(msg) {
+  const m = msg.toLowerCase();
+  const d = marketData.dolar || {};
+  const blue = d.blue?.venta, oficial = d.oficial?.venta;
+  const mep = d.mep?.venta, ccl = d.ccl?.venta;
+  const bonos = marketData.bonos.length ? marketData.bonos : [
+    {ticker:'AL30',tir:18.2,precio:68.5,moneda:'USD'},
+    {ticker:'GD30',tir:16.8,precio:71.2,moneda:'USD'},
+    {ticker:'T2X5',tir:3.8,precio:98.2,moneda:'ARS'},
+    {ticker:'S31E6',tir:4.2,precio:95.1,moneda:'ARS'}
+  ];
+  const cedears = marketData.cedears.length ? marketData.cedears : [
+    {symbol:'AAPL',precio:213.5,cambio:'0.80'},{symbol:'NVDA',precio:875.4,cambio:'3.20'},
+    {symbol:'MSFT',precio:422.1,cambio:'0.50'},{symbol:'AMZN',precio:198.4,cambio:'1.20'}
+  ];
+  const acciones = marketData.acciones.length ? marketData.acciones : [
+    {symbol:'GGAL',closePrice:8420,changePercent:2.3},{symbol:'YPF',closePrice:42100,changePercent:-0.8},
+    {symbol:'PAMP',closePrice:3280,changePercent:1.1},{symbol:'BBAR',closePrice:6150,changePercent:0.5}
+  ];
+  const cartera = Object.values(inversiones);
+
+  if (m.includes('dolar') || m.includes('cambio') || m.includes('blue') || m.includes('mep') || m.includes('ccl')) {
+    const parts = [];
+    if (oficial) parts.push('Oficial: $' + Math.round(oficial).toLocaleString('es-AR'));
+    if (blue)    parts.push('Blue: $' + Math.round(blue).toLocaleString('es-AR'));
+    if (mep)     parts.push('MEP: $' + Math.round(mep).toLocaleString('es-AR'));
+    if (ccl)     parts.push('CCL: $' + Math.round(ccl).toLocaleString('es-AR'));
+    let extra = '';
+    if (blue && oficial) {
+      const brecha = ((blue/oficial-1)*100).toFixed(1);
+      extra = ' Brecha: ' + brecha + '%. ' + (parseFloat(brecha)>20 ? 'MEP recomendado para dolarizarse.' : 'Brecha comprimida.');
+    }
+    return 'Tipos de cambio: ' + parts.join(' | ') + '.' + extra;
+  }
+
+  if (m.includes('bono') || m.includes('soberano') || m.includes('al30') || m.includes('gd30')) {
+    const usd = bonos.filter(b => b.moneda === 'USD');
+    const lista = usd.map(b => b.ticker + ' TIR ' + b.tir?.toFixed(1) + '%').join(', ');
+    return 'Bonos soberanos USD: ' + lista + '. TIRs atractivas para exposicion en moneda dura. AL30 es el mas liquido. Recomendado 20-30% en perfiles moderados/agresivos.';
+  }
+
+  if (m.includes('lecap') || m.includes('tasa') || m.includes('plazo fijo') || m.includes('renta fija')) {
+    const ars = bonos.filter(b => b.moneda === 'ARS');
+    const lista = ars.map(b => b.ticker + ' TIR ' + b.tir?.toFixed(1) + '% mensual').join(', ');
+    return 'Renta fija ARS: ' + lista + '. Rendimiento superior al plazo fijo con buena liquidez. Ideal para perfiles conservadores.';
+  }
+
+  if (m.includes('cedear') || m.includes('aapl') || m.includes('nvda') || m.includes('apple') || m.includes('tech')) {
+    const lista = cedears.slice(0,4).map(c => c.symbol + ' USD ' + c.precio + ' (' + (parseFloat(c.cambio||0)>=0?'+':'') + parseFloat(c.cambio||0).toFixed(2) + '%)').join(', ');
+    return 'CEDEARs: ' + lista + '. Inversion en empresas globales desde ARS con cobertura cambiaria. NVDA lidera rendimiento. Diversifica con tech + value (BRK-B, JPM).';
+  }
+
+  if (m.includes('accion') || m.includes('merval') || m.includes('ggal') || m.includes('ypf')) {
+    const lista = acciones.slice(0,4).map(a => a.symbol + ' $' + Math.round(a.closePrice||0).toLocaleString('es-AR') + ' (' + (parseFloat(a.changePercent||0)>=0?'+':'') + parseFloat(a.changePercent||0).toFixed(2) + '%)').join(', ');
+    return 'Acciones Merval: ' + lista + '. Energia (YPF, PAMP) y bancos (GGAL, BBAR) son los mas operados. Para perfiles moderados/agresivos, horizonte minimo 6 meses.';
+  }
+
+  if (m.includes('cartera') || m.includes('portafolio') || m.includes('tengo') || m.includes('mis inversiones')) {
+    if (!cartera.length) return 'No tenes posiciones cargadas. Agrega tus inversiones en Mi cartera para analizarlas.';
+    const total = cartera.reduce((s,i) => i.moneda==='ARS' ? s+i.monto : s+(i.monto*(ccl||1300)), 0);
+    const lista = cartera.map(i => i.ticker + ' ' + i.moneda + ' ' + i.monto.toLocaleString('es-AR')).join(', ');
+    return 'Tu cartera: ' + lista + '. Total en ARS: $' + Math.round(total).toLocaleString('es-AR') + '.';
+  }
+
+  if (m.includes('recomienda') || m.includes('conviene') || m.includes('donde invierto') || m.includes('que compro') || m.includes('sugerencia')) {
+    const lecapTir = bonos.find(b=>b.moneda==='ARS')?.tir?.toFixed(1) || '4.0';
+    return 'Cartera sugerida para el contexto actual: 30% Lecaps (tasa ~' + lecapTir + '% mensual), 25% Bonos USD AL30/GD30, 25% CEDEARs (AAPL/MSFT/NVDA), 20% Acciones Merval (GGAL/PAMP). Ajusta segun tu perfil en la seccion Asesor.';
+  }
+
+  if (m.includes('inflacion') || m.includes('cobertura') || m.includes('cer') || m.includes('uva')) {
+    return 'Cobertura inflacionaria: Bonos CER (ajustan por inflacion), Plazo fijo UVA (inflacion + spread), Lecaps (tasa fija alta), Dolares MEP/CCL (cobertura directa). Combina CER para corto plazo y dolares para largo plazo.';
+  }
+
+  return 'Puedo ayudarte con: dolar (blue/MEP/CCL), bonos soberanos (AL30/GD30), Lecaps y renta fija, CEDEARs (AAPL/NVDA/MSFT), acciones Merval (GGAL/YPF), analisis de tu cartera, sugerencias por perfil. Escribi tu consulta.';
+}
 
 function addChatMsg(text, type) {
   const msgs = document.getElementById('chat-messages');
