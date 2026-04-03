@@ -381,6 +381,10 @@
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
         Patrimonio
       </div>
+      <div class="nav-item" onclick="goTo('cashflow')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Proyección
+      </div>
     </nav>
     <div class="sidebar-footer">
       <div class="user-email" id="user-email">—</div>
@@ -576,6 +580,26 @@
         <button class="btn-primary" onclick="openModal('debt')">+ Agregar</button>
       </div>
       <div id="debt-list"></div>
+    </div>
+
+    <!-- CASH FLOW -->
+    <div class="page" id="page-cashflow">
+      <div class="page-title">Proyección</div>
+      <div class="page-sub">Flujo de caja estimado</div>
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:18px 22px;margin-bottom:28px;">
+        <div style="font-size:0.72rem;font-weight:500;color:var(--accent);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;">Cómo funciona</div>
+        <div style="font-size:0.82rem;color:var(--ink2);line-height:1.7;">Proyección basada en tu ingreso mensual promedio y tus gastos recurrentes detectados. Actualizá tus datos para mayor precisión.</div>
+      </div>
+
+      <!-- Horizon tabs -->
+      <div class="period-tabs" style="margin-bottom:28px;">
+        <button class="period-tab active" onclick="setCashflowHorizon(30,this)">30 días</button>
+        <button class="period-tab" onclick="setCashflowHorizon(60,this)">60 días</button>
+        <button class="period-tab" onclick="setCashflowHorizon(90,this)">90 días</button>
+      </div>
+
+      <div id="cashflow-content"></div>
     </div>
 
   </main>
@@ -831,6 +855,7 @@
     if (page === 'summary') renderSummary();
     if (page === 'recurring') renderRecurring();
     if (page === 'networth') renderNetWorth();
+    if (page === 'cashflow') renderCashflow();
   };
 
   // ── DASHBOARD ──
@@ -1294,6 +1319,157 @@
       html += '</div>';
     });
     html += '</div>';
+    container.innerHTML = html;
+  }
+
+  // ── CASH FLOW ──
+  let cashflowHorizon = 30;
+
+  window.setCashflowHorizon = (days, el) => {
+    cashflowHorizon = days;
+    document.querySelectorAll('#page-cashflow .period-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    renderCashflow();
+  };
+
+  function renderCashflow() {
+    const container = document.getElementById('cashflow-content');
+    if (!container) return;
+
+    const now = new Date();
+    const txArr = Object.values(transactions);
+
+    // Calculate average monthly income (last 3 months)
+    let monthlyIncome = 0;
+    for (let i = 0; i < 3; i++) {
+      const m = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthIncome = txArr
+        .filter(t => t.type === 'income')
+        .filter(t => {
+          const d = new Date(t.date + 'T12:00:00');
+          return d.getMonth() === m.getMonth() && d.getFullYear() === m.getFullYear();
+        })
+        .reduce((s, t) => s + t.amount, 0);
+      monthlyIncome += monthIncome;
+    }
+    monthlyIncome = monthlyIncome / 3;
+
+    // Detect recurring expenses (same logic as recurring section)
+    const groups = {};
+    txArr.filter(t => t.type === 'expense').forEach(t => {
+      const key = t.description.trim().toLowerCase() + '|' + t.category;
+      if (!groups[key]) groups[key] = { name: t.description, category: t.category, entries: [] };
+      groups[key].entries.push({ amount: t.amount, date: t.date });
+    });
+
+    const recurringExpenses = [];
+    Object.values(groups).forEach(g => {
+      const months = [...new Set(g.entries.map(e => e.date.slice(0, 7)))];
+      if (months.length < 2) return;
+      const amounts = g.entries.map(e => e.amount);
+      const avg = amounts.reduce((s, a) => s + a, 0) / amounts.length;
+      const allSimilar = amounts.every(a => Math.abs(a - avg) / avg <= 0.20);
+      if (!allSimilar) return;
+      recurringExpenses.push({ name: g.name, category: g.category, monthlyAmount: avg });
+    });
+
+    const monthlyExpenses = recurringExpenses.reduce((s, r) => s + r.monthlyAmount, 0);
+
+    // Also factor in reminder amounts
+    const reminderTotal = Object.values(reminders)
+      .reduce((s, r) => s + (r.amount || 0), 0);
+
+    const totalMonthlyOut = Math.max(monthlyExpenses, reminderTotal);
+    const dailyIncome  = monthlyIncome / 30;
+    const dailyExpense = totalMonthlyOut / 30;
+    const dailyNet     = dailyIncome - dailyExpense;
+
+    // Current balance (total income - total expenses ever)
+    const currentBalance = txArr.reduce((s, t) => t.type === 'income' ? s + t.amount : s - t.amount, 0);
+
+    // Project
+    const projected = currentBalance + (dailyNet * cashflowHorizon);
+    const isPositive = projected >= 0;
+
+    let html = '';
+
+    // Summary cards
+    html += '<div class="cards-row" style="margin-bottom:28px;">';
+    html += '<div class="card balance-card"><div class="card-label">Saldo actual</div>';
+    html += '<div class="card-value ' + (currentBalance >= 0 ? 'positive' : 'negative') + '">' + fmt(currentBalance) + '</div>';
+    html += '<div class="card-sub">Balance acumulado</div></div>';
+
+    html += '<div class="card income-card"><div class="card-label">Ingreso mensual est.</div>';
+    html += '<div class="card-value positive">' + fmt(monthlyIncome) + '</div>';
+    html += '<div class="card-sub">Promedio últimos 3 meses</div></div>';
+
+    html += '<div class="card expense-card"><div class="card-label">Gasto mensual est.</div>';
+    html += '<div class="card-value negative">' + fmt(totalMonthlyOut) + '</div>';
+    html += '<div class="card-sub">Gastos recurrentes</div></div>';
+    html += '</div>';
+
+    // Projection result
+    html += '<div style="background:var(--surface);border:1px solid var(--border);border-top:3px solid ' + (isPositive ? 'var(--green)' : 'var(--red)') + ';padding:32px;margin-bottom:28px;">';
+    html += '<div style="font-size:0.68rem;font-weight:500;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">Saldo proyectado en ' + cashflowHorizon + ' días</div>';
+    html += '<div style="font-family:serif;font-size:3rem;font-weight:400;color:' + (isPositive ? 'var(--green)' : 'var(--red)') + ';line-height:1;margin-bottom:16px;">' + fmt(projected) + '</div>';
+
+    const netLabel = dailyNet >= 0 ? 'superávit' : 'déficit';
+    const netColor = dailyNet >= 0 ? 'var(--green)' : 'var(--red)';
+    html += '<div style="font-size:0.85rem;color:var(--ink2);line-height:1.7;">';
+    html += 'Con un <span style="color:' + netColor + ';font-weight:500">' + netLabel + ' diario de ' + fmt(Math.abs(dailyNet)) + '</span>, ';
+    if (isPositive) {
+      html += 'tu saldo se mantiene positivo en los próximos ' + cashflowHorizon + ' días.';
+    } else {
+      // Days until zero
+      if (dailyNet < 0) {
+        const daysToZero = Math.floor(currentBalance / Math.abs(dailyNet));
+        if (daysToZero > 0 && daysToZero < cashflowHorizon) {
+          html += 'tu saldo llega a cero aproximadamente en <strong>' + daysToZero + ' días</strong>.';
+        } else {
+          html += 'el saldo proyectado es negativo.';
+        }
+      } else {
+        html += 'el saldo proyectado es negativo.';
+      }
+    }
+    html += '</div></div>';
+
+    // Monthly projection breakdown
+    const months = Math.ceil(cashflowHorizon / 30);
+    html += '<div style="font-size:0.68rem;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;">Desglose por mes</div>';
+    html += '<div class="tx-list">';
+    for (let i = 0; i < months; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      const label = d.toLocaleString('es-AR', { month: 'long', year: 'numeric' });
+      const daysInPeriod = i < months - 1 ? 30 : (cashflowHorizon - i * 30);
+      const projBalance = currentBalance + dailyNet * (i * 30 + daysInPeriod);
+      const monthNet = dailyNet * daysInPeriod;
+      html += '<div class="tx-item">';
+      html += '<div><div class="tx-desc" style="text-transform:capitalize;">' + label + '</div>';
+      html += '<div class="tx-cat">Flujo neto estimado</div></div>';
+      html += '<div class="tx-amount ' + (monthNet >= 0 ? 'income' : 'expense') + '">' + (monthNet >= 0 ? '+' : '') + fmt(monthNet) + '</div>';
+      html += '<div style="font-family:serif;font-size:1rem;color:' + (projBalance >= 0 ? 'var(--green)' : 'var(--red)') + ';white-space:nowrap;">' + fmt(projBalance) + '</div>';
+      html += '</div>';
+    }
+    html += '</div>';
+
+    // Recurring items used
+    if (recurringExpenses.length) {
+      html += '<div style="font-size:0.68rem;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-top:28px;margin-bottom:14px;">Gastos recurrentes considerados</div>';
+      html += '<div class="tx-list">';
+      recurringExpenses.forEach(r => {
+        html += '<div class="tx-item">';
+        html += '<div><div class="tx-desc">' + esc(r.name) + '</div><div class="tx-cat">' + esc(r.category) + '</div></div>';
+        html += '<div class="tx-amount expense">' + fmt(r.monthlyAmount) + '<span style="font-size:0.65rem;color:var(--muted);margin-left:4px;">/mes</span></div>';
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+
+    if (!recurringExpenses.length && monthlyIncome === 0) {
+      html = '<div class="tx-empty" style="background:var(--surface);border:1px solid var(--border);padding:52px;text-align:center;font-size:0.82rem;color:var(--muted);">Registrá movimientos en varios meses para generar la proyección.</div>';
+    }
+
     container.innerHTML = html;
   }
 
