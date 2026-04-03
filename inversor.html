@@ -158,7 +158,7 @@
 
     .market-table { background: var(--surface); border: 1px solid var(--border); width: 100%; }
     .market-row {
-      display: grid; grid-template-columns: 80px 1fr 120px 90px 90px;
+      display: grid; grid-template-columns: 80px 1fr 110px 80px 80px;
       align-items: center; padding: 12px 20px;
       border-bottom: 1px solid var(--border); transition: background 0.15s;
     }
@@ -169,7 +169,7 @@
     .ticker { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.82rem; font-weight: 600; color: var(--ink); }
     .nombre { font-size: 0.82rem; color: var(--ink2); }
     .precio { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.88rem; font-weight: 500; text-align: right; }
-    .cambio { font-size: 0.82rem; font-weight: 500; text-align: right; padding: 3px 8px; border-radius: 3px; }
+    .cambio { font-size: 0.78rem; font-weight: 500; text-align: right; padding: 2px 6px; border-radius: 3px; display: inline-block; white-space: nowrap; }
     .cambio.pos { color: var(--green); background: var(--green-bg); }
     .cambio.neg { color: var(--red); background: var(--red-bg); }
     .cambio.neu { color: var(--muted); }
@@ -431,7 +431,7 @@
       <div class="market-section">
         <div class="market-title">Bonos y Lecaps <span class="refreshing" id="bonos-status">cargando...</span></div>
         <div class="market-table">
-          <div class="market-row header"><span>Ticker</span><span>Instrumento</span><span style="text-align:right">Precio</span><span style="text-align:right">TIR %</span><span></span></div>
+          <div class="market-row header" style="grid-template-columns:80px 1fr 80px 120px 90px;"><span>Ticker</span><span>Instrumento</span><span style="text-align:right">Vence</span><span style="text-align:right">Precio</span><span style="text-align:right">TIR %</span></div>
           <div id="bonos-list"></div>
         </div>
       </div>
@@ -662,9 +662,11 @@ window.goTo = page => {
 // ── CURRENCY SWITCH ──
 window.setCurrency = cur => {
   currency = cur;
-  ['cur-ars','cur-ars2'].forEach(id => { const el = document.getElementById(id); if(el) el.className = 'cur-btn'+(cur==='ARS'?' active':''); });
-  ['cur-usd','cur-usd2'].forEach(id => { const el = document.getElementById(id); if(el) el.className = 'cur-btn'+(cur==='USD'?' active':''); });
+  document.querySelectorAll('.cur-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.textContent.trim() === cur);
+  });
   renderCartera();
+  renderAcciones();
 };
 
 // ── MARKET DATA ──
@@ -848,22 +850,22 @@ function renderBonos() {
   const list = document.getElementById('bonos-list');
   if (!list) return;
   const bonos = marketData.bonos.length ? marketData.bonos : [
-    { ticker:'AL30',  nombre:'Bono AL 2030',      precio:68.5,  tir:18.2, moneda:'USD' },
-    { ticker:'GD30',  nombre:'Bono GD 2030',      precio:71.2,  tir:16.8, moneda:'USD' },
-    { ticker:'AE38',  nombre:'Bono AE 2038',      precio:55.1,  tir:14.5, moneda:'USD' },
-    { ticker:'AL35',  nombre:'Bono AL 2035',      precio:62.3,  tir:17.1, moneda:'USD' },
-    { ticker:'T2X5',  nombre:'Lecap Jun 2025',    precio:98.2,  tir:3.8,  moneda:'ARS' },
-    { ticker:'S31E6', nombre:'Lecap Ene 2026',    precio:95.1,  tir:4.2,  moneda:'ARS' },
-    { ticker:'S28F6', nombre:'Lecap Feb 2026',    precio:93.8,  tir:4.4,  moneda:'ARS' },
-    { ticker:'TZX25', nombre:'Bono CER Mar 2025', precio:102.1, tir:2.1,  moneda:'ARS' },
+    { ticker:'AL30',  nombre:'Bono AL 2030',      precio:68.5,  tir:18.2, moneda:'USD', vence:'Jul 2030' },
+    { ticker:'GD30',  nombre:'Bono GD 2030',      precio:71.2,  tir:16.8, moneda:'USD', vence:'Jul 2030' },
+    { ticker:'AE38',  nombre:'Bono AE 2038',      precio:55.1,  tir:14.5, moneda:'USD', vence:'Ene 2038' },
+    { ticker:'AL35',  nombre:'Bono AL 2035',      precio:62.3,  tir:17.1, moneda:'USD', vence:'Jul 2035' },
+    { ticker:'T2X5',  nombre:'Lecap Jun 2025',    precio:98.2,  tir:3.8,  moneda:'ARS', vence:'Jun 2025' },
+    { ticker:'S31E6', nombre:'Lecap Ene 2026',    precio:95.1,  tir:4.2,  moneda:'ARS', vence:'Ene 2026' },
+    { ticker:'S28F6', nombre:'Lecap Feb 2026',    precio:93.8,  tir:4.4,  moneda:'ARS', vence:'Feb 2026' },
+    { ticker:'TZX25', nombre:'Bono CER Mar 2025', precio:102.1, tir:2.1,  moneda:'ARS', vence:'Mar 2025' },
   ];
   list.innerHTML = bonos.map(b => {
-    return '<div class="market-row">'+
+    return '<div class="market-row" style="grid-template-columns:80px 1fr 80px 120px 90px;">'+
       '<span class="ticker">'+(b.ticker||'—')+'</span>'+
       '<span class="nombre">'+(b.nombre||b.description||'—')+'</span>'+
+      '<span class="tir" style="text-align:right">'+(b.vence||'—')+'</span>'+
       '<span class="precio">'+(b.moneda==='USD'?'USD ':'$')+fmtNum(b.precio||0)+'</span>'+
       '<span class="tir">'+(b.tir?b.tir.toFixed(1)+'%':'—')+'</span>'+
-      '<span></span>'+
     '</div>';
   }).join('');
   const st = document.getElementById('bonos-status');
