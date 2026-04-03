@@ -287,12 +287,12 @@
     }
     .ticker-track {
       display: flex; gap: 0;
-      animation: ticker-scroll 40s linear infinite;
+      animation: ticker-scroll 25s linear infinite;
       white-space: nowrap;
     }
     .ticker-track:hover { animation-play-state: paused; }
     @keyframes ticker-scroll {
-      0%   { transform: translateX(0); }
+      0%   { transform: translateX(100vw); }
       100% { transform: translateX(-50%); }
     }
     .ticker-item { padding: 0 24px; display: flex; align-items: center; gap: 8px; border-right: 1px solid #2d4a38; }
@@ -453,7 +453,7 @@
         <div class="card gold"><div class="card-label">Total invertido</div><div class="card-value neu" id="c-total">$0</div><div class="card-sub" id="c-total-alt">USD 0</div></div>
         <div class="card green"><div class="card-label">Ganancia / P&L</div><div class="card-value" id="c-pl">$0</div><div class="card-sub" id="c-pl-pct">0%</div></div>
         <div class="card blue"><div class="card-label">En ARS</div><div class="card-value neu" id="c-ars">$0</div><div class="card-sub">pesos argentinos</div></div>
-        <div class="card red"><div class="card-label">En USD</div><div class="card-value neu" id="c-usd">USD 0</div><div class="card-sub">d\u00f3lares</div></div>
+        <div class="card red"><div class="card-label">En USD</div><div class="card-value neu" id="c-usd">USD 0</div><div class="card-sub">dólares</div></div>
       </div>
 
       <div class="section-header">
@@ -461,31 +461,31 @@
         <button class="btn-primary" onclick="openModal('inversion')">+ Agregar</button>
       </div>
       <div class="portfolio-list" id="portfolio-list">
-        <div style="padding:48px;text-align:center;font-size:0.82rem;color:var(--muted);">Sin inversiones cargadas. Empez\u00e1 agregando tu primera posici\u00f3n.</div>
+        <div style="padding:48px;text-align:center;font-size:0.82rem;color:var(--muted);">Sin inversiones cargadas. Empezá agregando tu primera posición.</div>
       </div>
     </div>
 
     <!-- ASESOR -->
     <div class="page" id="page-asesor">
       <div class="page-title">Asesor</div>
-      <div class="page-sub">Carteras sugeridas seg\u00fan tu perfil de riesgo</div>
+      <div class="page-sub">Carteras sugeridas según tu perfil de riesgo</div>
 
-      <div style="font-size:0.72rem;font-weight:500;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:16px;">Seleccion\u00e1 tu perfil</div>
+      <div style="font-size:0.72rem;font-weight:500;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:16px;">Seleccioná tu perfil</div>
       <div class="profile-grid">
         <div class="profile-card" id="prof-conservador" onclick="selectProfile('conservador')">
           <div class="profile-icon">🛡️</div>
           <div class="profile-name">Conservador</div>
-          <div class="profile-desc">Prioriz\u00e1s preservar el capital. Acepta\u00e1s menor rendimiento a cambio de menor riesgo.</div>
+          <div class="profile-desc">Priorizás preservar el capital. Aceptaás menor rendimiento a cambio de menor riesgo.</div>
         </div>
         <div class="profile-card" id="prof-moderado" onclick="selectProfile('moderado')">
           <div class="profile-icon">⚖️</div>
           <div class="profile-name">Moderado</div>
-          <div class="profile-desc">Busc\u00e1s equilibrio entre rendimiento y riesgo. Tolerancia media a la volatilidad.</div>
+          <div class="profile-desc">Buscás equilibrio entre rendimiento y riesgo. Tolerancia media a la volatilidad.</div>
         </div>
         <div class="profile-card" id="prof-agresivo" onclick="selectProfile('agresivo')">
           <div class="profile-icon">🚀</div>
           <div class="profile-name">Agresivo</div>
-          <div class="profile-desc">Busc\u00e1s m\u00e1ximo rendimiento. Tolerancia alta a fluctuaciones y p\u00e9rdidas temporales.</div>
+          <div class="profile-desc">Buscás máximo rendimiento. Tolerancia alta a fluctuaciones y pérdidas temporales.</div>
         </div>
       </div>
 
@@ -494,7 +494,7 @@
         <div id="cartera-detalle"></div>
         <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:16px 20px;margin-top:16px;">
           <div style="font-size:0.7rem;font-weight:500;color:var(--accent);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;">Aviso importante</div>
-          <div style="font-size:0.78rem;color:var(--ink2);line-height:1.65;">Las sugerencias son orientativas y se basan en condiciones actuales de mercado. No constituyen asesoramiento financiero profesional. Consult\u00e1 con un asesor matriculado antes de invertir.</div>
+          <div style="font-size:0.78rem;color:var(--ink2);line-height:1.65;">Las sugerencias son orientativas y se basan en condiciones actuales de mercado. No constituyen asesoramiento financiero profesional. Consultá con un asesor matriculado antes de invertir.</div>
         </div>
       </div>
     </div>
@@ -521,14 +521,14 @@
     <!-- CHAT IA -->
     <div class="page" id="page-chat">
       <div class="page-title">Chat IA</div>
-      <div class="page-sub">Consult\u00e1 al asesor con datos reales de mercado</div>
+      <div class="page-sub">Consultá al asesor con datos reales de mercado</div>
       <div class="chat-context" id="chat-context-label">El asistente tiene acceso a los datos actuales de mercado y tu cartera.</div>
       <div style="margin-top:12px;" class="chat-wrap">
         <div class="chat-messages" id="chat-messages">
-          <div class="chat-msg ai">Hola! Soy tu asesor financiero de finHub. Tengo acceso a los datos actuales del mercado argentino y tu cartera. Pod\u00e9s preguntarme sobre inversiones, comparar instrumentos, pedir an\u00e1lisis de bonos, CEDEARs, acciones, o pedirme que arme una estrategia seg\u00fan tus objetivos. \u00bFEn qu\u00e9 te ayudo?</div>
+          <div class="chat-msg ai">Hola! Soy tu asesor financiero de finHub. Tengo acceso a los datos actuales del mercado argentino y tu cartera. Podés preguntarme sobre inversiones, comparar instrumentos, pedir análisis de bonos, CEDEARs, acciones, o pedirme que arme una estrategia según tus objetivos. ¿En qué te ayudo?</div>
         </div>
         <div class="chat-input-row">
-          <input type="text" class="chat-input" id="chat-input" placeholder="\u00bfEn qu\u00e9 instrumento conviene invertir hoy?" />
+          <input type="text" class="chat-input" id="chat-input" placeholder="¿En qué instrumento conviene invertir hoy?" />
           <button class="chat-send" id="chat-send-btn" onclick="sendChat()">Enviar</button>
         </div>
       </div>
@@ -540,11 +540,11 @@
 <!-- MODAL INVERSIÓN -->
 <div class="overlay" id="modal-inversion" onclick="closeModal('inversion')">
   <div class="modal" onclick="event.stopPropagation()">
-    <div class="modal-title">Nueva posici\u00f3n</div>
+    <div class="modal-title">Nueva posición</div>
     <div class="field"><label>Instrumento / Ticker</label><input type="text" id="inv-ticker" placeholder="Ej: GGAL, AAPL, AL30, Plazo Fijo..." /></div>
     <div class="field"><label>Tipo</label>
       <select id="inv-tipo">
-        <option value="accion">Acci\u00f3n Argentina</option>
+        <option value="accion">Acción Argentina</option>
         <option value="cedear">CEDEAR</option>
         <option value="bono">Bono Soberano</option>
         <option value="lecap">Lecap / Letra</option>
@@ -557,7 +557,7 @@
     <div class="field"><label>Moneda</label>
       <select id="inv-moneda">
         <option value="ARS">ARS (Pesos)</option>
-        <option value="USD">USD (D\u00f3lares)</option>
+        <option value="USD">USD (Dólares)</option>
       </select>
     </div>
     <div class="field"><label>Monto invertido</label><input type="number" id="inv-monto" placeholder="0.00" min="0" step="0.01" /></div>
@@ -576,10 +576,10 @@
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-title">Nuevo activo</div>
     <div class="field"><label>Nombre</label><input type="text" id="pat-asset-name" placeholder="Ej: Efectivo, Inmueble, Auto..." /></div>
-    <div class="field"><label>Categor\u00eda</label>
+    <div class="field"><label>Categoría</label>
       <select id="pat-asset-cat">
         <option>Efectivo y ahorros</option><option>Inversiones</option>
-        <option>Inmuebles</option><option>Veh\u00edculos</option><option>Otros activos</option>
+        <option>Inmuebles</option><option>Vehículos</option><option>Otros activos</option>
       </select>
     </div>
     <div class="field"><label>Moneda</label><select id="pat-asset-moneda"><option value="ARS">ARS</option><option value="USD">USD</option></select></div>
@@ -596,9 +596,9 @@
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-title">Nueva deuda</div>
     <div class="field"><label>Nombre</label><input type="text" id="pat-debt-name" placeholder="Ej: Hipoteca, Tarjeta..." /></div>
-    <div class="field"><label>Categor\u00eda</label>
+    <div class="field"><label>Categoría</label>
       <select id="pat-debt-cat">
-        <option>Tarjeta de cr\u00e9dito</option><option>Pr\u00e9stamo personal</option>
+        <option>Tarjeta de crédito</option><option>Préstamo personal</option>
         <option>Hipoteca</option><option>Cuotas</option><option>Otras deudas</option>
       </select>
     </div>
@@ -732,7 +732,7 @@ function updateTicker() {
   const d = marketData.dolar;
   const items = [];
 
-  // Dolar values
+  // Dolar
   if (d.blue?.venta)    items.push({ name:'USD Blue',    price:'$'+Math.round(d.blue.venta).toLocaleString('es-AR'),    chg:'', cls:'neu' });
   if (d.oficial?.venta) items.push({ name:'USD Oficial', price:'$'+Math.round(d.oficial.venta).toLocaleString('es-AR'), chg:'', cls:'neu' });
   const mepV = d.mep?.venta || d.mep?.al30?.['24h']?.ask;
@@ -741,30 +741,55 @@ function updateTicker() {
   if (cclV) items.push({ name:'USD CCL', price:'$'+Math.round(cclV).toLocaleString('es-AR'), chg:'', cls:'neu' });
 
   // CEDEARs
-  marketData.cedears.forEach(c => {
+  const cedears = marketData.cedears.length ? marketData.cedears : [
+    {symbol:'AAPL',precio:213.5,cambio:'0.80'},{symbol:'GOOGL',precio:175.2,cambio:'-0.30'},
+    {symbol:'MSFT',precio:422.1,cambio:'0.50'},{symbol:'AMZN',precio:198.4,cambio:'1.20'},
+    {symbol:'TSLA',precio:248.0,cambio:'-2.10'},{symbol:'NVDA',precio:875.4,cambio:'3.20'}
+  ];
+  cedears.forEach(c => {
     const chg = parseFloat(c.cambio||0);
     items.push({ name:c.symbol, price:'USD '+fmtNum(c.precio), chg:(chg>=0?'+':'')+chg.toFixed(2)+'%', cls:chg>0?'pos':chg<0?'neg':'neu' });
   });
 
-  // Acciones
-  marketData.acciones.forEach(a => {
+  // Acciones Merval
+  const acciones = marketData.acciones.length ? marketData.acciones : [
+    {symbol:'GGAL',closePrice:8420,changePercent:2.3},{symbol:'YPF',closePrice:42100,changePercent:-0.8},
+    {symbol:'PAMP',closePrice:3280,changePercent:1.1},{symbol:'BBAR',closePrice:6150,changePercent:0.5},
+    {symbol:'TXAR',closePrice:1890,changePercent:-1.2},{symbol:'LOMA',closePrice:2100,changePercent:0.9}
+  ];
+  acciones.forEach(a => {
     const chg = parseFloat(a.changePercent||a.variacion||0);
-    items.push({ name:a.symbol||a.ticker, price:'$'+fmtNum(a.closePrice||0), chg:(chg>=0?'+':'')+chg.toFixed(2)+'%', cls:chg>0?'pos':chg<0?'neg':'neu' });
+    items.push({ name:a.symbol||a.ticker, price:'$'+Math.round(a.closePrice||0).toLocaleString('es-AR'), chg:(chg>=0?'+':'')+chg.toFixed(2)+'%', cls:chg>0?'pos':chg<0?'neg':'neu' });
+  });
+
+  // Bonos
+  const bonos = marketData.bonos.length ? marketData.bonos : [
+    {ticker:'AL30',tir:18.2},{ticker:'GD30',tir:16.8},{ticker:'AE38',tir:14.5},
+    {ticker:'T2X5',tir:3.8},{ticker:'S31E6',tir:4.2}
+  ];
+  bonos.forEach(b => {
+    items.push({ name:b.ticker, price:'TIR '+b.tir?.toFixed(1)+'%', chg:'', cls:'neu' });
   });
 
   if (!items.length) return;
 
-  // Duplicate for seamless loop
-  const html = [...items, ...items].map(item =>
+  // Triplicate for truly seamless scroll from right
+  const html = [...items, ...items, ...items].map(item =>
     '<div class="ticker-item">'+
-    '<span class="ticker-name">'+item.name+'</span>'+
+    '<span class="ticker-name">'+item.name+'</span> '+
     '<span class="ticker-price">'+item.price+'</span>'+
-    (item.chg ? '<span class="ticker-chg '+item.cls+'">'+item.chg+'</span>' : '')+
+    (item.chg ? ' <span class="ticker-chg '+item.cls+'">'+item.chg+'</span>' : '')+
     '</div>'
   ).join('');
 
   const track = document.getElementById('ticker-track');
-  if (track) track.innerHTML = html;
+  if (track) {
+    track.innerHTML = html;
+    // Reset animation
+    track.style.animation = 'none';
+    track.offsetHeight;
+    track.style.animation = '';
+  }
 }
 
 // ── RENDER ACCIONES ──
@@ -1051,26 +1076,21 @@ window.sendChat = async () => {
   chatHistory.push({ role: 'user', content: msg });
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: context,
-        messages: chatHistory
-      })
+      body: JSON.stringify({ system: context, messages: chatHistory })
     });
 
     const data = await response.json();
-    const reply = data.content?.[0]?.text || 'No pude procesar la respuesta.';
+    const reply = data.reply || data.error || 'No pude procesar la respuesta.';
     chatHistory.push({ role: 'assistant', content: reply });
 
     loading.classList.remove('loading');
     loading.textContent = reply;
   } catch (err) {
     loading.classList.remove('loading');
-    loading.textContent = 'Error al conectar con el asistente. Intent\u00e1 nuevamente.';
+    loading.textContent = 'Error al conectar. Verificá tu conexión e intentá nuevamente.';
   }
 
   btn.disabled = false;
