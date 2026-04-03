@@ -1877,7 +1877,7 @@
       if (diffPct !== null) {
         const sign = diffPct >= 0 ? '+' : '';
         const color = diffPct > 0 ? 'var(--red)' : 'var(--green)';
-        html += ' (<span style="color:'+color+';font-weight:500">'+sign+diffPct+'%</span> vs '+prevLabel+')';
+        html += ' (<span style="color:'+color+';font-weight:500">'+sign+Math.abs(diffPct).toLocaleString('es-AR')+'%</span> vs '+prevLabel+')';
       }
       html += '.';
       if (balance >= 0) html += ' Balance positivo de <strong style="color:var(--green)">' + fmt(balance) + '</strong>.';
@@ -1939,7 +1939,9 @@
     const catPrev  = {};
     prevMonthTx.filter(t=>t.type==='expense').forEach(t => { catPrev[t.category]=(catPrev[t.category]||0)+t.amount; });
 
-    const topCat = Object.entries(catSpent).sort((a,b)=>b[1]-a[1])[0];
+    const incomeCatsInsight = ['Sueldo','Freelance','Inversiones'];
+    const catSpentFiltered = Object.fromEntries(Object.entries(catSpent).filter(([k]) => !incomeCatsInsight.includes(k)));
+    const topCat = Object.entries(catSpentFiltered).sort((a,b)=>b[1]-a[1])[0];
     const savingsRate = thisIncome > 0 ? ((thisIncome - thisExpense) / thisIncome * 100) : 0;
 
     // Budget alerts
@@ -1966,10 +1968,11 @@
     // 1. Spending vs last month
     if (prevExpense > 0 && thisExpense > 0) {
       const pct = Math.round(((thisExpense - prevExpense) / prevExpense) * 100);
+      const fmtPct = Math.abs(pct).toLocaleString('es-AR');
       if (pct > 20) {
-        insights.push({ type:'bad', icon:'📈', title:'Gastos elevados este mes', body:'Gastaste '+fmt(thisExpense)+' este mes, un '+pct+'% más que el mes pasado ('+fmt(prevExpense)+'). Revisá en qué categorías aumentó el gasto.' });
+        insights.push({ type:'bad', icon:'📈', title:'Gastos elevados este mes', body:'Gastaste '+fmt(thisExpense)+' este mes, un '+fmtPct+'% más que el mes pasado ('+fmt(prevExpense)+'). Revisá en qué categorías aumentó el gasto.' });
       } else if (pct < -10) {
-        insights.push({ type:'good', icon:'📉', title:'Buen control del gasto', body:'Gastaste '+fmt(thisExpense)+' este mes, un '+Math.abs(pct)+'% menos que el mes pasado ('+fmt(prevExpense)+'). Muy bien.' });
+        insights.push({ type:'good', icon:'📉', title:'Buen control del gasto', body:'Gastaste '+fmt(thisExpense)+' este mes, un '+fmtPct+'% menos que el mes pasado ('+fmt(prevExpense)+'). Muy bien.' });
       }
     }
 
