@@ -330,8 +330,8 @@
   <!-- SIDEBAR -->
   <aside class="sidebar">
     <div class="wordmark">
-      <div style="display:flex;align-items:center;gap:9px;">
-        <svg width="24" height="20" viewBox="0 0 96 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <div style="display:flex;align-items:center;gap:11px;">
+        <svg width="30" height="25" viewBox="0 0 96 80" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="0" y="52" width="20" height="28" rx="3" fill="#3d6b52" opacity="0.4"/>
           <rect x="25" y="34" width="20" height="46" rx="3" fill="#3d6b52" opacity="0.65"/>
           <rect x="50" y="8" width="20" height="72" rx="3" fill="#3d6b52"/>
@@ -339,12 +339,12 @@
           <path d="M55 29 L60 19 L65 29" stroke="#3d6b52" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
           <line x1="60" y1="19" x2="60" y2="29" stroke="#3d6b52" stroke-width="2.5" stroke-linecap="round"/>
         </svg>
-        <span style="font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,sans-serif;font-size:1.25rem;font-weight:700;letter-spacing:-0.02em;line-height:1;">
+        <span style="font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,sans-serif;font-size:1.45rem;font-weight:700;letter-spacing:-0.02em;line-height:1;">
           <span style="color:#8a8070">fin</span><span style="color:#3d6b52">Hub.</span>
         </span>
       </div>
-      <div style="font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,sans-serif;font-size:0.65rem;color:#b4ac9e;letter-spacing:0.04em;margin-top:8px;padding-left:2px;">
-        Finanzas simples, mente tranquila
+      <div style="font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,sans-serif;font-size:0.72rem;color:#b4ac9e;letter-spacing:0.03em;margin-top:10px;padding-left:2px;line-height:1.5;">
+        Finanzas simples,<br>mente tranquila
       </div>
     </div>
     <nav>
@@ -368,6 +368,10 @@
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         Recordatorios
         <span class="nav-badge" id="reminder-badge" style="display:none">0</span>
+      </div>
+      <div class="nav-item" onclick="goTo('recurring')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        Recurrentes
       </div>
     </nav>
     <div class="sidebar-footer">
@@ -505,6 +509,17 @@
         <button class="btn-primary" onclick="openModal('reminder')">+ Agregar</button>
       </div>
       <div class="reminder-list" id="reminder-list"></div>
+    </div>
+
+    <!-- RECURRING -->
+    <div class="page" id="page-recurring">
+      <div class="page-title">Recurrentes</div>
+      <div class="page-sub">Gastos que se repiten todos los meses</div>
+      <div style="background:var(--surface);border:1px solid var(--border);padding:20px 24px;margin-bottom:24px;border-left:4px solid var(--accent);">
+        <div style="font-size:0.72rem;font-weight:500;color:var(--accent);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;">Detección automática</div>
+        <div style="font-size:0.82rem;color:var(--ink2);">Gastos que aparecen en al menos 2 meses distintos con montos similares (±20%). Sin cargar nada manualmente.</div>
+      </div>
+      <div id="recurring-list"></div>
     </div>
 
   </main>
@@ -669,7 +684,7 @@
     onValue(ref(db, `users/${uid}/globalBudgets`), s => { globalBudgets = s.val() || {}; renderBudgets(); });
   }
 
-  function renderAll() { renderDashboard(); renderTxList(); renderBudgets(); }
+  function renderAll() { renderDashboard(); renderTxList(); renderBudgets(); renderRecurring(); }
 
   // ── NAV ──
   window.goTo = page => {
@@ -1091,6 +1106,52 @@
     await push(ref(db,`users/${uid}/reminders`),{name,amount,category:cat,day,paidMonth:null});
     closeModal('reminder');
   };
+
+  // ── RECURRING ──
+  function renderRecurring() {
+    const container = document.getElementById('recurring-list');
+    if (!container) return;
+    const txArr = Object.values(transactions).filter(t => t.type === 'expense');
+    const groups = {};
+    txArr.forEach(t => {
+      const key = t.description.trim().toLowerCase() + '|' + t.category;
+      if (!groups[key]) groups[key] = { name: t.description, category: t.category, entries: [] };
+      groups[key].entries.push({ amount: t.amount, date: t.date });
+    });
+    const recurring = [];
+    Object.values(groups).forEach(g => {
+      const months = [...new Set(g.entries.map(e => e.date.slice(0, 7)))];
+      if (months.length < 2) return;
+      const amounts = g.entries.map(e => e.amount);
+      const avg = amounts.reduce((s, a) => s + a, 0) / amounts.length;
+      const allSimilar = amounts.every(a => Math.abs(a - avg) / avg <= 0.20);
+      if (!allSimilar) return;
+      const sorted = [...g.entries].sort((a, b) => new Date(b.date) - new Date(a.date));
+      recurring.push({ name: g.name, category: g.category, avgAmount: avg, count: months.length, lastDate: sorted[0].date });
+    });
+    recurring.sort((a, b) => b.avgAmount - a.avgAmount);
+    if (!recurring.length) {
+      container.innerHTML = '<div class="tx-empty" style="background:var(--surface);border:1px solid var(--border);padding:52px;text-align:center;font-size:0.82rem;color:var(--muted)">No se detectaron gastos recurrentes todav\u00eda.<br><span style=\"font-size:0.75rem;opacity:0.7\">Registr\u00e1 m\u00e1s movimientos para que la app pueda detectar patrones.</span></div>';
+      return;
+    }
+    const totalMonthly = recurring.reduce((s, r) => s + r.avgAmount, 0);
+    let html = '<div style="background:var(--surface);border:1px solid var(--border);padding:20px 24px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;">';
+    html += '<div><div style="font-size:0.68rem;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;">Total mensual recurrente</div>';
+    html += '<div style="font-family:\'Playfair Display\',serif;font-size:2rem;font-weight:400;color:var(--red)">' + fmt(totalMonthly) + '</div></div>';
+    html += '<div style="text-align:right"><div style="font-size:0.68rem;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;">Gastos detectados</div>';
+    html += '<div style="font-family:\'Playfair Display\',serif;font-size:2rem;font-weight:400;color:var(--ink)">' + recurring.length + '</div></div></div>';
+    html += '<div class="tx-list">';
+    recurring.forEach(r => {
+      html += '<div class="tx-item">';
+      html += '<div><div class="tx-desc">' + esc(r.name) + '</div>';
+      html += '<div class="tx-cat">' + esc(r.category) + ' &middot; detectado en ' + r.count + ' meses</div></div>';
+      html += '<div class="tx-date">' + fmtDate(r.lastDate) + '</div>';
+      html += '<div class="tx-amount expense">' + fmt(r.avgAmount) + '<span style="font-size:0.65rem;color:var(--muted);font-family:\'Instrument Sans\',sans-serif;margin-left:4px;">/mes</span></div>';
+      html += '</div>';
+    });
+    html += '</div>';
+    container.innerHTML = html;
+  }
 
   // ── UTILS ──
   function fmt(n) { return '$'+(n||0).toLocaleString('es-AR',{minimumFractionDigits:0,maximumFractionDigits:2}); }
