@@ -1516,9 +1516,9 @@
     const totalMonthly = recurring.reduce((s, r) => s + r.avgAmount, 0);
     let html = '<div style="background:var(--surface);border:1px solid var(--border);padding:20px 24px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;">';
     html += '<div><div style="font-size:0.68rem;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;">Total mensual recurrente</div>';
-    html += '<div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:2rem;font-weight:400;color:var(--red)">' + fmt(totalMonthly) + '</div></div>';
+    html += '<div style="font-family:sans-serif;font-size:2rem;font-weight:400;color:var(--red)">' + fmt(totalMonthly) + '</div></div>';
     html += '<div style="text-align:right"><div style="font-size:0.68rem;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;">Gastos detectados</div>';
-    html += '<div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:2rem;font-weight:400;color:var(--ink)">' + recurring.length + '</div></div></div>';
+    html += '<div style="font-family:sans-serif;font-size:2rem;font-weight:400;color:var(--ink)">' + recurring.length + '</div></div></div>';
     html += '<div class="tx-list">';
     recurring.forEach(r => {
       html += '<div class="tx-item">';
@@ -1621,7 +1621,7 @@
     // Projection result
     html += '<div style="background:var(--surface);border:1px solid var(--border);border-top:3px solid ' + (isPositive ? 'var(--green)' : 'var(--red)') + ';padding:32px;margin-bottom:28px;">';
     html += '<div style="font-size:0.68rem;font-weight:500;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">Saldo proyectado en ' + cashflowHorizon + ' días</div>';
-    html += '<div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:3rem;font-weight:400;color:' + (isPositive ? 'var(--green)' : 'var(--red)') + ';line-height:1;margin-bottom:16px;">' + fmt(projected) + '</div>';
+    html += '<div style="font-family:sans-serif;font-size:3rem;font-weight:400;color:' + (isPositive ? 'var(--green)' : 'var(--red)') + ';line-height:1;margin-bottom:16px;">' + fmt(projected) + '</div>';
 
     const netLabel = dailyNet >= 0 ? 'superávit' : 'déficit';
     const netColor = dailyNet >= 0 ? 'var(--green)' : 'var(--red)';
@@ -1658,7 +1658,7 @@
       html += '<div><div class="tx-desc" style="text-transform:capitalize;">' + label + '</div>';
       html += '<div class="tx-cat">Flujo neto estimado</div></div>';
       html += '<div class="tx-amount ' + (monthNet >= 0 ? 'income' : 'expense') + '">' + (monthNet >= 0 ? '+' : '') + fmt(monthNet) + '</div>';
-      html += '<div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1rem;color:' + (projBalance >= 0 ? 'var(--green)' : 'var(--red)') + ';white-space:nowrap;">' + fmt(projBalance) + '</div>';
+      html += '<div style="font-family:sans-serif;font-size:1rem;color:' + (projBalance >= 0 ? 'var(--green)' : 'var(--red)') + ';white-space:nowrap;">' + fmt(projBalance) + '</div>';
       html += '</div>';
     }
     html += '</div>';
