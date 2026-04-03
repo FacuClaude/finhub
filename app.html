@@ -1275,22 +1275,22 @@
     });
     recurring.sort((a, b) => b.avgAmount - a.avgAmount);
     if (!recurring.length) {
-      container.innerHTML = '<div class="tx-empty" style="background:var(--surface);border:1px solid var(--border);padding:52px;text-align:center;font-size:0.82rem;color:var(--muted)">No se detectaron gastos recurrentes todav\u00eda.<br><span style=\"font-size:0.75rem;opacity:0.7\">Registr\u00e1 m\u00e1s movimientos para que la app pueda detectar patrones.</span></div>';
+      container.innerHTML = '<div class="tx-empty" style="background:var(--surface);border:1px solid var(--border);padding:52px;text-align:center;font-size:0.82rem;color:var(--muted)">Sin recurrentes detectados. Registrá movimientos con el mismo nombre en meses distintos.</div>';
       return;
     }
     const totalMonthly = recurring.reduce((s, r) => s + r.avgAmount, 0);
     let html = '<div style="background:var(--surface);border:1px solid var(--border);padding:20px 24px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;">';
     html += '<div><div style="font-size:0.68rem;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;">Total mensual recurrente</div>';
-    html += '<div style="font-family:\'Playfair Display\',serif;font-size:2rem;font-weight:400;color:var(--red)">' + fmt(totalMonthly) + '</div></div>';
+    html += '<div style="font-family:serif;font-size:2rem;font-weight:400;color:var(--red)">' + fmt(totalMonthly) + '</div></div>';
     html += '<div style="text-align:right"><div style="font-size:0.68rem;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;">Gastos detectados</div>';
-    html += '<div style="font-family:\'Playfair Display\',serif;font-size:2rem;font-weight:400;color:var(--ink)">' + recurring.length + '</div></div></div>';
+    html += '<div style="font-family:serif;font-size:2rem;font-weight:400;color:var(--ink)">' + recurring.length + '</div></div></div>';
     html += '<div class="tx-list">';
     recurring.forEach(r => {
       html += '<div class="tx-item">';
       html += '<div><div class="tx-desc">' + esc(r.name) + '</div>';
       html += '<div class="tx-cat">' + esc(r.category) + ' &middot; detectado en ' + r.count + ' meses</div></div>';
       html += '<div class="tx-date">' + fmtDate(r.lastDate) + '</div>';
-      html += '<div class="tx-amount expense">' + fmt(r.avgAmount) + '<span style="font-size:0.65rem;color:var(--muted);font-family:\'Instrument Sans\',sans-serif;margin-left:4px;">/mes</span></div>';
+      html += '<div class="tx-amount expense">' + fmt(r.avgAmount) + '<span style="font-size:0.65rem;color:var(--muted);margin-left:4px;">/mes</span></div>';
       html += '</div>';
     });
     html += '</div>';
