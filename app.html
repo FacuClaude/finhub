@@ -1326,7 +1326,7 @@
           html += '<div class="tx-item">';
           html += '<div><div class="tx-desc">' + esc(a.name) + '</div><div class="tx-cat">' + esc(a.category) + '</div></div>';
           html += '<div class="tx-amount income">' + fmt(a.value) + '</div>';
-          html += '<button class="tx-delete" onclick="deleteAsset(' + JSON.stringify(a.id) + ')">&#x2715;</button>';
+          html += '<button class="tx-delete" onclick="deleteAsset(\'' + a.id + '\')">&#x2715;</button>';
           html += '</div>';
         });
         html += '</div>';
@@ -1345,7 +1345,7 @@
           html += '<div class="tx-item">';
           html += '<div><div class="tx-desc">' + esc(d.name) + '</div><div class="tx-cat">' + esc(d.category) + '</div></div>';
           html += '<div class="tx-amount expense">' + fmt(d.value) + '</div>';
-          html += '<button class="tx-delete" onclick="deleteDebt(' + JSON.stringify(d.id) + ')">&#x2715;</button>';
+          html += '<button class="tx-delete" onclick="deleteDebt(\'' + d.id + '\')">&#x2715;</button>';
           html += '</div>';
         });
         html += '</div>';
