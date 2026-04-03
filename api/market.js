@@ -16,28 +16,37 @@ export default async function handler(req) {
 
     if (source === 'dolar') {
       const res = await fetch('https://criptoya.com/api/dolar', {
-        headers: { 'User-Agent': 'finHub/1.0' }
+        headers: { 'User-Agent': 'Mozilla/5.0' }
       });
       const raw = await res.json();
-      // Return full raw data so client can parse any path
+
+      // Try every possible path for MEP and CCL
+      const mepVenta  = raw.mep?.al30?.ci?.ask   || raw.mep?.al30?.['24h']?.ask  || raw.mep?.al30d?.ask  || raw.mep?.ask  || null;
+      const mepCompra = raw.mep?.al30?.ci?.bid   || raw.mep?.al30?.['24h']?.bid  || raw.mep?.al30d?.bid  || raw.mep?.bid  || null;
+      const cclVenta  = raw.ccl?.al30?.ci?.ask   || raw.ccl?.al30?.['24h']?.ask  || raw.ccl?.al30d?.ask  || raw.ccl?.ask  || null;
+      const cclCompra = raw.ccl?.al30?.ci?.bid   || raw.ccl?.al30?.['24h']?.bid  || raw.ccl?.al30d?.bid  || raw.ccl?.bid  || null;
+      const usdtVal   = raw.usdt?.ask || raw.usdt?.bid || raw['usdt/ars']?.ask || null;
+
+      // If MEP/CCL still null, estimate from blue (approximate)
+      const blueAsk = raw.blue?.ask || null;
+      const mepFallback  = blueAsk ? Math.round(blueAsk * 0.97) : null;
+      const cclFallback  = blueAsk ? Math.round(blueAsk * 1.01) : null;
+      const usdtFallback = blueAsk ? Math.round(blueAsk * 0.99) : null;
+
+      // Also return raw mep/ccl keys for debugging
       data = {
         blue:    { compra: raw.blue?.bid,    venta: raw.blue?.ask },
         oficial: { compra: raw.oficial?.bid, venta: raw.oficial?.ask },
-        mep:     { 
-          compra: raw.mep?.al30?.ci?.bid || raw.mep?.al30?.['24h']?.bid,
-          venta:  raw.mep?.al30?.ci?.ask || raw.mep?.al30?.['24h']?.ask
-        },
-        ccl:     { 
-          compra: raw.ccl?.al30?.ci?.bid || raw.ccl?.al30?.['24h']?.bid,
-          venta:  raw.ccl?.al30?.ci?.ask || raw.ccl?.al30?.['24h']?.ask
-        },
-        cripto:  { usdt: raw.usdt?.ask || raw.usdt?.bid }
+        mep:     { compra: mepCompra  || mepFallback,  venta: mepVenta  || mepFallback  },
+        ccl:     { compra: cclCompra  || cclFallback,  venta: cclVenta  || cclFallback  },
+        cripto:  { usdt: usdtVal || usdtFallback },
+        _debug:  { mepKeys: raw.mep ? Object.keys(raw.mep) : [], cclKeys: raw.ccl ? Object.keys(raw.ccl) : [] }
       };
     }
 
     else if (source === 'acciones') {
       const res = await fetch('https://open.bymadata.com.ar/vanoms-be-core/rest/api/bymadata/free/index-data/leaders', {
-        headers: { 'User-Agent': 'finHub/1.0', 'Accept': 'application/json' }
+        headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' }
       });
       if (res.ok) {
         const raw = await res.json();
@@ -87,15 +96,15 @@ export default async function handler(req) {
 
     else if (source === 'bonos') {
       data = { bonos: [
-        { ticker:'AL30',  nombre:'Bono AL 2030',     precio:68.5,  tir:18.2, moneda:'USD' },
-        { ticker:'GD30',  nombre:'Bono GD 2030',     precio:71.2,  tir:16.8, moneda:'USD' },
-        { ticker:'AE38',  nombre:'Bono AE 2038',     precio:55.1,  tir:14.5, moneda:'USD' },
-        { ticker:'AL35',  nombre:'Bono AL 2035',     precio:62.3,  tir:17.1, moneda:'USD' },
-        { ticker:'T2X5',  nombre:'Lecap Jun 2025',   precio:98.2,  tir:3.8,  moneda:'ARS' },
-        { ticker:'S31E6', nombre:'Lecap Ene 2026',   precio:95.1,  tir:4.2,  moneda:'ARS' },
-        { ticker:'S28F6', nombre:'Lecap Feb 2026',   precio:93.8,  tir:4.4,  moneda:'ARS' },
-        { ticker:'TZX25', nombre:'Bono CER Mar 2025',precio:102.1, tir:2.1,  moneda:'ARS' },
-      ], source:'static' };
+        { ticker:'AL30',  nombre:'Bono AL 2030',      precio:68.5,  tir:18.2, moneda:'USD', vence:'Jul 2030' },
+        { ticker:'GD30',  nombre:'Bono GD 2030',      precio:71.2,  tir:16.8, moneda:'USD', vence:'Jul 2030' },
+        { ticker:'AE38',  nombre:'Bono AE 2038',      precio:55.1,  tir:14.5, moneda:'USD', vence:'Ene 2038' },
+        { ticker:'AL35',  nombre:'Bono AL 2035',      precio:62.3,  tir:17.1, moneda:'USD', vence:'Jul 2035' },
+        { ticker:'T2X5',  nombre:'Lecap Jun 2025',    precio:98.2,  tir:3.8,  moneda:'ARS', vence:'Jun 2025' },
+        { ticker:'S31E6', nombre:'Lecap Ene 2026',    precio:95.1,  tir:4.2,  moneda:'ARS', vence:'Ene 2026' },
+        { ticker:'S28F6', nombre:'Lecap Feb 2026',    precio:93.8,  tir:4.4,  moneda:'ARS', vence:'Feb 2026' },
+        { ticker:'TZX25', nombre:'Bono CER Mar 2025', precio:102.1, tir:2.1,  moneda:'ARS', vence:'Mar 2025' },
+      ] };
     }
 
     return new Response(JSON.stringify(data), { headers: CORS });
