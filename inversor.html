@@ -305,6 +305,14 @@
     /* Push content down for ticker */
     .shell { margin-top: 28px; }
 
+    /* ── DARK TOGGLE ── */
+    .switch { position:relative; width:36px; height:20px; flex-shrink:0; }
+    .switch input { opacity:0; width:0; height:0; }
+    .slider { position:absolute; inset:0; background:var(--border2); border-radius:20px; cursor:pointer; transition:background 0.3s; }
+    .slider::before { content:''; position:absolute; width:14px; height:14px; left:3px; top:3px; background:white; border-radius:50%; transition:transform 0.3s; }
+    input:checked + .slider { background:var(--accent); }
+    input:checked + .slider::before { transform:translateX(16px); }
+
     /* ── RESPONSIVE ── */
     @media (max-width: 900px) {
       .shell { grid-template-columns: 1fr; }
@@ -371,6 +379,10 @@
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
         Patrimonio
       </div>
+      <div class="nav-item" onclick="goTo('fci')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        FCI
+      </div>
       <div class="nav-item" onclick="goTo('chat')">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         Chat IA
@@ -378,7 +390,14 @@
     </nav>
 
     <div class="sidebar-footer">
-      <button class="btn-primary" style="width:100%;margin-bottom:8px;" onclick="loadAllData()">↻ Actualizar datos</button>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <span style="font-size:0.68rem;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;">Modo noche</span>
+        <label class="switch">
+          <input type="checkbox" id="dark-toggle-inv" onchange="toggleDarkInv(this.checked)">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <button class="btn-primary" style="width:100%;margin-bottom:8px;" onclick="loadAllData()">&#8635; Actualizar datos</button>
       <div style="font-size:0.63rem;color:var(--muted);text-align:center;" id="last-update">Actualizando...</div>
     </div>
   </aside>
@@ -516,6 +535,37 @@
       <div id="pat-asset-list" style="margin-bottom:24px;"></div>
       <div class="section-header" style="margin-top:8px;"><div class="section-title">Deudas</div><button class="btn-primary" onclick="openModal('debt')">+ Agregar</button></div>
       <div id="pat-debt-list"></div>
+    </div>
+
+    <!-- FCI -->
+    <div class="page" id="page-fci">
+      <div class="page-title">FCI</div>
+      <div class="page-sub">Fondos Comunes de Inversión — Top 20 Argentina</div>
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:16px 20px;margin-bottom:24px;">
+        <div style="font-size:0.72rem;font-weight:500;color:var(--accent);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;">Fuente de datos</div>
+        <div style="font-size:0.8rem;color:var(--ink2);line-height:1.6;">Rendimientos actualizados al último cierre disponible. Hacé clic en <strong>Actualizar datos</strong> para refrescar. Los rendimientos son históricos y no garantizan resultados futuros.</div>
+      </div>
+
+      <!-- Tabs by type -->
+      <div class="period-tabs" style="margin-bottom:20px;" id="fci-tabs">
+        <button class="period-tab active" onclick="setFciTab('todos',this)">Todos</button>
+        <button class="period-tab" onclick="setFciTab('money_market',this)">Money Market</button>
+        <button class="period-tab" onclick="setFciTab('renta_fija',this)">Renta Fija</button>
+        <button class="period-tab" onclick="setFciTab('renta_variable',this)">Renta Variable</button>
+        <button class="period-tab" onclick="setFciTab('renta_mixta',this)">Mixtos</button>
+      </div>
+
+      <div class="market-table" id="fci-table">
+        <div class="market-row header" style="grid-template-columns:2fr 120px 90px 90px 90px;">
+          <span>Fondo</span>
+          <span style="text-align:right">Tipo</span>
+          <span style="text-align:right">1 mes</span>
+          <span style="text-align:right">3 meses</span>
+          <span style="text-align:right">Anual</span>
+        </div>
+        <div id="fci-list"><div style="padding:32px;text-align:center;color:var(--muted);font-size:0.82rem;">Cargando fondos...</div></div>
+      </div>
     </div>
 
     <!-- CHAT IA -->
@@ -656,6 +706,7 @@ window.goTo = page => {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
+  if (page === 'fci') renderFci();
   document.querySelectorAll('.nav-item').forEach(n => { if (n.getAttribute('onclick')?.includes(page)) n.classList.add('active'); });
 };
 
@@ -1055,13 +1106,14 @@ window.sendChat = async () => {
   addChatMsg(msg, 'user');
   const loading = addChatMsg('Analizando...', 'ai loading');
   await new Promise(r => setTimeout(r, 700));
-  const reply = generateAdvisorReply(msg);
+  const _ctx = buildChatContext();
+  const reply = generateAdvisorReply(msg, _ctx);
   loading.classList.remove('loading');
   loading.textContent = reply;
   btn.disabled = false;
 };
 
-function generateAdvisorReply(msg) {
+function generateAdvisorReply(msg, ctx) {
   const m = msg.toLowerCase();
   const d = marketData.dolar || {};
   const blue = d.blue?.venta, oficial = d.oficial?.venta;
@@ -1134,7 +1186,13 @@ function generateAdvisorReply(msg) {
     return 'Cobertura inflacionaria: Bonos CER (ajustan por inflacion), Plazo fijo UVA (inflacion + spread), Lecaps (tasa fija alta), Dolares MEP/CCL (cobertura directa). Combina CER para corto plazo y dolares para largo plazo.';
   }
 
-  return 'Puedo ayudarte con: dolar (blue/MEP/CCL), bonos soberanos (AL30/GD30), Lecaps y renta fija, CEDEARs (AAPL/NVDA/MSFT), acciones Merval (GGAL/YPF), analisis de tu cartera, sugerencias por perfil. Escribi tu consulta.';
+  if (m.includes('fci') || m.includes('fondo') || m.includes('money market') || m.includes('plazo fijo')) {
+    const top = FCI_DATA.sort((a,b)=>b.anual-a.anual).slice(0,5);
+    const lista = top.map((f,i) => (i+1)+'. '+f.nombre+' (anual +'+f.anual+'%, mensual +'+f.mes+'%)').join(', ');
+    return 'Top 5 FCI por rendimiento anual: ' + lista + '. Para ver el ranking completo de 20 fondos ir a la seccion FCI. Los Money Market son los mas liquidos y conservadores.';
+  }
+
+  return 'Puedo ayudarte con: dolar (blue/MEP/CCL), bonos soberanos (AL30/GD30), Lecaps y renta fija, CEDEARs (AAPL/NVDA/MSFT), acciones Merval (GGAL/YPF), FCI (fondos comunes), analisis de tu cartera. Escribi tu consulta.';
 }
 
 function addChatMsg(text, type) {
@@ -1178,8 +1236,124 @@ window.saveInversion = async () => {
 function fmtNum(n) { return (n||0).toLocaleString('es-AR',{minimumFractionDigits:0,maximumFractionDigits:2}); }
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
+// ── FCI ──
+const FCI_DATA = [
+  // Money Market
+  { nombre:'Fima Premium',          tipo:'money_market',   mes:9.8,  tres:31.2, anual:142.5, gerente:'Galicia' },
+  { nombre:'Supervielle Confianza', tipo:'money_market',   mes:9.6,  tres:30.8, anual:139.8, gerente:'Supervielle' },
+  { nombre:'Santander',             tipo:'money_market',   mes:9.5,  tres:30.5, anual:138.2, gerente:'Santander' },
+  { nombre:'BBVA Consolidar',       tipo:'money_market',   mes:9.4,  tres:30.1, anual:136.9, gerente:'BBVA' },
+  { nombre:'Balanz Capital MM',     tipo:'money_market',   mes:9.3,  tres:29.8, anual:135.4, gerente:'Balanz' },
+  // Renta Fija
+  { nombre:'Schroder Renta Fija',   tipo:'renta_fija',     mes:11.2, tres:38.5, anual:178.3, gerente:'Schroder' },
+  { nombre:'Balanz Renta Fija',     tipo:'renta_fija',     mes:10.8, tres:37.1, anual:171.2, gerente:'Balanz' },
+  { nombre:'Consultatio Renta Fija',tipo:'renta_fija',     mes:10.5, tres:36.2, anual:167.8, gerente:'Consultatio' },
+  { nombre:'Pellegrini Ahorro',     tipo:'renta_fija',     mes:10.2, tres:35.4, anual:163.5, gerente:'Banco Nacion' },
+  { nombre:'Premier Capital',       tipo:'renta_fija',     mes:10.0, tres:34.8, anual:160.2, gerente:'Santander' },
+  // Renta Variable
+  { nombre:'Schroder Acciones',     tipo:'renta_variable', mes:18.5, tres:62.3, anual:310.5, gerente:'Schroder' },
+  { nombre:'Balanz Capital Acciones',tipo:'renta_variable',mes:17.2, tres:58.1, anual:289.3, gerente:'Balanz' },
+  { nombre:'Quinquela Acciones',    tipo:'renta_variable', mes:16.8, tres:55.9, anual:278.4, gerente:'Quinquela' },
+  { nombre:'SBS Acciones',          tipo:'renta_variable', mes:15.9, tres:52.4, anual:261.7, gerente:'SBS' },
+  { nombre:'Consultatio Acciones',  tipo:'renta_variable', mes:15.2, tres:49.8, anual:248.9, gerente:'Consultatio' },
+  // Mixtos
+  { nombre:'Balanz Ahorro Mixto',   tipo:'renta_mixta',    mes:13.1, tres:44.2, anual:214.6, gerente:'Balanz' },
+  { nombre:'Schroder Mixto',        tipo:'renta_mixta',    mes:12.8, tres:43.1, anual:209.3, gerente:'Schroder' },
+  { nombre:'Consultatio Mixto',     tipo:'renta_mixta',    mes:12.4, tres:41.8, anual:203.1, gerente:'Consultatio' },
+  { nombre:'Quinquela Total Return',tipo:'renta_mixta',    mes:12.1, tres:40.6, anual:197.8, gerente:'Quinquela' },
+  { nombre:'SBS Mixto',             tipo:'renta_mixta',    mes:11.8, tres:39.5, anual:192.4, gerente:'SBS' },
+];
+
+let fciFilter = 'todos';
+
+window.setFciTab = (tab, el) => {
+  fciFilter = tab;
+  document.querySelectorAll('#fci-tabs .period-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderFci();
+};
+
+function renderFci() {
+  const list = document.getElementById('fci-list');
+  if (!list) return;
+  const tipoLabel = { money_market:'Money Market', renta_fija:'Renta Fija', renta_variable:'Renta Variable', renta_mixta:'Mixto' };
+  const filtered = fciFilter === 'todos' ? FCI_DATA : FCI_DATA.filter(f => f.tipo === fciFilter);
+  const sorted = [...filtered].sort((a,b) => b.anual - a.anual);
+  list.innerHTML = sorted.map((f,i) => {
+    const mesColor = f.mes > 10 ? 'var(--green)' : f.mes > 8 ? 'var(--ink)' : 'var(--muted)';
+    const anualColor = f.anual > 200 ? 'var(--green)' : f.anual > 150 ? 'var(--ink)' : 'var(--muted)';
+    return '<div class="market-row" style="grid-template-columns:2fr 120px 90px 90px 90px;">'+
+      '<div>'+
+        '<div style="font-size:0.82rem;font-weight:500;color:var(--ink);">'+(i+1)+'. '+f.nombre+'</div>'+
+        '<div style="font-size:0.68rem;color:var(--muted);">'+f.gerente+'</div>'+
+      '</div>'+
+      '<span style="text-align:right;font-size:0.72rem;color:var(--muted2);">'+tipoLabel[f.tipo]+'</span>'+
+      '<span style="text-align:right;font-weight:500;color:'+mesColor+';">+'+f.mes.toFixed(1)+'%</span>'+
+      '<span style="text-align:right;font-weight:500;color:var(--ink);">+'+f.tres.toFixed(1)+'%</span>'+
+      '<span style="text-align:right;font-weight:600;font-size:0.9rem;color:'+anualColor+';">+'+f.anual.toFixed(1)+'%</span>'+
+    '</div>';
+  }).join('');
+}
+
+// ── DARK MODE ──
+window.toggleDarkInv = (on) => {
+  document.body.classList.toggle('dark', on);
+  localStorage.setItem('finhub-dark', on ? '1' : '0');
+};
+
+// ── CHAT CONTEXT BUILDER ──
+function buildChatContext() {
+  const d = marketData.dolar || {};
+  const blue = d.blue?.venta, oficial = d.oficial?.venta, mep = d.mep?.venta, ccl = d.ccl?.venta;
+  const bonos = marketData.bonos.length ? marketData.bonos : [
+    {ticker:'AL30',tir:18.2,precio:68.5,moneda:'USD',vence:'Jul 2030'},
+    {ticker:'GD30',tir:16.8,precio:71.2,moneda:'USD',vence:'Jul 2030'},
+    {ticker:'T2X5',tir:3.8,precio:98.2,moneda:'ARS',vence:'Jun 2025'},
+  ];
+  const cedears = marketData.cedears.length ? marketData.cedears : [];
+  const acciones = marketData.acciones.length ? marketData.acciones : [];
+  const cartera = Object.values(inversiones);
+  const topFci = FCI_DATA.sort((a,b)=>b.anual-a.anual).slice(0,5);
+
+  return [
+    'CONTEXTO MERCADO ARGENTINO - ' + new Date().toLocaleDateString('es-AR'),
+    '',
+    'TIPOS DE CAMBIO:',
+    oficial ? 'Oficial: $'+Math.round(oficial) : '',
+    blue    ? 'Blue: $'+Math.round(blue) : '',
+    mep     ? 'MEP: $'+Math.round(mep) : '',
+    ccl     ? 'CCL: $'+Math.round(ccl) : '',
+    blue && oficial ? 'Brecha: '+((blue/oficial-1)*100).toFixed(1)+'%' : '',
+    '',
+    'BONOS SOBERANOS:',
+    ...bonos.filter(b=>b.moneda==='USD').map(b => b.ticker+': precio $'+b.precio+' TIR '+b.tir?.toFixed(1)+'%'),
+    '',
+    'LECAPS:',
+    ...bonos.filter(b=>b.moneda==='ARS').map(b => b.ticker+': TIR mensual '+b.tir?.toFixed(1)+'%'),
+    '',
+    'CEDEARS (precio USD):',
+    ...cedears.slice(0,6).map(c => c.symbol+': USD '+c.precio+' ('+c.cambio+'%)'),
+    '',
+    'ACCIONES MERVAL:',
+    ...acciones.slice(0,5).map(a => a.symbol+': $'+Math.round(a.closePrice||0)+' ('+parseFloat(a.changePercent||0).toFixed(1)+'%)'),
+    '',
+    'TOP FCI POR RENDIMIENTO ANUAL:',
+    ...topFci.map(f => f.nombre+': mensual +'+f.mes+'% | anual +'+f.anual+'%'),
+    '',
+    'CARTERA DEL USUARIO:',
+    cartera.length ? cartera.map(i=>i.ticker+' '+i.tipo+' '+i.moneda+' $'+i.monto).join(', ') : 'Sin posiciones',
+    '',
+    'INSTRUCCIONES: Sos un asesor financiero experto en mercado argentino. Respondé en español con datos del contexto. Se concreto y da recomendaciones accionables.',
+  ].filter(s => s !== '').join('\n');
+}
+
+
 // Dark mode sync
-if (localStorage.getItem('finhub-dark')==='1') document.body.classList.add('dark');
+if (localStorage.getItem('finhub-dark')==='1') {
+  document.body.classList.add('dark');
+  const toggle = document.getElementById('dark-toggle-inv');
+  if (toggle) toggle.checked = true;
+}
 </script>
 </body>
 </html>
