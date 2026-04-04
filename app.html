@@ -272,20 +272,60 @@
     /* ── TX LIST ── */
     .tx-list { background: var(--surface); border: 1px solid var(--border); }
     .tx-item {
-      display: grid; grid-template-columns: 1fr auto auto auto;
-      align-items: center; gap: 20px; padding: 16px 24px;
+      display: flex; flex-direction: row; align-items: center;
+      gap: 20px; padding: 14px 24px;
       border-bottom: 1px solid var(--border); transition: background 0.15s;
     }
     .tx-item:last-child { border-bottom: none; }
     .tx-item:hover { background: var(--surface2); }
+    .tx-item-left { flex: 1; min-width: 0; }
+    .tx-item-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex-shrink: 0; }
+    .tx-item-actions { display: flex; gap: 8px; }
     .tx-desc { font-size: 0.9rem; color: var(--ink); font-weight: 400; }
     .tx-cat  { font-size: 0.68rem; color: var(--muted); margin-top: 3px; }
-    .tx-date { font-size: 0.72rem; color: var(--muted2); white-space: nowrap; }
+    .tx-date { font-size: 0.72rem; color: var(--muted2); white-space: nowrap; margin-top: 3px; }
     .tx-amount { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.2rem; white-space: nowrap; }
     .tx-amount.income  { color: var(--green); }
     .tx-amount.expense { color: var(--red); }
-    .tx-delete { background: none; border: none; color: var(--muted2); cursor: pointer; font-size: 0.9rem; padding: 4px 6px; transition: color 0.15s; line-height: 1; }
-    .tx-delete:hover { color: var(--red); }
+    .tx-btn-edit {
+      font-family: 'DM Sans', sans-serif; font-size: 0.6rem; font-weight: 500;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      background: transparent; color: var(--accent);
+      border: 1px solid var(--accent); padding: 5px 14px;
+      cursor: pointer; border-radius: 3px; transition: all 0.2s;
+    }
+    .tx-btn-edit:hover { background: var(--accent); color: white; }
+    .tx-btn-del {
+      font-family: 'DM Sans', sans-serif; font-size: 0.6rem; font-weight: 500;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      background: var(--accent); color: white;
+      border: 1px solid var(--accent); padding: 5px 14px;
+      cursor: pointer; border-radius: 3px; transition: all 0.2s;
+    }
+    .tx-btn-del:hover { background: var(--red); border-color: var(--red); }
+    .tx-delete { display: none; }
+
+    /* ── MES COLAPSABLE ── */
+    .tx-month-group { margin-bottom: 8px; }
+    .tx-month-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 11px 24px; background: var(--surface2);
+      border: 1px solid var(--border); cursor: pointer;
+      user-select: none; transition: background 0.15s;
+    }
+    .tx-month-header:hover { background: var(--border); }
+    .tx-month-label { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
+    .tx-month-summary { font-size: 0.72rem; color: var(--muted); display: flex; gap: 20px; align-items: center; }
+    .tx-month-toggle { font-size: 0.7rem; color: var(--muted2); transition: transform 0.2s; }
+    .tx-month-toggle.collapsed { transform: rotate(-90deg); }
+    .tx-month-body { background: var(--surface); border: 1px solid var(--border); border-top: none; }
+    .tx-month-body.hidden { display: none; }
+    .tx-type-label {
+      font-size: 0.62rem; font-weight: 600; letter-spacing: 0.15em;
+      text-transform: uppercase; color: var(--muted);
+      padding: 8px 24px 4px; background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+    }
     .tx-empty { padding: 52px; text-align: center; font-size: 0.82rem; color: var(--muted); }
 
     /* ── FILTERS ── */
@@ -1181,19 +1221,87 @@
     renderTxItems(document.getElementById('tx-list'), txArr, true);
   }
 
-  function renderTxItems(container, txArr, showDelete) {
-    if (!txArr.length) { container.innerHTML='<div class="tx-empty">Sin movimientos registrados</div>'; return; }
-    container.innerHTML = txArr.map(t => `
-      <div class="tx-item">
-        <div>
+  window.toggleMonth = (el) => {
+    const body = el.nextElementSibling;
+    const toggle = el.querySelector('.tx-month-toggle');
+    body.classList.toggle('hidden');
+    toggle.classList.toggle('collapsed');
+  };
+
+  function txItemHtml(t, showDelete) {
+    return `<div class="tx-item">
+        <div class="tx-item-left">
           <div class="tx-desc">${esc(t.description)}</div>
           <div class="tx-cat">${esc(t.category)}</div>
+          <div class="tx-date">${fmtDate(t.date)}</div>
         </div>
-        <div class="tx-date">${fmtDate(t.date)}</div>
-        <div class="tx-amount ${t.type==='income'?'income':'expense'}">${t.type==='income'?'+':'−'}${fmt(t.amount)}</div>
-        ${showDelete?`<button class="tx-delete" data-id="${t.id}" onclick="openEditTx(this.dataset.id)" title="Editar" style="color:var(--muted2)">✎</button>`:''}
-        ${showDelete?`<button class="tx-delete" data-id="${t.id}" onclick="deleteTx(this.dataset.id)" title="Eliminar">✕</button>`:''}
-      </div>`).join('');
+        <div class="tx-item-right">
+          <div class="tx-amount ${t.type==='income'?'income':'expense'}">${t.type==='income'?'+':'−'}${fmt(t.amount)}</div>
+          ${showDelete?`<div class="tx-item-actions">
+            <button class="tx-btn-edit" data-id="${t.id}" onclick="openEditTx(this.dataset.id)">Editar</button>
+            <button class="tx-btn-del" data-id="${t.id}" onclick="deleteTx(this.dataset.id)">Eliminar</button>
+          </div>`:''}
+        </div>
+      </div>`;
+  }
+
+  function renderTxItems(container, txArr, showDelete) {
+    if (!txArr.length) { container.innerHTML='<div class="tx-empty">Sin movimientos registrados</div>'; return; }
+
+    if (!showDelete) {
+      container.innerHTML = '<div class="tx-list">' + txArr.map(t => txItemHtml(t, false)).join('') + '</div>';
+      return;
+    }
+
+    // Group by month key YYYY-MM
+    const groups = {};
+    txArr.forEach(t => {
+      const key = t.date ? t.date.slice(0,7) : '0000-00';
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(t);
+    });
+
+    const monthKeys = Object.keys(groups).sort((a,b) => b.localeCompare(a));
+    const now = new Date();
+    const currentKey = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+
+    let html = '';
+    monthKeys.forEach(key => {
+      const items = groups[key];
+      const [yr, mo] = key.split('-');
+      const d = new Date(parseInt(yr), parseInt(mo)-1, 1);
+      const label = d.toLocaleString('es-AR', {month:'long', year:'numeric'});
+      const income  = items.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+      const expense = items.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+      const isOpen = key === currentKey;
+
+      html += '<div class="tx-month-group">';
+      html += '<div class="tx-month-header" onclick="toggleMonth(this)">';
+      html += '<span class="tx-month-label">' + label + '</span>';
+      html += '<span class="tx-month-summary">';
+      if (income)  html += '<span style="color:var(--green)">+' + fmt(income) + '</span>';
+      if (expense) html += '<span style="color:var(--red)">−' + fmt(expense) + '</span>';
+      html += '<span class="tx-month-toggle' + (isOpen ? '' : ' collapsed') + '">&#9660;</span>';
+      html += '</span></div>';
+      html += '<div class="tx-month-body' + (isOpen ? '' : ' hidden') + '">';
+
+      // Split by type: incomes first, then expenses
+      const incomes  = items.filter(t=>t.type==='income').sort((a,b)=>new Date(b.date)-new Date(a.date));
+      const expenses = items.filter(t=>t.type==='expense').sort((a,b)=>new Date(b.date)-new Date(a.date));
+
+      if (incomes.length && expenses.length) {
+        html += '<div class="tx-type-label">Ingresos</div>';
+        html += incomes.map(t => txItemHtml(t, showDelete)).join('');
+        html += '<div class="tx-type-label">Gastos</div>';
+        html += expenses.map(t => txItemHtml(t, showDelete)).join('');
+      } else {
+        html += items.map(t => txItemHtml(t, showDelete)).join('');
+      }
+
+      html += '</div></div>';
+    });
+
+    container.innerHTML = html;
   }
 
   window.deleteTx = async id => {
