@@ -57,6 +57,7 @@
     body.dark { background: #141414 !important; color: #e0e0e0 !important; }
     body.dark body::before { opacity: 0.06; }
     body.dark .sidebar { background: #1c1c1c; }
+    body.dark .sidebar.mobile-open { background: #f5f3f0 !important; }
 
     /* ── DARK MODE TOGGLE ── */
     .theme-toggle {
@@ -561,9 +562,11 @@
     .mobile-overlay {
       display: none;
       position: fixed;
-      inset: 0;
+      top: 0; bottom: 0;
+      left: 300px;
+      right: 0;
       background: rgba(20,20,14,0.4);
-      z-index: 8000;
+      z-index: 8888;
     }
     .mobile-overlay.open { display: block; }
     @media (max-width: 900px) {
