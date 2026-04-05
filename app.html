@@ -1090,8 +1090,8 @@
     <input type="hidden" id="edit-tx-id" />
     <div class="field">
       <div class="type-toggle">
-        <button class="type-btn active-income" id="edit-type-income" onclick="setEditType('income')">Ingreso</button>
-        <button class="type-btn" id="edit-type-expense" onclick="setEditType('expense')">Gasto</button>
+        <button type="button" class="type-btn active-income" id="edit-type-income" onclick="window.setEditType('income')">Ingreso</button>
+        <button type="button" class="type-btn" id="edit-type-expense" onclick="window.setEditType('expense')">Gasto</button>
       </div>
     </div>
     <div class="field"><label>Descripción</label><input type="text" id="edit-tx-desc" placeholder="Ej: Sueldo, Supermercado…" /></div>
@@ -1141,8 +1141,8 @@
     <div class="modal-title">Nueva transacción</div>
     <div class="field">
       <div class="type-toggle">
-        <button class="type-btn active-income" id="type-income" onclick="setType('income')">Ingreso</button>
-        <button class="type-btn" id="type-expense" onclick="setType('expense')">Gasto</button>
+        <button type="button" class="type-btn active-income" id="type-income" onclick="window.setType('income')">Ingreso</button>
+        <button type="button" class="type-btn" id="type-expense" onclick="window.setType('expense')">Gasto</button>
       </div>
     </div>
     <div class="field"><label>Descripción</label><input type="text" id="tx-desc" placeholder="Ej: Sueldo, Supermercado…" /></div>
@@ -1864,7 +1864,7 @@
       document.getElementById('tx-desc').value   = '';
       document.getElementById('tx-amount').value = '';
       document.getElementById('tx-date').value   = new Date().toISOString().split('T')[0];
-      setType('income');
+      window.setType('income'); window._txType = 'income';
     }
     if (name==='budget')        document.getElementById('budget-limit').value  = '';
     if (name==='global-budget') document.getElementById('gb-amount').value     = globalBudgets[budgetPeriod]?.amount || '';
@@ -1889,9 +1889,9 @@
 
   window.setType = type => {
     txType = type;
+    window._txType = type; // backup for onclick scope
     document.getElementById('type-income').className  = 'type-btn'+(type==='income' ?' active-income':'');
     document.getElementById('type-expense').className = 'type-btn'+(type==='expense'?' active-expense':'');
-    // Auto-suggest variabilidad based on type
     const fijoRadio = document.getElementById('tx-fijo');
     const varRadio  = document.getElementById('tx-variable');
     if (fijoRadio && varRadio) {
@@ -1910,7 +1910,8 @@
     if (!date)            { alert('Seleccioná una fecha'); return; }
     const variabilidad = document.querySelector('input[name="tx-variabilidad"]:checked')?.value || 'fijo';
     const monedaTx = document.querySelector('input[name="tx-moneda"]:checked')?.value || 'ARS';
-    await push(ref(db,`users/${uid}/transactions`),{description:desc,amount,category:cat,type:txType,date,variabilidad,moneda:monedaTx,createdAt:Date.now()});
+    const finalType = window._txType || txType;
+    await push(ref(db,`users/${uid}/transactions`),{description:desc,amount,category:cat,type:finalType,date,variabilidad,moneda:monedaTx,createdAt:Date.now()});
     // Point dashboard to the month of the new transaction
     dashMonthKey = date.substring(0,7);
     closeModal('tx');
