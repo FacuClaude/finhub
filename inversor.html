@@ -348,10 +348,10 @@
       position: fixed;
       top: 32px;
       right: 16px;
-      z-index: 420;
-      width: 40px;
-      height: 40px;
-      border-radius: 6px;
+      z-index: 9999;
+      width: 44px;
+      height: 44px;
+      border-radius: 8px;
       background: var(--accent);
       border: none;
       cursor: pointer;
@@ -362,9 +362,10 @@
     .mobile-overlay {
       display: none;
       position: fixed;
-      inset: 0;
+      top: 0; bottom: 0;
+      left: 300px; right: 0;
       background: rgba(20,20,14,0.4);
-      z-index: 8000;
+      z-index: 8888;
     }
     .mobile-overlay.open { display: block; }
 
@@ -374,7 +375,7 @@
         position: fixed !important;
         left: -280px !important; top: 0 !important; bottom: 0 !important;
         width: 280px !important;
-        z-index: 9000 !important;
+        z-index: 9999 !important;
         background: #f5f0eb !important;
         transition: left 0.28s cubic-bezier(0.4,0,0.2,1);
         overflow-y: auto !important;
