@@ -170,11 +170,13 @@
 
     .nav-item {
       display: flex; align-items: center; gap: 12px;
-      padding: 13px 32px;
+      padding: 13px 32px; width: 100%;
       font-size: 0.78rem; font-weight: 400; letter-spacing: 0.06em;
       color: var(--muted); cursor: pointer;
       transition: color 0.2s, background 0.2s;
-      border-left: 2px solid transparent;
+      border: none; border-left: 2px solid transparent;
+      background: transparent; text-align: left;
+      font-family: 'DM Sans', sans-serif;
     }
     .nav-item:hover { color: var(--ink2); background: var(--surface2); }
     .nav-item.active { color: var(--accent); border-left-color: var(--accent); background: var(--accent-bg); font-weight: 500; }
@@ -638,54 +640,54 @@
       <div style="font-size:0.65rem;color:#b4ac9e;margin-top:8px;">Finanzas simples, mente tranquila</div>
     </div>
     <nav>
-      <div class="nav-item active" onclick="goTo('dashboard')" ontouchstart="">
+      <button class="nav-item active" onclick="goTo('dashboard')">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
         Dashboard
-      </div>
-      <div class="nav-item" onclick="goTo('transactions')" ontouchstart="">
+      </button>
+      <button class="nav-item" onclick="goTo('transactions')">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
         Movimientos
-      </div>
-      <div class="nav-item" onclick="goTo('budgets')" ontouchstart="">
+      </button>
+      <button class="nav-item" onclick="goTo('budgets')">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
         Presupuestos
-      </div>
-      <div class="nav-item" onclick="goTo('goals')" ontouchstart="">
+      </button>
+      <button class="nav-item" onclick="goTo('goals')">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
         Metas
-      </div>
-      <div class="nav-item" onclick="goTo('reminders')" id="nav-reminders">
+      </button>
+      <button class="nav-item" onclick="goTo('reminders')" id="nav-reminders">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         Recordatorios
         <span class="nav-badge" id="reminder-badge" style="display:none">0</span>
-      </div>
-      <div class="nav-item" onclick="goTo('recurring')" ontouchstart="">
+      </button>
+      <button class="nav-item" onclick="goTo('recurring')">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
         Recurrentes
-      </div>
-      <div class="nav-item" onclick="goTo('summary')" ontouchstart="">
+      </button>
+      <button class="nav-item" onclick="goTo('summary')">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
         Resumen
-      </div>
+      </button>
 
-      <div class="nav-item" onclick="goTo('cashflow')" ontouchstart="">
+      <button class="nav-item" onclick="goTo('cashflow')">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         Proyección
-      </div>
-      <div class="nav-item" onclick="goTo('insights')" ontouchstart="">
+      </button>
+      <button class="nav-item" onclick="goTo('insights')">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
         Insights
-      </div>
-      <div class="nav-item" onclick="goTo('comparativa')" ontouchstart="">
+      </button>
+      <button class="nav-item" onclick="goTo('comparativa')">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
         Comparativa
-      </div>
+      </button>
 
-      <div class="nav-item" onclick="window.location.href='inversor.html'" style="border-top:1px solid var(--border);margin-top:8px;padding-top:16px;">
+      <button class="nav-item" onclick="window.location.href='inversor.html'" style="border-top:1px solid var(--border);margin-top:8px;padding-top:16px;">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
         <span style="color:var(--accent);font-weight:500;">Inversor</span>
         <span style="font-size:0.55rem;background:var(--accent);color:white;padding:2px 5px;border-radius:3px;margin-left:auto;">NEW</span>
-      </div>
+      </button>
     </nav>
     <div class="sidebar-footer">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
