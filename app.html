@@ -533,10 +533,7 @@
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
         Resumen
       </div>
-      <div class="nav-item" onclick="goTo('networth')">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-        Patrimonio
-      </div>
+
       <div class="nav-item" onclick="goTo('cashflow')">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         Proyección
@@ -549,10 +546,7 @@
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
         Comparativa
       </div>
-      <div class="nav-item" onclick="goTo('pat-historial')">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-        Hist. Patrimonio
-      </div>
+
       <div class="nav-item" onclick="window.location.href='inversor.html'" style="border-top:1px solid var(--border);margin-top:8px;padding-top:16px;">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
         <span style="color:var(--accent);font-weight:500;">Inversor</span>
@@ -741,12 +735,12 @@
     <!-- NET WORTH -->
     <div class="page" id="page-networth">
       <div class="page-title">Patrimonio neto</div>
-      <div class="page-sub">Activos menos deudas</div>
+      <div class="page-sub">Activos, deudas e historial</div>
 
       <!-- Net worth summary card -->
       <div style="background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--accent);padding:32px;margin-bottom:28px;">
         <div style="font-size:0.68rem;font-weight:500;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">Tu patrimonio neto</div>
-        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:3.2rem;font-weight:400;line-height:1;" id="nw-total">$0</div>
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:3.2rem;font-weight:600;line-height:1;" id="nw-total">$0</div>
         <div style="display:flex;gap:40px;margin-top:20px;">
           <div>
             <div style="font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">Activos</div>
@@ -764,7 +758,7 @@
       <div class="section-header">
         <div class="section-title">Activos</div>
         <div style="display:flex;gap:8px;">
-          <button class="btn-export" onclick="exportSection('networth')">↓ Excel</button>
+          <button class="btn-export" onclick="exportSection('networth')">&#8681; Excel</button>
           <button class="btn-primary" onclick="openModal('asset')">+ Agregar</button>
         </div>
       </div>
@@ -775,7 +769,22 @@
         <div class="section-title">Deudas</div>
         <button class="btn-primary" onclick="openModal('debt')">+ Agregar</button>
       </div>
-      <div id="debt-list"></div>
+      <div id="debt-list" style="margin-bottom:36px;"></div>
+
+      <!-- Historial integrado -->
+      <div style="border-top:1px solid var(--border);padding-top:28px;margin-top:8px;">
+        <div class="section-header">
+          <div class="section-title">Historial patrimonio</div>
+          <button class="btn-primary" onclick="snapshotPatrimonio()">+ Snapshot hoy</button>
+        </div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:16px;">Registrá el valor de tu patrimonio periódicamente para ver su evolución.</div>
+        <div class="cards-row" style="margin-bottom:20px;">
+          <div class="card income-card"><div class="card-label">Máximo registrado</div><div class="card-value positive" id="ph-max">$0</div><div class="card-sub" id="ph-max-date">—</div></div>
+          <div class="card balance-card"><div class="card-label">Variación último mes</div><div class="card-value" id="ph-var">$0</div><div class="card-sub" id="ph-var-pct">—</div></div>
+        </div>
+        <div class="chart-card" style="margin-bottom:20px;"><canvas id="chart-pat-historial" height="220"></canvas></div>
+        <div id="ph-snapshots-list"></div>
+      </div>
     </div>
 
     <!-- CASH FLOW -->
@@ -802,55 +811,69 @@
     <div class="page" id="page-help">
       <div class="page-title">Ayuda</div>
       <div class="page-sub">Cómo usar finHub</div>
-
       <div style="display:grid;gap:16px;max-width:720px;">
 
         <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:24px;">
           <div style="font-size:0.72rem;font-weight:500;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;">📊 Dashboard</div>
-          <div style="font-size:0.88rem;color:var(--ink2);line-height:1.75;">Tu pantalla principal. Muestra el balance del mes, ingresos y gastos, gráficos de los últimos 6 meses y un desglose por categoría. Si tenés pagos próximos a vencer aparece un banner de alerta.</div>
+          <div style="font-size:0.85rem;color:var(--ink2);line-height:1.75;">Pantalla principal. Balance del mes, ingresos y gastos, gráfico de los últimos 6 meses y desglose por categoría. Muestra alertas de pagos próximos y alertas de presupuesto superado.</div>
         </div>
 
         <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:24px;">
           <div style="font-size:0.72rem;font-weight:500;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;">💳 Movimientos</div>
-          <div style="font-size:0.88rem;color:var(--ink2);line-height:1.75;">Registrá ingresos y gastos con descripción, monto, categoría y fecha. Podés filtrar por tipo y editar o eliminar cualquier movimiento con los íconos ✎ y ✕.</div>
+          <div style="font-size:0.85rem;color:var(--ink2);line-height:1.75;">Registrá ingresos y gastos. Los movimientos se agrupan por mes (colapsables) y se ordenan por tipo dentro de cada mes. Tiene botones Editar y Eliminar por movimiento. También podés importar desde Excel/CSV con mapeo de columnas personalizado.</div>
         </div>
 
         <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:24px;">
           <div style="font-size:0.72rem;font-weight:500;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;">📅 Presupuestos</div>
-          <div style="font-size:0.88rem;color:var(--ink2);line-height:1.75;">Configurá tu presupuesto global mensual o anual — la barra te muestra cuánto llevás gastado. También podés definir límites por categoría. La barra cambia de verde a naranja cuando superás el 80%, y a rojo si te pasás.</div>
+          <div style="font-size:0.85rem;color:var(--ink2);line-height:1.75;">Presupuesto global mensual o anual con barra de progreso verde→naranja→rojo. Límites por categoría. Alertas automáticas en el Dashboard cuando superás el 80% de cualquier categoría.</div>
         </div>
 
         <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:24px;">
           <div style="font-size:0.72rem;font-weight:500;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;">🎯 Metas</div>
-          <div style="font-size:0.88rem;color:var(--ink2);line-height:1.75;">Creá metas de ahorro con un objetivo y fecha límite. Usá el botón "+ Aportar" para ir sumando dinero y ver el progreso en tiempo real.</div>
+          <div style="font-size:0.85rem;color:var(--ink2);line-height:1.75;">Metas de ahorro con objetivo y fecha límite. Botón "+ Aportar" para ir sumando. Barra de progreso en tiempo real.</div>
         </div>
 
         <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:24px;">
           <div style="font-size:0.72rem;font-weight:500;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;">🔔 Recordatorios</div>
-          <div style="font-size:0.88rem;color:var(--ink2);line-height:1.75;">Agregá pagos fijos con su día de vencimiento. La app muestra cuántos días faltan y te avisa en el dashboard. Al marcar un pago como pagado ✓ se registra automáticamente como gasto en Movimientos.</div>
+          <div style="font-size:0.85rem;color:var(--ink2);line-height:1.75;">Pagos fijos con día de vencimiento. Badge rojo en el menú cuando hay pagos en los próximos 7 días. Al marcar como pagado ✓ se registra automáticamente como gasto.</div>
         </div>
 
         <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:24px;">
           <div style="font-size:0.72rem;font-weight:500;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;">🔄 Recurrentes</div>
-          <div style="font-size:0.88rem;color:var(--ink2);line-height:1.75;">Detección automática de gastos que se repiten mes a mes. Para que un gasto aparezca acá tiene que tener el mismo nombre exacto y categoría en al menos 2 meses distintos, con montos similares (±20%).</div>
+          <div style="font-size:0.85rem;color:var(--ink2);line-height:1.75;">Detección automática de gastos que se repiten. Requiere el mismo nombre exacto en al menos 2 meses distintos con montos similares (±20%).</div>
         </div>
 
         <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:24px;">
           <div style="font-size:0.72rem;font-weight:500;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;">📋 Resumen</div>
-          <div style="font-size:0.88rem;color:var(--ink2);line-height:1.75;">Informe automático semanal o mensual con tus ingresos, gastos, balance y comparación versus el período anterior. Incluye el desglose por categoría con barras de progreso.</div>
-        </div>
-
-        <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:24px;">
-          <div style="font-size:0.72rem;font-weight:500;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;">💰 Patrimonio</div>
-          <div style="font-size:0.88rem;color:var(--ink2);line-height:1.75;">Cargá tus activos (ahorros, propiedades, inversiones, vehículos) y tus deudas (tarjetas, préstamos, hipotecas). La app calcula tu patrimonio neto en tiempo real: Activos − Deudas.</div>
+          <div style="font-size:0.85rem;color:var(--ink2);line-height:1.75;">Informe automático semanal o mensual: ingresos, gastos, balance y comparación vs período anterior. Desglose por categoría.</div>
         </div>
 
         <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:24px;">
           <div style="font-size:0.72rem;font-weight:500;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;">📈 Proyección</div>
-          <div style="font-size:0.88rem;color:var(--ink2);line-height:1.75;">Proyección de tu flujo de caja a 30, 60 o 90 días. Toma tu ingreso mensual promedio y tus gastos recurrentes para estimar cuánto dinero vas a tener en el futuro. Si el saldo va a llegar a cero, te dice exactamente en cuántos días.</div>
+          <div style="font-size:0.85rem;color:var(--ink2);line-height:1.75;">Flujo de caja estimado a 30, 60 o 90 días. Toma tu ingreso promedio y gastos recurrentes. Si el saldo llega a cero, indica cuántos días faltan.</div>
         </div>
 
-        <div style="background:var(--surface);border:1px solid var(--border);padding:24px;margin-top:8px;">
+        <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:24px;">
+          <div style="font-size:0.72rem;font-weight:500;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;">💡 Insights</div>
+          <div style="font-size:0.85rem;color:var(--ink2);line-height:1.75;">Análisis automático: gasto vs mes anterior, tasa de ahorro, presupuestos cerca del límite, categoría con más gasto, pagos próximos, metas casi completadas y estado del patrimonio.</div>
+        </div>
+
+        <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:24px;">
+          <div style="font-size:0.72rem;font-weight:500;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;">📊 Comparativa</div>
+          <div style="font-size:0.85rem;color:var(--ink2);line-height:1.75;">Gráfico de barras apiladas con la evolución de gastos por categoría en los últimos 6 meses. Permite ver tendencias y cambios en hábitos de consumo.</div>
+        </div>
+
+        <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:24px;">
+          <div style="font-size:0.72rem;font-weight:500;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;">💰 Patrimonio neto</div>
+          <div style="font-size:0.85rem;color:var(--ink2);line-height:1.75;">Activos (ahorros, propiedades, vehículos) menos deudas (tarjetas, préstamos). Incluye historial de patrimonio: registrá snapshots periódicamente para ver cómo evoluciona tu patrimonio neto en el tiempo.</div>
+        </div>
+
+        <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:24px;">
+          <div style="font-size:0.72rem;font-weight:500;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;">📂 Importar Excel</div>
+          <div style="font-size:0.85rem;color:var(--ink2);line-height:1.75;">En Movimientos, botón "↑ Importar". Subí tu archivo .xlsx o .csv, mapeá las columnas (fecha, descripción, monto, categoría) y la app importa todos los registros automáticamente. Compatible con cualquier formato.</div>
+        </div>
+
+        <div style="background:var(--surface);border:1px solid var(--border);padding:24px;">
           <div style="font-size:0.72rem;font-weight:500;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;">Consejo</div>
           <div style="font-size:0.85rem;color:var(--ink2);line-height:1.75;">Para aprovechar mejor Proyección y Recurrentes, registrá movimientos con nombres consistentes durante al menos 2 meses. Más datos = proyecciones más precisas.</div>
         </div>
@@ -874,37 +897,6 @@
       </div>
       <div id="comparativa-legend" style="display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;"></div>
     </div>
-
-    <!-- HISTORIAL PATRIMONIO -->
-    <div class="page" id="page-pat-historial">
-      <div class="page-title">Historial Patrimonio</div>
-      <div class="page-sub">Evolución de tu patrimonio neto</div>
-      <div class="cards-row" style="margin-bottom:28px;">
-        <div class="card balance-card">
-          <div class="card-label">Patrimonio actual</div>
-          <div class="card-value neutral" id="ph-actual">$0</div>
-          <div class="card-sub">Activos − Deudas</div>
-        </div>
-        <div class="card income-card">
-          <div class="card-label">Máximo registrado</div>
-          <div class="card-value positive" id="ph-max">$0</div>
-          <div class="card-sub" id="ph-max-date">—</div>
-        </div>
-        <div class="card expense-card">
-          <div class="card-label">Variación último mes</div>
-          <div class="card-value" id="ph-var">$0</div>
-          <div class="card-sub" id="ph-var-pct">—</div>
-        </div>
-      </div>
-      <div class="chart-card" style="margin-bottom:28px;">
-        <canvas id="chart-pat-historial" height="280"></canvas>
-      </div>
-      <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
-        <button class="btn-primary" onclick="snapshotPatrimonio()">+ Registrar snapshot hoy</button>
-      </div>
-      <div id="ph-snapshots-list"></div>
-    </div>
-
   </main>
 </div>
 
@@ -1219,12 +1211,11 @@
     });
     if (page === 'summary') renderSummary();
     if (page === 'recurring') renderRecurring();
-    if (page === 'networth') renderNetWorth();
+    if (page === 'networth') { renderNetWorth(); renderPatHistorial(); }
     if (page === 'cashflow') renderCashflow();
     if (page === 'help') {}
     if (page === 'insights') renderInsights();
     if (page === 'comparativa') renderComparativa();
-    if (page === 'pat-historial') renderPatHistorial();
   };
 
   // ── DASHBOARD ──
