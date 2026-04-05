@@ -600,7 +600,7 @@
   </div>
 </div>
 
-<div class="shell" id="shell" style="opacity:0;transition:opacity 0.3s">
+<div class="shell" id="shell">
 
   <!-- SIDEBAR -->
   <aside class="sidebar">
@@ -694,7 +694,7 @@
   </aside>
 
   <!-- MAIN -->
-  <main>
+  <main id="main-content" style="opacity:0;transition:opacity 0.3s">
 
     <!-- DASHBOARD -->
     <div class="page active" id="page-dashboard">
@@ -1431,7 +1431,7 @@
     if (!user) { window.location.href = 'index.html'; return; }
     uid = user.uid;
     document.getElementById('user-email').textContent = user.email;
-    document.getElementById('shell').style.opacity = '1';
+    const _mc = document.getElementById('main-content'); if(_mc) _mc.style.opacity='1';
     subscribeAll();
   });
 
