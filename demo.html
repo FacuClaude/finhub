@@ -14,11 +14,11 @@
     html { color-scheme: light only; scroll-behavior: smooth; }
 
     :root {
-      --bg:        #dff0ea;
-      --surface:   #eef7f2;
-      --surface2:  #e5f2ec;
-      --border:    #c2dbd2;
-      --border2:   #a8c9bc;
+      --bg:        #f5f3f0;
+      --surface:   #eeece8;
+      --surface2:  #e8e6e2;
+      --border:    #dddad5;
+      --border2:   #ccc9c3;
       --ink:       #1a1a14;
       --ink2:      #3a3830;
       --muted:     #8a8070;
@@ -99,7 +99,7 @@
     input:checked + .slider::before { transform: translateX(16px); }
 
     body {
-      background: #dff0ea !important;
+      background: #f5f3f0 !important;
       color: #1a1a14 !important;
       font-family: 'DM Sans', sans-serif;
       font-weight: 300;
@@ -109,10 +109,38 @@
     }
     body.dark { background: #141414 !important; color: #e0e0e0 !important; }
 
+    /* ── FINHUB LIVE TICKER ── */
+    .finhub-ticker {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 999;
+      background: #1a2e24; color: #7ecba1;
+      font-family: 'DM Sans', sans-serif; font-size: 0.7rem; font-weight: 500;
+      height: 26px; overflow: hidden; display: flex; align-items: center;
+    }
+    .finhub-ticker-label {
+      background: #3d6b52; color: white; padding: 0 12px;
+      font-size: 0.62rem; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; height: 100%; display: flex; align-items: center;
+      flex-shrink: 0; white-space: nowrap;
+    }
+    .finhub-ticker-track {
+      display: flex; gap: 0; white-space: nowrap;
+      animation: finhub-scroll 35s linear infinite;
+    }
+    .finhub-ticker-track:hover { animation-play-state: paused; }
+    @keyframes finhub-scroll {
+      0%   { transform: translateX(100vw); }
+      100% { transform: translateX(-50%); }
+    }
+    .finhub-ticker-item { padding: 0 20px; display: flex; align-items: center; gap: 7px; border-right: 1px solid #2d4a38; }
+    .finhub-ticker-name { color: #a0c8b0; }
+    .finhub-ticker-val  { color: #e8f5ee; font-weight: 600; }
+    .finhub-ticker-chg.pos { color: #7ecba1; }
+    .finhub-ticker-chg.neg { color: #e07070; }
+
     body::before {
       content: '';
       position: fixed; inset: 0;
-      background-image: radial-gradient(circle, #a8c9bc 1px, transparent 1px);
+      background-image: radial-gradient(circle, #ccc9c3 1px, transparent 1px);
       background-size: 28px 28px;
       opacity: 0.3;
       pointer-events: none;
@@ -120,7 +148,7 @@
     }
 
     /* ── SHELL ── */
-    .shell { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; position: relative; z-index: 1; }
+    .shell { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; position: relative; z-index: 1; margin-top: 26px; }
 
     /* ── SIDEBAR ── */
     .sidebar {
@@ -421,6 +449,38 @@
     /* ── EMPTY ── */
     .empty-state { padding: 52px; text-align: center; font-size: 0.82rem; color: var(--muted); background: var(--surface); border: 1px solid var(--border); grid-column: 1 / -1; }
 
+    /* ── MODO FOCO ── */
+    .foco-active .tx-amount,
+    .foco-active .card-value,
+    .foco-active #dash-balance,
+    .foco-active #dash-income,
+    .foco-active #dash-expense,
+    .foco-active #txs-ingresos,
+    .foco-active #txs-fijos,
+    .foco-active #txs-variables,
+    .foco-active #txs-saldo,
+    .foco-active #txs-ahorro,
+    .foco-active #txs-mayor,
+    .foco-active .nw-value,
+    .foco-active #nw-total,
+    .foco-active #nw-assets,
+    .foco-active #nw-debts {
+      color: transparent !important;
+      background: var(--border) !important;
+      border-radius: 4px !important;
+      user-select: none !important;
+    }
+    .foco-btn { 
+      display:flex; align-items:center; gap:8px; width:100%;
+      padding:8px 12px; border:1px solid var(--border);
+      background:transparent; color:var(--muted);
+      font-family:'DM Sans',sans-serif; font-size:0.7rem;
+      font-weight:500; letter-spacing:0.1em; text-transform:uppercase;
+      cursor:pointer; border-radius:4px; transition:all 0.2s;
+    }
+    .foco-btn:hover { border-color:var(--accent); color:var(--accent); }
+    .foco-btn.active { background:var(--accent); color:white; border-color:var(--accent); }
+
     /* ── CURRENCY SWITCH ── */
     .currency-bar {
       display: flex; align-items: center; justify-content: space-between;
@@ -499,6 +559,15 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
+<div class="finhub-ticker" id="finhub-ticker">
+  <div class="finhub-ticker-label">finHub. Live</div>
+  <div style="overflow:hidden;flex:1;">
+    <div class="finhub-ticker-track" id="finhub-ticker-track">
+      <div class="finhub-ticker-item"><span class="finhub-ticker-name">Cargando...</span></div>
+    </div>
+  </div>
+</div>
+
 <div class="shell" id="shell" style="opacity:0;transition:opacity 0.3s">
 
   <!-- SIDEBAR -->
@@ -517,9 +586,7 @@
           <span style="color:#8a8070">fin</span><span style="color:#3d6b52">Hub.</span>
         </span>
       </div>
-      <div style="font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,sans-serif;font-size:0.72rem;color:#b4ac9e;letter-spacing:0.03em;margin-top:10px;padding-left:2px;line-height:1.5;">
-        Finanzas simples,<br>mente tranquila
-      </div>
+      <div style="font-size:0.65rem;color:#b4ac9e;margin-top:8px;">Finanzas simples, mente tranquila</div>
     </div>
     <nav>
       <div class="nav-item active" onclick="goTo('dashboard')">
@@ -572,6 +639,10 @@
       </div>
     </nav>
     <div class="sidebar-footer">
+      <button class="foco-btn" id="foco-btn" onclick="toggleFoco()" title="Ocultar montos">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+        Modo foco
+      </button>
       <div class="theme-toggle">
         <span class="theme-label">Modo noche</span>
         <label class="switch">
@@ -672,6 +743,7 @@
           <button class="btn-export" onclick="collapseAllMonths()">&#9650; Colapsar</button>
           <button class="btn-export" onclick="openModal('import')">&#8679; Importar</button>
           <button class="btn-export" onclick="exportSection('transactions')">&#8681; Excel</button>
+          <button class="btn-export" onclick="confirmClearTx()" style="border-color:var(--red);color:var(--red);">&#128465; Limpiar</button>
           <button class="btn-primary" onclick="openModal('tx')">+ Agregar</button>
         </div>
       </div>
@@ -853,6 +925,11 @@
       <div class="page-sub">Cómo usar finHub</div>
       <div style="display:grid;gap:16px;max-width:720px;">
 
+        <div style="background:var(--accent);color:white;padding:20px 24px;border-radius:2px;">
+          <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:8px;opacity:0.8;">Novedades recientes</div>
+          <div style="font-size:0.85rem;line-height:1.7;opacity:0.95;">Switch ARS/USD con TC Oficial · Fijo/Variable por movimiento · Moneda por movimiento (ARS o USD) · Modo Foco · Selector de período en Dashboard · Importar Excel · Barra finHub. Live</div>
+        </div>
+
         <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:24px;">
           <div style="font-size:0.72rem;font-weight:500;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;">📊 Dashboard</div>
           <div style="font-size:0.85rem;color:var(--ink2);line-height:1.75;">Pantalla principal. Balance del mes, ingresos y gastos, gráfico de los últimos 6 meses y desglose por categoría. Muestra alertas de pagos próximos y alertas de presupuesto superado.</div>
@@ -911,6 +988,36 @@
         <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:24px;">
           <div style="font-size:0.72rem;font-weight:500;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;">📂 Importar Excel</div>
           <div style="font-size:0.85rem;color:var(--ink2);line-height:1.75;">En Movimientos, botón "↑ Importar". Subí tu archivo .xlsx o .csv, mapeá las columnas (fecha, descripción, monto, categoría) y la app importa todos los registros automáticamente. Compatible con cualquier formato.</div>
+        </div>
+
+        <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:24px;">
+          <div style="font-size:0.72rem;font-weight:500;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;">&#128065; Modo Foco</div>
+          <div style="font-size:0.85rem;color:var(--ink2);line-height:1.75;">Ocultá todos los montos con un clic para mayor privacidad cuando estás en público. Botón en el panel izquierdo, abajo del menú. Hacé clic de nuevo para volver a mostrar los valores.</div>
+        </div>
+
+        <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:24px;">
+          <div style="font-size:0.72rem;font-weight:500;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;">&#128183; ARS / USD por movimiento</div>
+          <div style="font-size:0.85rem;color:var(--ink2);line-height:1.75;">Al agregar un movimiento podés indicar si es en pesos o en dólares. El switch ARS/USD en Movimientos convierte todos los montos al tipo de cambio oficial. Siempre se muestra el equivalente en la otra moneda debajo del monto.</div>
+        </div>
+
+        <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:24px;">
+          <div style="font-size:0.72rem;font-weight:500;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;">&#128197; Selector de período</div>
+          <div style="font-size:0.85rem;color:var(--ink2);line-height:1.75;">El Dashboard tiene un selector de mes arriba a la derecha. Elegí cualquier mes con datos para ver su resumen. Útil cuando tenés historial importado de varios meses.</div>
+        </div>
+
+        <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:24px;">
+          <div style="font-size:0.72rem;font-weight:500;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;">&#128202; Fijo / Variable</div>
+          <div style="font-size:0.85rem;color:var(--ink2);line-height:1.75;">Cada movimiento tiene una etiqueta Fijo o Variable. Al elegir "Gasto" se preselecciona Variable, al elegir "Ingreso" se preselecciona Fijo. El resumen de Movimientos muestra el total de gastos fijos y variables por separado.</div>
+        </div>
+
+        <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:24px;">
+          <div style="font-size:0.72rem;font-weight:500;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;">&#128228; Importar Excel</div>
+          <div style="font-size:0.85rem;color:var(--ink2);line-height:1.75;">En Movimientos → Importar. Subí un .xlsx o .csv, mapeá las columnas (fecha, descripción, monto, categoría) y la app importa todo automáticamente en lotes. <strong>Importante:</strong> usá montos negativos para gastos y positivos para ingresos con el modo "El signo del monto".</div>
+        </div>
+
+        <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:24px;">
+          <div style="font-size:0.72rem;font-weight:500;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;">&#9883; finHub. Live</div>
+          <div style="font-size:0.85rem;color:var(--ink2);line-height:1.75;">Barra animada en la parte superior con datos en tiempo real: tipos de dólar (Blue, Oficial, MEP, CCL), CEDEARs principales, tus ingresos/gastos del mes, tasa de ahorro y próximo vencimiento. Se actualiza cada 60 segundos.</div>
         </div>
 
         <div style="background:var(--surface);border:1px solid var(--border);padding:24px;">
@@ -1054,8 +1161,8 @@
     <input type="hidden" id="edit-tx-id" />
     <div class="field">
       <div class="type-toggle">
-        <button class="type-btn active-income" id="edit-type-income" onclick="setEditType('income')">Ingreso</button>
-        <button class="type-btn" id="edit-type-expense" onclick="setEditType('expense')">Gasto</button>
+        <button type="button" class="type-btn active-income" id="edit-type-income" data-type="income">Ingreso</button>
+        <button type="button" class="type-btn" id="edit-type-expense" data-type="expense">Gasto</button>
       </div>
     </div>
     <div class="field"><label>Descripción</label><input type="text" id="edit-tx-desc" placeholder="Ej: Sueldo, Supermercado…" /></div>
@@ -1105,8 +1212,8 @@
     <div class="modal-title">Nueva transacción</div>
     <div class="field">
       <div class="type-toggle">
-        <button class="type-btn active-income" id="type-income" onclick="setType('income')">Ingreso</button>
-        <button class="type-btn" id="type-expense" onclick="setType('expense')">Gasto</button>
+        <button type="button" class="type-btn active-income" id="type-income" data-type="income">Ingreso</button>
+        <button type="button" class="type-btn" id="type-expense" data-type="expense">Gasto</button>
       </div>
     </div>
     <div class="field"><label>Descripción</label><input type="text" id="tx-desc" placeholder="Ej: Sueldo, Supermercado…" /></div>
@@ -1256,53 +1363,71 @@
 
   let uid = null;
   let transactions = {}, budgets = {}, goals = {}, reminders = {}, globalBudgets = {}, assets = {}, debts = {}, patSnapshots = {};
+  let dashMonthKey = null;
   let txFilter = 'all', txType = 'income';
   let budgetPeriod = 'monthly';
   let monthlyChart, catChart;
 
   // ── AUTH ──
+  // ── TYPE TOGGLE LISTENERS (immune to module scoping) ──
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('[data-type]');
+    if (!btn) return;
+    const type = btn.dataset.type;
+    const isEdit = btn.id.startsWith('edit-');
+    if (isEdit) {
+      window.setEditType(type);
+    } else {
+      window.setType(type);
+    }
+  });
+
   // ── DEMO MODE ──
-  (function showDemoLogin() {
+  (function() {
     const ov = document.createElement('div');
-    ov.id = 'demo-login-ov';
-    ov.style.cssText = 'position:fixed;inset:0;background:rgba(20,20,14,0.88);backdrop-filter:blur(8px);z-index:9999;display:flex;align-items:center;justify-content:center;';
-    ov.innerHTML = '<div style="background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--accent);padding:48px;width:380px;text-align:center;border-radius:4px;">' +
-      '<div style="font-family:Plus Jakarta Sans,sans-serif;font-size:1.8rem;font-weight:700;margin-bottom:6px;"><span style=color:#8a8070>fin</span><span style=color:#3d6b52>Hub.</span></div>' +
-      '<div style="font-size:0.72rem;color:var(--muted);margin-bottom:28px;letter-spacing:0.1em;text-transform:uppercase;">Modo Demo</div>' +
-      '<input id="demo-u" type="text" placeholder="Usuario" value="test" style="width:100%;padding:11px 14px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-size:0.9rem;border-radius:4px;margin-bottom:12px;box-sizing:border-box;">' +
-      '<input id="demo-p" type="password" placeholder="Contrasena" value="test" style="width:100%;padding:11px 14px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-size:0.9rem;border-radius:4px;margin-bottom:20px;box-sizing:border-box;">' +
-      '<button onclick="demoLogin()" style="width:100%;background:var(--accent);color:white;border:none;padding:12px;font-size:0.78rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;border-radius:4px;">Ingresar al Demo</button>' +
-      '<div id="demo-err" style="color:var(--red);font-size:0.75rem;margin-top:10px;display:none;">Usá: test / test</div>' +
-      '<div style="font-size:0.7rem;color:var(--muted);margin-top:16px;">Los cambios no se guardan permanentemente</div>' +
+    ov.id = 'demo-ov';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(20,20,14,0.82);backdrop-filter:blur(6px);';
+    ov.innerHTML = '<div style="background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--accent);padding:48px 40px;width:360px;max-width:90vw;">' +
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">' +
+        '<svg width="26" height="22" viewBox="0 0 96 80" fill="none"><rect x="0" y="52" width="20" height="28" rx="3" fill="#3d6b52" opacity="0.4"/><rect x="25" y="34" width="20" height="46" rx="3" fill="#3d6b52" opacity="0.65"/><rect x="50" y="8" width="20" height="72" rx="3" fill="#3d6b52"/></svg>' +
+        '<span style="font-size:1.5rem;font-weight:700;"><span style="color:#8a8070">fin</span><span style="color:#3d6b52">Hub.</span></span>' +
+      '</div>' +
+      '<div style="font-size:0.65rem;color:#b4ac9e;margin-bottom:32px;">Finanzas simples, mente tranquila</div>' +
+      '<div style="font-size:0.68rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:16px;">Modo Demo</div>' +
+      '<input id="du" type="text" placeholder="Usuario" value="test" style="width:100%;padding:11px 14px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-size:0.88rem;border-radius:3px;margin-bottom:10px;box-sizing:border-box;font-family:DM Sans,sans-serif;">' +
+      '<input id="dp" type="password" placeholder="Contraseña" value="test" style="width:100%;padding:11px 14px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-size:0.88rem;border-radius:3px;margin-bottom:20px;box-sizing:border-box;font-family:DM Sans,sans-serif;">' +
+      '<button onclick="demoLogin()" style="width:100%;background:var(--accent);color:white;border:none;padding:13px;font-family:DM Sans,sans-serif;font-size:0.75rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;border-radius:3px;">Ingresar al demo</button>' +
+      '<div id="de" style="color:var(--red);font-size:0.75rem;margin-top:10px;display:none;">Usuá: test / test</div>' +
+      '<div style="font-size:0.68rem;color:var(--muted2);margin-top:20px;text-align:center;">Los cambios no se guardan permanentemente</div>' +
     '</div>';
     document.body.appendChild(ov);
   })();
 
   window.demoLogin = () => {
-    const u = document.getElementById('demo-u').value.trim();
-    const p = document.getElementById('demo-p').value.trim();
-    if (u === 'test' && p === 'test') {
-      document.getElementById('demo-login-ov').remove();
-      document.getElementById('shell').style.opacity = '1';
-      uid = 'demo-user';
-      document.getElementById('user-email').textContent = 'test@finhub.demo';
+    const u = document.getElementById('du').value.trim();
+    const p = document.getElementById('dp').value.trim();
+    if (u==='test' && p==='test') {
+      document.getElementById('demo-ov').remove();
+      document.getElementById('shell').style.opacity='1';
+      uid='demo-user';
+      document.getElementById('user-email').textContent='test@finhub.demo';
       fetchTCOficial();
       loadDemoData();
     } else {
-      document.getElementById('demo-err').style.display = 'block';
+      document.getElementById('de').style.display='block';
     }
   };
-  document.addEventListener('keydown', e => { if (e.key==='Enter' && document.getElementById('demo-login-ov')) demoLogin(); });
+  document.addEventListener('keydown', e => { if(e.key==='Enter'&&document.getElementById('demo-ov')) demoLogin(); });
 
-  window.logout = () => { window.location.reload(); };
+  window.logout = () => window.location.reload();
 
   function loadDemoData() {
-    const now = new Date(), y = now.getFullYear(), m = now.getMonth()+1;
-    const pm = m===1?12:m-1, py = m===1?y-1:y;
-    const ppm = pm===1?12:pm-1, ppy = pm===1?py-1:py;
-    const pad = n => String(n).padStart(2,'0');
-    const cur = `${y}-${pad(m)}`, prev = `${py}-${pad(pm)}`, prev2 = `${ppy}-${pad(ppm)}`;
-    transactions = {
+    const now=new Date(), y=now.getFullYear(), m=now.getMonth()+1;
+    const pm=m===1?12:m-1, py=m===1?y-1:y;
+    const ppm=pm===1?12:pm-1, ppy=pm===1?py-1:py;
+    const p=n=>String(n).padStart(2,'0');
+    const cur=`${y}-${p(m)}`, prev=`${py}-${p(pm)}`, prev2=`${ppy}-${p(ppm)}`;
+    transactions={
       't1':{description:'Sueldo',amount:850000,category:'Sueldo',type:'income',date:`${cur}-05`,variabilidad:'fijo',moneda:'ARS',createdAt:1},
       't2':{description:'Alquiler',amount:180000,category:'Vivienda',type:'expense',date:`${cur}-01`,variabilidad:'fijo',moneda:'ARS',createdAt:2},
       't3':{description:'Supermercado Coto',amount:38000,category:'Alimentación',type:'expense',date:`${cur}-08`,variabilidad:'variable',moneda:'ARS',createdAt:3},
@@ -1321,32 +1446,27 @@
       'q2':{description:'Alquiler',amount:165000,category:'Vivienda',type:'expense',date:`${prev2}-01`,variabilidad:'fijo',moneda:'ARS',createdAt:16},
       'q3':{description:'Supermercado',amount:29000,category:'Alimentación',type:'expense',date:`${prev2}-10`,variabilidad:'variable',moneda:'ARS',createdAt:17},
     };
-    budgets = {
-      'b1':{category:'Alimentación',limit:80000},
-      'b2':{category:'Vivienda',limit:200000},
-      'b3':{category:'Salud',limit:60000},
-      'b4':{category:'Entretenimiento',limit:20000},
-    };
-    globalBudgets = {monthly:{amount:400000}};
-    goals = {
-      'g1':{name:'Vacaciones',target:500000,current:180000,dueDate:`${y+1}-01-31`},
-      'g2':{name:'Fondo emergencia',target:1000000,current:320000,dueDate:`${y+1}-06-30`},
-    };
-    reminders = {
-      'r1':{name:'Expensas',amount:42000,category:'Vivienda',day:5},
-      'r2':{name:'Seguro auto',amount:18000,category:'Servicios',day:15},
-    };
-    assets = {
-      'a1':{name:'Ahorros ARS',category:'Efectivo y ahorros',value:350000},
-      'a2':{name:'Dólares MEP',category:'Inversiones',value:3000000},
-    };
-    debts = {'d1':{name:'Tarjeta Visa',category:'Tarjeta de crédito',value:85000}};
+    budgets={'b1':{category:'Alimentación',limit:80000},'b2':{category:'Vivienda',limit:200000},'b3':{category:'Salud',limit:60000}};
+    globalBudgets={monthly:{amount:400000}};
+    goals={'g1':{name:'Vacaciones',target:500000,current:180000,dueDate:`${y+1}-01-31`},'g2':{name:'Fondo emergencia',target:1000000,current:320000,dueDate:`${y+1}-06-30`}};
+    reminders={'r1':{name:'Expensas',amount:42000,category:'Vivienda',day:5},'r2':{name:'Seguro auto',amount:18000,category:'Servicios',day:15}};
+    assets={'a1':{name:'Ahorros ARS',category:'Efectivo y ahorros',value:350000},'a2':{name:'Dólares MEP',category:'Inversiones',value:3000000}};
+    debts={'d1':{name:'Tarjeta Visa',category:'Tarjeta de crédito',value:85000}};
+    dashMonthKey=cur;
     renderAll();
+    loadFinHubTicker();
   }
 
+  // ── SUBSCRIPTIONS ──
   function subscribeAll() {} // no-op in demo
 
-  function renderAll() { renderDashboard(); renderTxList(); renderBudgets(); renderRecurring(); }
+  function renderAll() {
+    renderDashboard();
+    renderTxList();
+    renderBudgets();
+    renderRecurring();
+    checkBudgetAlerts();
+  }
 
   // ── NAV ──
   window.goTo = page => {
@@ -1367,26 +1487,35 @@
 
   // ── DASHBOARD ──
   function renderDashboard() {
-    const now = new Date(), month = now.getMonth(), year = now.getFullYear();
     const txArr = Object.entries(transactions).map(([id,t]) => ({id,...t}));
-    const thisMonth = txArr.filter(t => {
-      const d = new Date(t.date+'T12:00:00');
-      return d.getMonth()===month && d.getFullYear()===year;
-    });
+    const { txs: thisMonth, key: activeKey } = getActiveMonth(txArr);
+
+    // Render month selector
+    const months = getAvailableMonths(txArr);
+    const selectorEl = document.getElementById('dash-month-selector');
+    if (selectorEl) {
+      selectorEl.innerHTML = months.map(k =>
+        '<option value="'+k+'"'+(k===activeKey?' selected':'')+'>'+getMonthLabel(k)+'</option>'
+      ).join('');
+    }
+    const subEl = document.querySelector('#page-dashboard .page-sub');
+    if (subEl) subEl.textContent = 'Tu panorama financiero';
+
     const incomes  = thisMonth.filter(t => t.type==='income');
     const expenses = thisMonth.filter(t => t.type==='expense');
-    const totalIn  = incomes.reduce((s,t) => s+t.amount, 0);
-    const totalEx  = expenses.reduce((s,t) => s+t.amount, 0);
+    const toARS = t => (t.moneda === 'USD') ? (t.amount * tcOficial) : t.amount;
+    const totalIn  = incomes.reduce((s,t) => s+toARS(t), 0);
+    const totalEx  = expenses.reduce((s,t) => s+toARS(t), 0);
     const balance  = totalIn - totalEx;
 
-    document.getElementById('dash-balance').textContent      = fmt(balance);
-    document.getElementById('dash-income').textContent       = fmt(totalIn);
-    document.getElementById('dash-expense').textContent      = fmt(totalEx);
-    document.getElementById('dash-income-count').textContent  = `${incomes.length} ingreso${incomes.length!==1?'s':''}`;
-    document.getElementById('dash-expense-count').textContent = `${expenses.length} gasto${expenses.length!==1?'s':''}`;
-    document.getElementById('dash-balance').className = 'card-value ' + (balance>=0?'positive':'negative');
+    document.getElementById('dash-balance').textContent       = fmt(balance);
+    document.getElementById('dash-income').textContent        = fmt(totalIn);
+    document.getElementById('dash-expense').textContent       = fmt(totalEx);
+    document.getElementById('dash-income-count').textContent  = incomes.length+' ingreso'+(incomes.length!==1?'s':'');
+    document.getElementById('dash-expense-count').textContent = expenses.length+' gasto'+(expenses.length!==1?'s':'');
+    document.getElementById('dash-balance').className = 'card-value '+(balance>=0?'positive':'negative');
 
-    const recent = [...txArr].sort((a,b) => new Date(b.date)-new Date(a.date)).slice(0,5);
+    const recent = [...txArr].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,5);
     renderTxItems(document.getElementById('dash-recent'), recent, false);
     renderMonthlyChart(txArr);
     renderCatChart(expenses);
@@ -1475,12 +1604,7 @@
   }
 
   function renderTxSummaryBanner(allTx) {
-    const now = new Date();
-    const m = now.getMonth(), y = now.getFullYear();
-    const thisMonth = allTx.filter(t => {
-      const d = new Date(t.date+'T12:00:00');
-      return d.getMonth()===m && d.getFullYear()===y;
-    });
+    const { txs: thisMonth } = getActiveMonth(allTx);
     // Convert everything to display currency
     const conv = t => toDisplayAmount(t.amount, t.moneda || 'ARS');
     const prefix = appCurrency === 'USD' ? 'USD ' : '$';
@@ -1638,9 +1762,33 @@
     container.innerHTML = html;
   }
 
+  window.confirmClearTx = () => {
+    const overlay = document.createElement('div');
+    overlay.id = 'clear-tx-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(20,20,14,0.6);backdrop-filter:blur(4px);z-index:500;display:flex;align-items:center;justify-content:center;';
+    overlay.innerHTML = '<div style="background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--red);padding:36px;width:420px;border-radius:4px;">' +
+      '<div style="font-family:Plus Jakarta Sans,sans-serif;font-size:1.2rem;font-weight:700;color:var(--ink);margin-bottom:12px;">¿Eliminar todos los movimientos?</div>' +
+      '<div style="font-size:0.85rem;color:var(--ink2);line-height:1.7;margin-bottom:24px;">Esta acción es <strong>irreversible</strong>. Todos los ingresos y gastos cargados hasta el momento se perderán permanentemente. Los presupuestos, metas y recordatorios no se verán afectados.</div>' +
+      '<div style="display:flex;gap:10px;">' +
+        '<button onclick="closeClearOverlay()" style="flex:1;padding:11px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:DM Sans,sans-serif;font-size:0.75rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;border-radius:4px;">Cancelar</button>' +
+        '<button onclick="clearAllTx()" style="flex:2;padding:11px;border:none;background:var(--red);color:white;font-family:DM Sans,sans-serif;font-size:0.75rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;border-radius:4px;">Sí, eliminar todo</button>' +
+      '</div>' +
+    '</div>';
+    document.body.appendChild(overlay);
+  };
+
+  window.closeClearOverlay = () => { document.getElementById('clear-tx-overlay')?.remove(); };
+
+  window.clearAllTx = async () => {
+    document.getElementById('clear-tx-overlay')?.remove();
+    await remove(ref(db, 'users/'+uid+'/transactions'));
+    transactions = {};
+    renderAll();
+  };
+
   window.deleteTx = async id => {
     if (!confirm('¿Eliminar este movimiento?')) return;
-    delete transactions[id]; renderAll();
+    delete transactions[id];
   };
 
   // ── BUDGETS ──
@@ -1855,7 +2003,7 @@
       document.getElementById('tx-desc').value   = '';
       document.getElementById('tx-amount').value = '';
       document.getElementById('tx-date').value   = new Date().toISOString().split('T')[0];
-      setType('income');
+      window.setType('income'); window._txType = 'income';
     }
     if (name==='budget')        document.getElementById('budget-limit').value  = '';
     if (name==='global-budget') document.getElementById('gb-amount').value     = globalBudgets[budgetPeriod]?.amount || '';
@@ -1882,6 +2030,12 @@
     txType = type;
     document.getElementById('type-income').className  = 'type-btn'+(type==='income' ?' active-income':'');
     document.getElementById('type-expense').className = 'type-btn'+(type==='expense'?' active-expense':'');
+    const fijoRadio = document.getElementById('tx-fijo');
+    const varRadio  = document.getElementById('tx-variable');
+    if (fijoRadio && varRadio) {
+      fijoRadio.checked = (type === 'income');
+      varRadio.checked  = (type === 'expense');
+    }
   };
 
   window.saveTx = async () => {
@@ -1894,7 +2048,7 @@
     if (!date)            { alert('Seleccioná una fecha'); return; }
     const variabilidad = document.querySelector('input[name="tx-variabilidad"]:checked')?.value || 'fijo';
     const monedaTx = document.querySelector('input[name="tx-moneda"]:checked')?.value || 'ARS';
-    const nid='tx_'+Date.now(); transactions[nid]={description:desc,amount,category:cat,type:txType,date,variabilidad,moneda:monedaTx,createdAt:Date.now()}; renderAll();
+    const nid='tx_'+Date.now(); transactions[nid]={description:desc,amount,category:cat,type:txType,date,variabilidad,moneda:monedaTx,createdAt:Date.now()}; dashMonthKey=date.substring(0,7); renderAll();
     closeModal('tx');
   };
 
@@ -2245,6 +2399,12 @@
     editTxType = type;
     document.getElementById('edit-type-income').className  = 'type-btn'+(type==='income'?' active-income':'');
     document.getElementById('edit-type-expense').className = 'type-btn'+(type==='expense'?' active-expense':'');
+    const fijoRadio = document.getElementById('edit-tx-fijo');
+    const varRadio  = document.getElementById('edit-tx-variable');
+    if (fijoRadio && varRadio && !document.getElementById('edit-tx-id').value) {
+      fijoRadio.checked = (type === 'income');
+      varRadio.checked  = (type === 'expense');
+    }
   };
 
   window.saveEditTx = async () => {
@@ -2261,6 +2421,7 @@
     await set(ref(db, 'users/'+uid+'/transactions/'+id), {
       description: desc, amount, category: cat, type: editTxType, date, variabilidad: varEdit, moneda: monedaEdit, createdAt: transactions[id]?.createdAt || Date.now()
     });
+    dashMonthKey = date.substring(0,7);
     closeModal('edit-tx');
   };
 
@@ -2645,7 +2806,7 @@
     const ti = importTypeMode === 'column' ? hIdx(mapTypeCol) : -1;
 
     let ok = 0, skip = 0;
-    const promises = [];
+    const toInsert = [];
 
     for (const row of importData.rows) {
       const dateStr = parseImportDate(row[fi]);
@@ -2665,18 +2826,22 @@
         type = (tv.includes('ingreso') || tv.includes('income') || tv.includes('entrada') || tv === '+') ? 'income' : 'expense';
       } else type = 'expense';
 
-      promises.push(push(ref(db, 'users/'+uid+'/transactions'), {
-        description: desc,
-        amount: Math.abs(amount),
-        category: cat,
-        type,
-        date: dateStr,
-        createdAt: Date.now()
-      }));
+      toInsert.push({ description: desc, amount: Math.abs(amount), category: cat, type, date: dateStr, variabilidad: 'fijo', createdAt: Date.now() });
       ok++;
     }
 
-    await Promise.all(promises);
+    // Show progress
+    const btn = document.getElementById('import-action-btn');
+    if (btn) btn.textContent = 'Importando 0/' + ok + '...';
+
+    // Write in batches of 8 to avoid freezing
+    const BATCH = 8;
+    for (let i = 0; i < toInsert.length; i += BATCH) {
+      const batch = toInsert.slice(i, i + BATCH);
+      await Promise.all(batch.map(tx => push(ref(db, 'users/'+uid+'/transactions'), tx)));
+      if (btn) btn.textContent = 'Importando ' + Math.min(i+BATCH, ok) + '/' + ok + '...';
+      await new Promise(r => setTimeout(r, 100)); // small pause between batches
+    }
 
     document.getElementById('import-step2').style.display = 'none';
     document.getElementById('import-step3').style.display = 'block';
@@ -2955,9 +3120,126 @@
 
   // ── TIPO DE CAMBIO & CURRENCY ──
   let appCurrency = 'ARS';
-  let tcOficial = 1000; // fallback, updated from API
+  let tcOficial = 1415; // fallback (approx oficial), updated from API
 
   // Fetch dolar oficial on load
+  // ── ACTIVE MONTH HELPER ──
+  function getActiveMonth(txArr) {
+    const now = new Date();
+    const curKey = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+    // If dashMonthKey set, use it
+    const key = dashMonthKey || curKey;
+    const [ky, km] = key.split('-').map(Number);
+    let filtered = txArr.filter(t => {
+      const d = new Date(t.date+'T12:00:00');
+      return d.getFullYear()===ky && d.getMonth()+1===km;
+    });
+    // If no data for selected key, fall back to most recent month with data
+    if (!filtered.length && txArr.length) {
+      const sorted = [...txArr].sort((a,b) => new Date(b.date)-new Date(a.date));
+      const ld = new Date(sorted[0].date+'T12:00:00');
+      const fallKey = ld.getFullYear()+'-'+String(ld.getMonth()+1).padStart(2,'0');
+      if (dashMonthKey === null) dashMonthKey = fallKey;
+      filtered = txArr.filter(t => {
+        const d = new Date(t.date+'T12:00:00');
+        return d.getFullYear()===ld.getFullYear() && d.getMonth()===ld.getMonth();
+      });
+      return { txs: filtered, key: fallKey };
+    }
+    return { txs: filtered, key };
+  }
+
+  function getMonthLabel(key) {
+    if (!key) return '';
+    const [y,m] = key.split('-').map(Number);
+    return new Date(y, m-1, 1).toLocaleString('es-AR',{month:'long',year:'numeric'});
+  }
+
+  function getAvailableMonths(txArr) {
+    const keys = new Set();
+    txArr.forEach(t => {
+      const d = new Date(t.date+'T12:00:00');
+      keys.add(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'));
+    });
+    return [...keys].sort((a,b) => b.localeCompare(a));
+  }
+
+  window.setDashMonth = key => {
+    dashMonthKey = key;
+    renderDashboard();
+    const allTx = Object.entries(transactions).map(([id,t])=>({id,...t}));
+    renderTxSummaryBanner(allTx);
+  };
+
+  // ── FINHUB LIVE TICKER ──
+  async function loadFinHubTicker() {
+    try {
+      const base = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '';
+      const [dolarRes, cedearRes] = await Promise.allSettled([
+        fetch(base+'/api/market?source=dolar').then(r=>r.json()),
+        fetch(base+'/api/market?source=cedears').then(r=>r.json()),
+      ]);
+
+      const items = [];
+      if (dolarRes.status==='fulfilled') {
+        const d = dolarRes.value;
+        if (d.blue?.venta)    items.push({name:'USD Blue',    val:'$'+Math.round(d.blue.venta).toLocaleString('es-AR'),    chg:'', cls:''});
+        if (d.oficial?.venta) items.push({name:'USD Oficial', val:'$'+Math.round(d.oficial.venta).toLocaleString('es-AR'), chg:'', cls:''});
+        if (d.mep?.venta)     items.push({name:'USD MEP',     val:'$'+Math.round(d.mep.venta).toLocaleString('es-AR'),     chg:'', cls:''});
+        if (d.ccl?.venta)     items.push({name:'USD CCL',     val:'$'+Math.round(d.ccl.venta).toLocaleString('es-AR'),     chg:'', cls:''});
+        if (d.oficial?.venta) tcOficial = d.oficial.venta;
+        const badge = document.getElementById('tc-badge');
+        if (badge) badge.textContent = 'TC Oficial: $'+Math.round(tcOficial).toLocaleString('es-AR');
+      }
+      if (cedearRes.status==='fulfilled') {
+        (cedearRes.value.cedears||[]).slice(0,6).forEach(c => {
+          const chg = parseFloat(c.cambio||0);
+          items.push({name:c.symbol, val:'USD '+parseFloat(c.precio).toFixed(1), chg:(chg>=0?'+':'')+chg.toFixed(2)+'%', cls:chg>0?'pos':chg<0?'neg':''});
+        });
+      }
+
+      // Add summary stats
+      const allTx = Object.values(transactions);
+      const now = new Date(), m = now.getMonth(), y = now.getFullYear();
+      const thisMo = allTx.filter(t=>{ const d=new Date(t.date+'T12:00:00'); return d.getMonth()===m&&d.getFullYear()===y; });
+      const ingMo = thisMo.filter(t=>t.type==='income').reduce((s,t)=>s+toDisplayAmount(t.amount,t.moneda||'ARS'),0);
+      const expMo = thisMo.filter(t=>t.type==='expense').reduce((s,t)=>s+toDisplayAmount(t.amount,t.moneda||'ARS'),0);
+      if (ingMo) items.push({name:'Ingresos mes', val:'$'+fmtNum(ingMo), chg:'', cls:''});
+      if (expMo) items.push({name:'Gastos mes',   val:'$'+fmtNum(expMo), chg:'', cls:''});
+      if (ingMo||expMo) {
+        items.push({name:'Balance', val:(ingMo-expMo>=0?'+':'-')+'$'+fmtNum(Math.abs(ingMo-expMo)), chg:'', cls:ingMo-expMo>=0?'pos':'neg'});
+        const ahorro = ingMo>0 ? Math.round(((ingMo-expMo)/ingMo)*100) : 0;
+        items.push({name:'Tasa ahorro', val:ahorro+'%', chg:'', cls:ahorro>=20?'pos':ahorro>=0?'neu':'neg'});
+      }
+      // Days to next reminder
+      const todayNum = now.getDate();
+      const rems = Object.values(reminders).filter(r=>!r.paidMonth||r.paidMonth!==y+'-'+m);
+      if (rems.length) {
+        const next = rems.map(r=>{
+          let dias = r.day - todayNum;
+          if (dias < 0) dias += new Date(y, m+1, 0).getDate();
+          return {name:r.name, dias};
+        }).sort((a,b)=>a.dias-b.dias)[0];
+        items.push({name:'Vence: '+next.name, val:next.dias===0?'hoy':next.dias+' días', chg:'', cls:next.dias<=3?'neg':next.dias<=7?'neu':''});
+      }
+
+      if (!items.length) return;
+
+      const html = [...items,...items,...items].map(it =>
+        '<div class="finhub-ticker-item">'+
+        '<span class="finhub-ticker-name">'+it.name+'</span>'+
+        '<span class="finhub-ticker-val">'+it.val+'</span>'+
+        (it.chg?'<span class="finhub-ticker-chg '+it.cls+'">'+it.chg+'</span>':'')+
+        '</div>'
+      ).join('');
+      const track = document.getElementById('finhub-ticker-track');
+      if (track) { track.innerHTML=html; track.style.animation='none'; track.offsetHeight; track.style.animation=''; }
+
+      // Re-render dashboard with real TC
+      renderAll();
+    } catch(e) {}
+  }
+
   async function fetchTCOficial() {
     try {
       const base = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '';
@@ -3002,6 +3284,22 @@
     const prefix = appCurrency === 'USD' ? 'USD ' : '$';
     return prefix + fmtNum(display);
   }
+
+  setInterval(() => { if(uid) loadFinHubTicker(); }, 60000);
+
+  // ── MODO FOCO ──
+  let focoActive = false;
+  window.toggleFoco = () => {
+    focoActive = !focoActive;
+    document.getElementById('shell').classList.toggle('foco-active', focoActive);
+    const btn = document.getElementById('foco-btn');
+    if (btn) {
+      btn.classList.toggle('active', focoActive);
+      btn.innerHTML = focoActive
+        ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Modo foco'
+        : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg> Modo foco';
+    }
+  };
 
   // ── DARK MODE ──
   window.toggleDark = (on) => {
