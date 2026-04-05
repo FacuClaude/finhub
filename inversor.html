@@ -170,10 +170,11 @@
     .market-row span { overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0; }
   .market-table { background: var(--surface); border: 1px solid var(--border); width: 100%; }
     .market-row {
-      display: grid; grid-template-columns: 80px 1fr 110px 80px 80px;
+      display: grid; grid-template-columns: 75px 1fr 100px 72px 72px;
       align-items: center; padding: 12px 20px;
       border-bottom: 1px solid var(--border); transition: background 0.15s;
     }
+    .market-row > span { min-width: 0; overflow: hidden; }
     .market-row:last-child { border-bottom: none; }
     .market-row:hover { background: var(--surface2); }
     .market-row.header { font-size: 0.65rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding: 10px 20px; }
@@ -181,7 +182,7 @@
     .ticker { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.82rem; font-weight: 600; color: var(--ink); }
     .nombre { font-size: 0.82rem; color: var(--ink2); }
     .precio { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.88rem; font-weight: 500; text-align: right; }
-    .cambio { font-size: 0.78rem; font-weight: 500; text-align: right; padding: 2px 6px; border-radius: 3px; display: inline-block; white-space: nowrap; }
+    .cambio { font-size: 0.72rem; font-weight: 500; text-align: right; padding: 2px 5px; border-radius: 3px; display: inline-block; white-space: nowrap; max-width: 100%; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; }
     .cambio.pos { color: var(--green); background: var(--green-bg); }
     .cambio.neg { color: var(--red); background: var(--red-bg); }
     .cambio.neu { color: var(--muted); }
