@@ -1904,6 +1904,8 @@
     const variabilidad = document.querySelector('input[name="tx-variabilidad"]:checked')?.value || 'fijo';
     const monedaTx = document.querySelector('input[name="tx-moneda"]:checked')?.value || 'ARS';
     await push(ref(db,`users/${uid}/transactions`),{description:desc,amount,category:cat,type:txType,date,variabilidad,moneda:monedaTx,createdAt:Date.now()});
+    // Point dashboard to the month of the new transaction
+    dashMonthKey = date.substring(0,7);
     closeModal('tx');
   };
 
@@ -2270,6 +2272,7 @@
     await set(ref(db, 'users/'+uid+'/transactions/'+id), {
       description: desc, amount, category: cat, type: editTxType, date, variabilidad: varEdit, moneda: monedaEdit, createdAt: transactions[id]?.createdAt || Date.now()
     });
+    dashMonthKey = date.substring(0,7);
     closeModal('edit-tx');
   };
 
