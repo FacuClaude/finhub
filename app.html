@@ -1322,9 +1322,7 @@
 
   function renderAll() {
     renderDashboard();
-    // Update summary banner without re-rendering the full grouped list
-    const allTx = Object.entries(transactions).map(([id,t]) => ({id,...t}));
-    renderTxSummaryBanner(allTx);
+    renderTxList();
     renderBudgets();
     renderRecurring();
     checkBudgetAlerts();
@@ -1338,7 +1336,6 @@
     document.querySelectorAll('.nav-item').forEach(n => {
       if (n.getAttribute('onclick')?.includes(page)) n.classList.add('active');
     });
-    if (page === 'transactions') renderTxList();
     if (page === 'summary') renderSummary();
     if (page === 'recurring') renderRecurring();
     if (page === 'networth') { renderNetWorth(); renderPatHistorial(); }
@@ -1471,8 +1468,7 @@
       .filter(t => txFilter==='all'||t.type===txFilter)
       .sort((a,b) => new Date(b.date)-new Date(a.date));
     renderTxSummaryBanner(allTx);
-    const container = document.getElementById('tx-list');
-    if (container) renderTxItems(container, txArr, true);
+    renderTxItems(document.getElementById('tx-list'), txArr, true);
   }
 
   function renderTxSummaryBanner(allTx) {
