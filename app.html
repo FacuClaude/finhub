@@ -14,11 +14,11 @@
     html { color-scheme: light only; scroll-behavior: smooth; }
 
     :root {
-      --bg:        #dff0ea;
-      --surface:   #eef7f2;
-      --surface2:  #e5f2ec;
-      --border:    #c2dbd2;
-      --border2:   #a8c9bc;
+      --bg:        #f5f3f0;
+      --surface:   #eeece8;
+      --surface2:  #e8e6e2;
+      --border:    #dddad5;
+      --border2:   #ccc9c3;
       --ink:       #1a1a14;
       --ink2:      #3a3830;
       --muted:     #8a8070;
@@ -99,7 +99,7 @@
     input:checked + .slider::before { transform: translateX(16px); }
 
     body {
-      background: #dff0ea !important;
+      background: #f5f3f0 !important;
       color: #1a1a14 !important;
       font-family: 'DM Sans', sans-serif;
       font-weight: 300;
@@ -140,7 +140,7 @@
     body::before {
       content: '';
       position: fixed; inset: 0;
-      background-image: radial-gradient(circle, #a8c9bc 1px, transparent 1px);
+      background-image: radial-gradient(circle, #ccc9c3 1px, transparent 1px);
       background-size: 28px 28px;
       opacity: 0.3;
       pointer-events: none;
@@ -1356,10 +1356,26 @@
   function renderDashboard() {
     const now = new Date(), month = now.getMonth(), year = now.getFullYear();
     const txArr = Object.entries(transactions).map(([id,t]) => ({id,...t}));
-    const thisMonth = txArr.filter(t => {
+    // Try current month first, fall back to most recent month with data
+    let thisMonth = txArr.filter(t => {
       const d = new Date(t.date+'T12:00:00');
       return d.getMonth()===month && d.getFullYear()===year;
     });
+    let dashLabel = null;
+    if (!thisMonth.length && txArr.length) {
+      // Find most recent month with data
+      const sorted = [...txArr].sort((a,b) => new Date(b.date)-new Date(a.date));
+      const latestDate = new Date(sorted[0].date+'T12:00:00');
+      const lm = latestDate.getMonth(), ly = latestDate.getFullYear();
+      thisMonth = txArr.filter(t => {
+        const d = new Date(t.date+'T12:00:00');
+        return d.getMonth()===lm && d.getFullYear()===ly;
+      });
+      dashLabel = latestDate.toLocaleString('es-AR',{month:'long',year:'numeric'});
+    }
+    // Update subtitle to reflect which month is shown
+    const subEl = document.querySelector('#page-dashboard .page-sub');
+    if (subEl) subEl.textContent = dashLabel ? 'Mostrando: '+dashLabel : 'Tu panorama financiero';
     const incomes  = thisMonth.filter(t => t.type==='income');
     const expenses = thisMonth.filter(t => t.type==='expense');
     // Use toDisplayAmount to convert USD transactions correctly
