@@ -112,6 +112,7 @@
     /* ── FINHUB LIVE TICKER ── */
     .finhub-ticker {
       position: fixed; top: 0; left: 0; right: 0; z-index: 999;
+      max-width: 100vw; overflow: hidden;
       background: #1a2e24; color: #7ecba1;
       font-family: 'DM Sans', sans-serif; font-size: 0.7rem; font-weight: 500;
       height: 26px; overflow: hidden; display: flex; align-items: center;
@@ -148,7 +149,7 @@
     }
 
     /* ── SHELL ── */
-    .shell { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; position: relative; z-index: 1; margin-top: 26px; }
+    .shell { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; position: relative; z-index: 1; margin-top: 26px; max-width: 100vw; }
 
     /* ── SIDEBAR ── */
     .sidebar {
@@ -553,7 +554,7 @@
       position: fixed;
       top: 32px;
       right: 16px;
-      z-index: 300;
+      z-index: 420;
       width: 40px;
       height: 40px;
       border-radius: 6px;
@@ -570,26 +571,27 @@
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(20,20,14,0.4);
-      z-index: 310;
+      background: rgba(20,20,14,0.3);
+      z-index: 400;
     }
     .mobile-overlay.open { display: block; }
     @media (max-width: 900px) {
       .shell { grid-template-columns: 1fr; }
       .sidebar {
         position: fixed;
-        left: -260px;
+        left: -280px;
         top: 0;
         bottom: 0;
-        width: 260px;
-        z-index: 320;
+        width: 280px;
+        z-index: 410;
         transition: left 0.28s cubic-bezier(0.4,0,0.2,1);
         overflow-y: auto;
+        box-shadow: none;
       }
-      .sidebar.mobile-open { left: 0; }
-      .hamburger { display: flex; }
-      main { padding: 24px 16px; }
-      .cards-row { grid-template-columns: 1fr; }
+      .sidebar.mobile-open { left: 0; box-shadow: 4px 0 24px rgba(0,0,0,0.18); background: var(--surface) !important; }
+      .hamburger { display: flex; z-index: 420; }
+      main { padding: 20px 14px; max-width: 100vw; overflow-x: hidden; }
+      .cards-row { grid-template-columns: 1fr; gap: 12px; }
       .charts-row { grid-template-columns: 1fr; }
       .budget-grid, .goals-grid { grid-template-columns: 1fr; }
       .tx-summary-banner-inner { grid-template-columns: repeat(3,1fr) !important; }
@@ -767,7 +769,7 @@
       </div>
 
       <!-- Resumen fijo -->
-      <div id="tx-summary-banner" style="background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--accent);padding:20px 24px;margin-bottom:20px;display:grid;grid-template-columns:repeat(6,1fr);gap:16px;">
+      <div id="tx-summary-banner" style="background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--accent);padding:16px 20px;margin-bottom:20px;display:grid;grid-template-columns:repeat(6,1fr);gap:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;">
         <div><div style="font-size:0.6rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Ingresos</div><div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.1rem;font-weight:600;color:var(--green);" id="txs-ingresos">$0</div></div>
         <div><div style="font-size:0.6rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Gastos fijos</div><div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.1rem;font-weight:600;color:var(--ink);" id="txs-fijos">$0</div></div>
         <div><div style="font-size:0.6rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Gastos variables</div><div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.1rem;font-weight:600;color:var(--accent2);" id="txs-variables">$0</div></div>
