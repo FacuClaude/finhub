@@ -40,7 +40,18 @@
       min-height: 100vh;
     }
 
-    body.dark {
+  /* ── PRIVACIDAD ── */
+  .shell.foco-inv .precio, .shell.foco-inv .cambio, .shell.foco-inv .tir,
+  .shell.foco-inv .card-value, .shell.foco-inv #c-total, .shell.foco-inv #c-total-alt,
+  .shell.foco-inv #c-ars, .shell.foco-inv #c-usd, .shell.foco-inv .ticker-val,
+  .shell.foco-inv .ticker-chg {
+    color: transparent !important;
+    background: var(--border) !important;
+    border-radius: 3px !important;
+    user-select: none !important;
+  }
+
+      body.dark {
       --bg: #141414; --surface: #1c1c1c; --surface2: #242424;
       --border: #2e2e2e; --border2: #3a3a3a;
       --ink: #e0e0e0; --ink2: #c0c0c0; --muted: #787878; --muted2: #545454;
@@ -156,7 +167,8 @@
     }
     .refreshing { font-size: 0.65rem; color: var(--accent); }
 
-    .market-table { background: var(--surface); border: 1px solid var(--border); width: 100%; }
+    .market-row span { overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0; }
+  .market-table { background: var(--surface); border: 1px solid var(--border); width: 100%; }
     .market-row {
       display: grid; grid-template-columns: 80px 1fr 110px 80px 80px;
       align-items: center; padding: 12px 20px;
@@ -413,6 +425,13 @@
 
     <div class="sidebar-footer">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <span style="font-size:0.68rem;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;">Privacidad</span>
+        <label class="switch">
+          <input type="checkbox" id="foco-toggle-inv" onchange="toggleFocoInv(this.checked)">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
         <span style="font-size:0.68rem;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;">Modo noche</span>
         <label class="switch">
           <input type="checkbox" id="dark-toggle-inv" onchange="toggleDarkInv(this.checked)">
@@ -481,7 +500,7 @@
       <div class="market-section">
         <div class="market-title">Bonos y Lecaps <span class="refreshing" id="bonos-status">cargando...</span></div>
         <div class="market-table">
-          <div class="market-row header" style="grid-template-columns:70px 1fr 70px 80px 65px 65px 80px;"><span>Ticker</span><span>Instrumento</span><span style="text-align:right">Vence</span><span style="text-align:right">Precio</span><span style="text-align:right">TIR/TNA</span><span style="text-align:right">TEM</span><span style="text-align:right">Ganancia</span></div>
+          <div class="market-row header" style="grid-template-columns:60px 1fr 62px 72px 58px 58px 70px;font-size:0.65rem;"><span>Ticker</span><span>Instrumento</span><span style="text-align:right">Vence</span><span style="text-align:right">Precio</span><span style="text-align:right">TIR/TNA</span><span style="text-align:right">TEM</span><span style="text-align:right">Ganancia</span></div>
           <div id="bonos-list"></div>
         </div>
       </div>
@@ -1754,6 +1773,15 @@ window.calcInflacion = () => {
 
 // ── GOTOS ──
 // (added to existing goTo function below)
+
+// Privacidad
+let focoInvActive = false;
+window.toggleFocoInv = (checked) => {
+  focoInvActive = checked !== undefined ? checked : !focoInvActive;
+  document.querySelector('.shell').classList.toggle('foco-inv', focoInvActive);
+  const tog = document.getElementById('foco-toggle-inv');
+  if (tog) tog.checked = focoInvActive;
+};
 
 // Dark mode sync
 if (localStorage.getItem('finhub-dark')==='1') {
