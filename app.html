@@ -565,6 +565,14 @@
     }
     .mobile-overlay.open { display: block; }
     @media (max-width: 900px) {
+      body.dark .sidebar.mobile-open,
+      .sidebar.mobile-open {
+        background: #f5f3f0 !important;
+        left: 0 !important;
+        box-shadow: 6px 0 32px rgba(0,0,0,0.25) !important;
+      }
+
+    @media (max-width: 900px) {
       .shell { grid-template-columns: 1fr; }
       .sidebar {
         position: fixed;
@@ -621,19 +629,19 @@
       <div style="font-size:0.65rem;color:#b4ac9e;margin-top:8px;">Finanzas simples, mente tranquila</div>
     </div>
     <nav>
-      <div class="nav-item active" onclick="goTo('dashboard')">
+      <div class="nav-item active" onclick="goTo('dashboard')" ontouchstart="">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
         Dashboard
       </div>
-      <div class="nav-item" onclick="goTo('transactions')">
+      <div class="nav-item" onclick="goTo('transactions')" ontouchstart="">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
         Movimientos
       </div>
-      <div class="nav-item" onclick="goTo('budgets')">
+      <div class="nav-item" onclick="goTo('budgets')" ontouchstart="">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
         Presupuestos
       </div>
-      <div class="nav-item" onclick="goTo('goals')">
+      <div class="nav-item" onclick="goTo('goals')" ontouchstart="">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
         Metas
       </div>
@@ -642,24 +650,24 @@
         Recordatorios
         <span class="nav-badge" id="reminder-badge" style="display:none">0</span>
       </div>
-      <div class="nav-item" onclick="goTo('recurring')">
+      <div class="nav-item" onclick="goTo('recurring')" ontouchstart="">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
         Recurrentes
       </div>
-      <div class="nav-item" onclick="goTo('summary')">
+      <div class="nav-item" onclick="goTo('summary')" ontouchstart="">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
         Resumen
       </div>
 
-      <div class="nav-item" onclick="goTo('cashflow')">
+      <div class="nav-item" onclick="goTo('cashflow')" ontouchstart="">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         Proyección
       </div>
-      <div class="nav-item" onclick="goTo('insights')">
+      <div class="nav-item" onclick="goTo('insights')" ontouchstart="">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
         Insights
       </div>
-      <div class="nav-item" onclick="goTo('comparativa')">
+      <div class="nav-item" onclick="goTo('comparativa')" ontouchstart="">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
         Comparativa
       </div>
