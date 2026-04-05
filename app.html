@@ -1322,7 +1322,9 @@
 
   function renderAll() {
     renderDashboard();
-    renderTxList();  // handles banner + grouped months
+    // Update summary banner without re-rendering the full grouped list
+    const allTx = Object.entries(transactions).map(([id,t]) => ({id,...t}));
+    renderTxSummaryBanner(allTx);
     renderBudgets();
     renderRecurring();
     checkBudgetAlerts();
@@ -1468,12 +1470,8 @@
       .filter(t => txFilter==='all'||t.type===txFilter)
       .sort((a,b) => new Date(b.date)-new Date(a.date));
     renderTxSummaryBanner(allTx);
-    // Only render the list items when the transactions page is visible
-    const page = document.getElementById('page-transactions');
     const container = document.getElementById('tx-list');
-    if (container && page && page.classList.contains('active')) {
-      renderTxItems(container, txArr, true);
-    }
+    if (container) renderTxItems(container, txArr, true);
   }
 
   function renderTxSummaryBanner(allTx) {
