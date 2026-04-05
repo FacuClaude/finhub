@@ -62,7 +62,7 @@
     .theme-toggle {
       display: flex;
       align-items: center;
-      gap: 10px;
+      justify-content: space-between;
       margin-bottom: 14px;
     }
     .theme-label {
@@ -630,8 +630,8 @@
       </div>
     </nav>
     <div class="sidebar-footer">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-        <span style="font-size:0.68rem;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;">Privacidad</span>
+      <div class="theme-toggle">
+        <span class="theme-label">Privacidad</span>
         <label class="switch">
           <input type="checkbox" id="foco-toggle" onchange="toggleFoco(this.checked)">
           <span class="slider"></span>
