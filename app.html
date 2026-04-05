@@ -672,6 +672,7 @@
           <button class="btn-export" onclick="collapseAllMonths()">&#9650; Colapsar</button>
           <button class="btn-export" onclick="openModal('import')">&#8679; Importar</button>
           <button class="btn-export" onclick="exportSection('transactions')">&#8681; Excel</button>
+          <button class="btn-export" onclick="confirmClearTx()" style="border-color:var(--red);color:var(--red);">&#128465; Limpiar</button>
           <button class="btn-primary" onclick="openModal('tx')">+ Agregar</button>
         </div>
       </div>
@@ -1313,13 +1314,16 @@
     });
     const incomes  = thisMonth.filter(t => t.type==='income');
     const expenses = thisMonth.filter(t => t.type==='expense');
-    const totalIn  = incomes.reduce((s,t) => s+t.amount, 0);
-    const totalEx  = expenses.reduce((s,t) => s+t.amount, 0);
+    // Use toDisplayAmount to convert USD transactions correctly
+    const conv = t => toDisplayAmount(t.amount, t.moneda || 'ARS');
+    const totalIn  = incomes.reduce((s,t) => s+conv(t), 0);
+    const totalEx  = expenses.reduce((s,t) => s+conv(t), 0);
     const balance  = totalIn - totalEx;
+    const prefix   = appCurrency === 'USD' ? 'USD ' : '$';
 
-    document.getElementById('dash-balance').textContent      = fmt(balance);
-    document.getElementById('dash-income').textContent       = fmt(totalIn);
-    document.getElementById('dash-expense').textContent      = fmt(totalEx);
+    document.getElementById('dash-balance').textContent      = (balance>=0?'':'-')+prefix+fmtNum(Math.abs(balance));
+    document.getElementById('dash-income').textContent       = prefix+fmtNum(totalIn);
+    document.getElementById('dash-expense').textContent      = prefix+fmtNum(totalEx);
     document.getElementById('dash-income-count').textContent  = `${incomes.length} ingreso${incomes.length!==1?'s':''}`;
     document.getElementById('dash-expense-count').textContent = `${expenses.length} gasto${expenses.length!==1?'s':''}`;
     document.getElementById('dash-balance').className = 'card-value ' + (balance>=0?'positive':'negative');
@@ -1575,6 +1579,30 @@
 
     container.innerHTML = html;
   }
+
+  window.confirmClearTx = () => {
+    const overlay = document.createElement('div');
+    overlay.id = 'clear-tx-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(20,20,14,0.6);backdrop-filter:blur(4px);z-index:500;display:flex;align-items:center;justify-content:center;';
+    overlay.innerHTML = '<div style="background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--red);padding:36px;width:420px;border-radius:4px;">' +
+      '<div style="font-family:Plus Jakarta Sans,sans-serif;font-size:1.2rem;font-weight:700;color:var(--ink);margin-bottom:12px;">¿Eliminar todos los movimientos?</div>' +
+      '<div style="font-size:0.85rem;color:var(--ink2);line-height:1.7;margin-bottom:24px;">Esta acción es <strong>irreversible</strong>. Todos los ingresos y gastos cargados hasta el momento se perderán permanentemente. Los presupuestos, metas y recordatorios no se verán afectados.</div>' +
+      '<div style="display:flex;gap:10px;">' +
+        '<button onclick="closeClearOverlay()" style="flex:1;padding:11px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:DM Sans,sans-serif;font-size:0.75rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;border-radius:4px;">Cancelar</button>' +
+        '<button onclick="clearAllTx()" style="flex:2;padding:11px;border:none;background:var(--red);color:white;font-family:DM Sans,sans-serif;font-size:0.75rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;border-radius:4px;">Sí, eliminar todo</button>' +
+      '</div>' +
+    '</div>';
+    document.body.appendChild(overlay);
+  };
+
+  window.closeClearOverlay = () => { document.getElementById('clear-tx-overlay')?.remove(); };
+
+  window.clearAllTx = async () => {
+    document.getElementById('clear-tx-overlay')?.remove();
+    await remove(ref(db, 'users/'+uid+'/transactions'));
+    transactions = {};
+    renderAll();
+  };
 
   window.deleteTx = async id => {
     if (!confirm('¿Eliminar este movimiento?')) return;
