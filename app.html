@@ -1891,6 +1891,13 @@
     txType = type;
     document.getElementById('type-income').className  = 'type-btn'+(type==='income' ?' active-income':'');
     document.getElementById('type-expense').className = 'type-btn'+(type==='expense'?' active-expense':'');
+    // Auto-suggest variabilidad based on type
+    const fijoRadio = document.getElementById('tx-fijo');
+    const varRadio  = document.getElementById('tx-variable');
+    if (fijoRadio && varRadio) {
+      fijoRadio.checked = (type === 'income');
+      varRadio.checked  = (type === 'expense');
+    }
   };
 
   window.saveTx = async () => {
@@ -2256,6 +2263,12 @@
     editTxType = type;
     document.getElementById('edit-type-income').className  = 'type-btn'+(type==='income'?' active-income':'');
     document.getElementById('edit-type-expense').className = 'type-btn'+(type==='expense'?' active-expense':'');
+    const fijoRadio = document.getElementById('edit-tx-fijo');
+    const varRadio  = document.getElementById('edit-tx-variable');
+    if (fijoRadio && varRadio && !document.getElementById('edit-tx-id').value) {
+      fijoRadio.checked = (type === 'income');
+      varRadio.checked  = (type === 'expense');
+    }
   };
 
   window.saveEditTx = async () => {
