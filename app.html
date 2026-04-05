@@ -545,6 +545,14 @@
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
         Insights
       </div>
+      <div class="nav-item" onclick="goTo('comparativa')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        Comparativa
+      </div>
+      <div class="nav-item" onclick="goTo('pat-historial')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Hist. Patrimonio
+      </div>
       <div class="nav-item" onclick="window.location.href='inversor.html'" style="border-top:1px solid var(--border);margin-top:8px;padding-top:16px;">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
         <span style="color:var(--accent);font-weight:500;">Inversor</span>
@@ -857,6 +865,46 @@
       <div id="insights-content"></div>
     </div>
 
+    <!-- COMPARATIVA -->
+    <div class="page" id="page-comparativa">
+      <div class="page-title">Comparativa</div>
+      <div class="page-sub">Evolución de gastos por categoría — últimos 6 meses</div>
+      <div class="chart-card" style="margin-bottom:28px;">
+        <canvas id="chart-comparativa" height="320"></canvas>
+      </div>
+      <div id="comparativa-legend" style="display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;"></div>
+    </div>
+
+    <!-- HISTORIAL PATRIMONIO -->
+    <div class="page" id="page-pat-historial">
+      <div class="page-title">Historial Patrimonio</div>
+      <div class="page-sub">Evolución de tu patrimonio neto</div>
+      <div class="cards-row" style="margin-bottom:28px;">
+        <div class="card balance-card">
+          <div class="card-label">Patrimonio actual</div>
+          <div class="card-value neutral" id="ph-actual">$0</div>
+          <div class="card-sub">Activos − Deudas</div>
+        </div>
+        <div class="card income-card">
+          <div class="card-label">Máximo registrado</div>
+          <div class="card-value positive" id="ph-max">$0</div>
+          <div class="card-sub" id="ph-max-date">—</div>
+        </div>
+        <div class="card expense-card">
+          <div class="card-label">Variación último mes</div>
+          <div class="card-value" id="ph-var">$0</div>
+          <div class="card-sub" id="ph-var-pct">—</div>
+        </div>
+      </div>
+      <div class="chart-card" style="margin-bottom:28px;">
+        <canvas id="chart-pat-historial" height="280"></canvas>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+        <button class="btn-primary" onclick="snapshotPatrimonio()">+ Registrar snapshot hoy</button>
+      </div>
+      <div id="ph-snapshots-list"></div>
+    </div>
+
   </main>
 </div>
 
@@ -1131,7 +1179,7 @@
   const db   = getDatabase(app);
 
   let uid = null;
-  let transactions = {}, budgets = {}, goals = {}, reminders = {}, globalBudgets = {}, assets = {}, debts = {};
+  let transactions = {}, budgets = {}, goals = {}, reminders = {}, globalBudgets = {}, assets = {}, debts = {}, patSnapshots = {};
   let txFilter = 'all', txType = 'income';
   let budgetPeriod = 'monthly';
   let monthlyChart, catChart;
@@ -1155,6 +1203,7 @@
     onValue(ref(db, `users/${uid}/reminders`),     s => { reminders    = s.val() || {}; renderReminders(); updateReminderBadge(); });
     onValue(ref(db, `users/${uid}/globalBudgets`), s => { globalBudgets = s.val() || {}; renderBudgets(); });
     onValue(ref(db, `users/${uid}/assets`),        s => { assets = s.val() || {}; renderNetWorth(); });
+    onValue(ref(db, `users/${uid}/patSnapshots`),  s => { patSnapshots = s.val() || {}; renderPatHistorial(); });
     onValue(ref(db, `users/${uid}/debts`),         s => { debts  = s.val() || {}; renderNetWorth(); });
   }
 
@@ -1174,6 +1223,8 @@
     if (page === 'cashflow') renderCashflow();
     if (page === 'help') {}
     if (page === 'insights') renderInsights();
+    if (page === 'comparativa') renderComparativa();
+    if (page === 'pat-historial') renderPatHistorial();
   };
 
   // ── DASHBOARD ──
@@ -2487,6 +2538,190 @@
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
+
+  // ── BUDGET ALERTS ──
+  function checkBudgetAlerts() {
+    const now = new Date();
+    const month = now.getMonth(), year = now.getFullYear();
+    const catSpent = {};
+    Object.values(transactions).forEach(t => {
+      if (t.type !== 'expense') return;
+      const d = new Date(t.date + 'T12:00:00');
+      if (d.getMonth() !== month || d.getFullYear() !== year) return;
+      catSpent[t.category] = (catSpent[t.category] || 0) + t.amount;
+    });
+    const alerts = [];
+    Object.values(budgets).forEach(b => {
+      const spent = catSpent[b.category] || 0;
+      const pct = b.limit > 0 ? spent / b.limit : 0;
+      if (pct >= 0.8 && pct < 1) alerts.push({ cat: b.category, pct: Math.round(pct * 100), remaining: b.limit - spent });
+      if (pct >= 1) alerts.push({ cat: b.category, pct: Math.round(pct * 100), over: true, extra: spent - b.limit });
+    });
+    renderBudgetAlerts(alerts);
+  }
+
+  function renderBudgetAlerts(alerts) {
+    let banner = document.getElementById('budget-alert-banner');
+    if (!banner) {
+      const ref_el = document.getElementById('page-dashboard');
+      if (!ref_el) return;
+      banner = document.createElement('div');
+      banner.id = 'budget-alert-banner';
+      banner.style.cssText = 'margin-bottom:20px;display:flex;flex-direction:column;gap:8px;';
+      ref_el.insertBefore(banner, ref_el.children[2]);
+    }
+    if (!alerts.length) { banner.innerHTML = ''; return; }
+    banner.innerHTML = alerts.map(a =>
+      '<div style="background:' + (a.over ? 'var(--red-bg)' : 'rgba(193,122,74,0.08)') + ';border:1px solid ' + (a.over ? 'var(--red)' : 'var(--warn)') + ';border-left:4px solid ' + (a.over ? 'var(--red)' : 'var(--warn)') + ';padding:12px 20px;display:flex;justify-content:space-between;align-items:center;">' +
+      '<div><span style="font-size:0.75rem;font-weight:600;color:' + (a.over ? 'var(--red)' : 'var(--warn)') + ';">' + (a.over ? '⚠ Presupuesto superado' : '⚠ Cerca del límite') + '</span>' +
+      '<span style="font-size:0.78rem;color:var(--ink2);margin-left:8px;">' + a.cat + ' — ' + a.pct + '% usado' + (a.over ? ' (+' + fmt(a.extra) + ' de exceso)' : ' (' + fmt(a.remaining) + ' restante)') + '</span></div>' +
+      '</div>'
+    ).join('');
+  }
+
+  // ── COMPARATIVA 6 MESES ──
+  let comparativaChart = null;
+  function renderComparativa() {
+    const now = new Date();
+    const COLORS = ['#3d6b52','#c17a4a','#4a90c4','#9b59b6','#e67e22','#2ecc71','#e74c3c','#1abc9c'];
+    const months = [];
+    const catSet = new Set();
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push({ label: d.toLocaleString('es-AR', { month: 'short', year: '2-digit' }), month: d.getMonth(), year: d.getFullYear(), data: {} });
+    }
+    Object.values(transactions).filter(t => t.type === 'expense').forEach(t => {
+      const d = new Date(t.date + 'T12:00:00');
+      const m = months.find(m => m.month === d.getMonth() && m.year === d.getFullYear());
+      if (!m) return;
+      m.data[t.category] = (m.data[t.category] || 0) + t.amount;
+      catSet.add(t.category);
+    });
+    const cats = [...catSet].sort();
+    const datasets = cats.map((cat, i) => ({
+      label: cat,
+      data: months.map(m => Math.round(m.data[cat] || 0)),
+      backgroundColor: COLORS[i % COLORS.length],
+      borderRadius: 3,
+    }));
+    const ctx = document.getElementById('chart-comparativa');
+    if (!ctx) return;
+    if (comparativaChart) comparativaChart.destroy();
+    comparativaChart = new Chart(ctx, {
+      type: 'bar',
+      data: { labels: months.map(m => m.label), datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + fmt(ctx.raw) } }
+        },
+        scales: {
+          x: { stacked: true, ticks: { color: '#8a8070', font: { size: 11 } }, grid: { display: false } },
+          y: { stacked: true, ticks: { color: '#8a8070', font: { size: 11 }, callback: v => '$' + (v/1000).toFixed(0) + 'k' }, grid: { color: '#d4e6de' } }
+        }
+      }
+    });
+    const legend = document.getElementById('comparativa-legend');
+    if (legend) {
+      legend.innerHTML = cats.map((cat, i) =>
+        '<div style="display:flex;align-items:center;gap:6px;font-size:0.72rem;color:var(--ink2);">' +
+        '<div style="width:12px;height:12px;border-radius:2px;background:' + COLORS[i % COLORS.length] + ';flex-shrink:0;"></div>' +
+        cat + '</div>'
+      ).join('');
+    }
+  }
+
+  // ── HISTORIAL PATRIMONIO ──
+  let patHistChart = null;
+  window.snapshotPatrimonio = async () => {
+    const totalAssets = Object.values(assets).reduce((s, a) => s + (a.value || 0), 0);
+    const totalDebts  = Object.values(debts).reduce((s, d) => s + (d.value || 0), 0);
+    const neto = totalAssets - totalDebts;
+    const today = new Date().toISOString().slice(0, 10);
+    await push(ref(db, 'users/' + uid + '/patSnapshots'), { date: today, neto, activos: totalAssets, deudas: totalDebts });
+    alert('Snapshot guardado: ' + fmt(neto));
+  };
+
+  function renderPatHistorial() {
+    const snapArr = Object.entries(patSnapshots)
+      .map(([id, s]) => ({ id, ...s }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    const totalAssets = Object.values(assets).reduce((s, a) => s + (a.value || 0), 0);
+    const totalDebts  = Object.values(debts).reduce((s, d) => s + (d.value || 0), 0);
+    const neto = totalAssets - totalDebts;
+
+    const phActual = document.getElementById('ph-actual');
+    if (phActual) { phActual.textContent = fmt(neto); phActual.style.color = neto >= 0 ? 'var(--green)' : 'var(--red)'; }
+
+    if (snapArr.length) {
+      const maxSnap = snapArr.reduce((a, b) => b.neto > a.neto ? b : a);
+      const phMax = document.getElementById('ph-max');
+      const phMaxDate = document.getElementById('ph-max-date');
+      if (phMax) phMax.textContent = fmt(maxSnap.neto);
+      if (phMaxDate) phMaxDate.textContent = fmtDate(maxSnap.date);
+
+      if (snapArr.length >= 2) {
+        const prev = snapArr[snapArr.length - 2].neto;
+        const diff = neto - prev;
+        const pct  = prev !== 0 ? ((diff / Math.abs(prev)) * 100).toFixed(1) : 0;
+        const phVar = document.getElementById('ph-var');
+        const phVarPct = document.getElementById('ph-var-pct');
+        if (phVar) { phVar.textContent = (diff >= 0 ? '+' : '') + fmt(diff); phVar.style.color = diff >= 0 ? 'var(--green)' : 'var(--red)'; }
+        if (phVarPct) phVarPct.textContent = (diff >= 0 ? '+' : '') + pct + '% vs snapshot anterior';
+      }
+    }
+
+    const ctx = document.getElementById('chart-pat-historial');
+    if (ctx && snapArr.length) {
+      const labels = snapArr.map(s => fmtDate(s.date));
+      const data   = snapArr.map(s => s.neto);
+      if (patHistChart) patHistChart.destroy();
+      patHistChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Patrimonio neto',
+            data,
+            borderColor: '#3d6b52',
+            backgroundColor: 'rgba(61,107,82,0.08)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 5,
+            pointBackgroundColor: '#3d6b52',
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: ctx => 'Patrimonio: ' + fmt(ctx.raw) } }
+          },
+          scales: {
+            x: { ticks: { color: '#8a8070', font: { size: 11 } }, grid: { display: false } },
+            y: { ticks: { color: '#8a8070', font: { size: 11 }, callback: v => '$' + (v/1000000).toFixed(1) + 'M' }, grid: { color: '#d4e6de' } }
+          }
+        }
+      });
+    } else if (ctx) {
+      if (patHistChart) { patHistChart.destroy(); patHistChart = null; }
+      ctx.parentElement.innerHTML += '<div style="padding:40px;text-align:center;font-size:0.82rem;color:var(--muted);">Hacé clic en "+ Registrar snapshot hoy" para empezar a guardar el historial.</div>';
+    }
+
+    const list = document.getElementById('ph-snapshots-list');
+    if (list) {
+      if (!snapArr.length) { list.innerHTML = ''; return; }
+      list.innerHTML = '<div class="tx-list">' + [...snapArr].reverse().map(s =>
+        '<div class="tx-item">' +
+        '<div class="tx-item-left"><div class="tx-desc">' + fmtDate(s.date) + '</div>' +
+        '<div class="tx-cat">Activos ' + fmt(s.activos || 0) + ' − Deudas ' + fmt(s.deudas || 0) + '</div></div>' +
+        '<div class="tx-item-right"><div class="tx-amount ' + (s.neto >= 0 ? 'income' : 'expense') + '">' + fmt(s.neto) + '</div></div>' +
+        '</div>'
+      ).join('') + '</div>';
+    }
+  }
 
   // ── DARK MODE ──
   window.toggleDark = (on) => {
