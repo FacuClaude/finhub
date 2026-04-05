@@ -554,7 +554,7 @@
       position: fixed;
       top: 32px;
       right: 16px;
-      z-index: 420;
+      z-index: 9999;
       width: 40px;
       height: 40px;
       border-radius: 6px;
@@ -564,15 +564,13 @@
       box-shadow: 0 2px 8px rgba(61,107,82,0.25);
       align-items: center;
       justify-content: center;
-      transition: transform 0.2s;
     }
-    .hamburger:active { transform: scale(0.93); }
     .mobile-overlay {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(20,20,14,0.3);
-      z-index: 400;
+      background: rgba(20,20,14,0.4);
+      z-index: 8000;
     }
     .mobile-overlay.open { display: block; }
     @media (max-width: 900px) {
@@ -589,7 +587,7 @@
         box-shadow: none;
       }
       .sidebar.mobile-open { left: 0; box-shadow: 4px 0 24px rgba(0,0,0,0.18); background: var(--surface) !important; }
-      .hamburger { display: flex; z-index: 420; }
+      .hamburger { display: flex !important; }
       main { padding: 20px 14px; max-width: 100vw; overflow-x: hidden; }
       .cards-row { grid-template-columns: 1fr; gap: 12px; }
       .charts-row { grid-template-columns: 1fr; }
