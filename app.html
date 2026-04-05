@@ -109,6 +109,34 @@
     }
     body.dark { background: #141414 !important; color: #e0e0e0 !important; }
 
+    /* ── FINHUB LIVE TICKER ── */
+    .finhub-ticker {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 999;
+      background: #1a2e24; color: #7ecba1;
+      font-family: 'DM Sans', sans-serif; font-size: 0.7rem; font-weight: 500;
+      height: 26px; overflow: hidden; display: flex; align-items: center;
+    }
+    .finhub-ticker-label {
+      background: #3d6b52; color: white; padding: 0 12px;
+      font-size: 0.62rem; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; height: 100%; display: flex; align-items: center;
+      flex-shrink: 0; white-space: nowrap;
+    }
+    .finhub-ticker-track {
+      display: flex; gap: 0; white-space: nowrap;
+      animation: finhub-scroll 35s linear infinite;
+    }
+    .finhub-ticker-track:hover { animation-play-state: paused; }
+    @keyframes finhub-scroll {
+      0%   { transform: translateX(100vw); }
+      100% { transform: translateX(-50%); }
+    }
+    .finhub-ticker-item { padding: 0 20px; display: flex; align-items: center; gap: 7px; border-right: 1px solid #2d4a38; }
+    .finhub-ticker-name { color: #a0c8b0; }
+    .finhub-ticker-val  { color: #e8f5ee; font-weight: 600; }
+    .finhub-ticker-chg.pos { color: #7ecba1; }
+    .finhub-ticker-chg.neg { color: #e07070; }
+
     body::before {
       content: '';
       position: fixed; inset: 0;
@@ -120,7 +148,7 @@
     }
 
     /* ── SHELL ── */
-    .shell { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; position: relative; z-index: 1; }
+    .shell { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; position: relative; z-index: 1; margin-top: 26px; }
 
     /* ── SIDEBAR ── */
     .sidebar {
@@ -499,6 +527,15 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
+<div class="finhub-ticker" id="finhub-ticker">
+  <div class="finhub-ticker-label">finHub. Live</div>
+  <div style="overflow:hidden;flex:1;">
+    <div class="finhub-ticker-track" id="finhub-ticker-track">
+      <div class="finhub-ticker-item"><span class="finhub-ticker-name">Cargando...</span></div>
+    </div>
+  </div>
+</div>
+
 <div class="shell" id="shell" style="opacity:0;transition:opacity 0.3s">
 
   <!-- SIDEBAR -->
@@ -517,9 +554,7 @@
           <span style="color:#8a8070">fin</span><span style="color:#3d6b52">Hub.</span>
         </span>
       </div>
-      <div style="font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,sans-serif;font-size:0.72rem;color:#b4ac9e;letter-spacing:0.03em;margin-top:10px;padding-left:2px;line-height:1.5;">
-        Finanzas simples,<br>mente tranquila
-      </div>
+      <div style="font-size:0.65rem;color:#b4ac9e;margin-top:8px;">Finanzas simples, mente tranquila</div>
     </div>
     <nav>
       <div class="nav-item active" onclick="goTo('dashboard')">
@@ -1274,7 +1309,7 @@
 
   // ── SUBSCRIPTIONS ──
   function subscribeAll() {
-    fetchTCOficial();
+    loadFinHubTicker();
     onValue(ref(db, `users/${uid}/transactions`), s => { transactions = s.val() || {}; renderAll(); });
     onValue(ref(db, `users/${uid}/budgets`),      s => { budgets      = s.val() || {}; renderBudgets(); });
     onValue(ref(db, `users/${uid}/goals`),         s => { goals        = s.val() || {}; renderGoals(); });
@@ -1285,7 +1320,18 @@
     onValue(ref(db, `users/${uid}/debts`),         s => { debts  = s.val() || {}; renderNetWorth(); });
   }
 
-  function renderAll() { renderDashboard(); renderTxList(); renderBudgets(); renderRecurring(); }
+  function renderAll() {
+    renderDashboard();
+    // Always update summary banner even if not on transactions page
+    const allTx = Object.entries(transactions).map(([id,t]) => ({id,...t}));
+    renderTxSummaryBanner(allTx);
+    if (document.getElementById('page-transactions').classList.contains('active')) {
+      renderTxItems(document.getElementById('tx-list'), allTx.sort((a,b)=>new Date(b.date)-new Date(a.date)), true);
+    }
+    renderBudgets();
+    renderRecurring();
+    checkBudgetAlerts();
+  }
 
   // ── NAV ──
   window.goTo = page => {
@@ -1413,7 +1459,8 @@
       .filter(t => txFilter==='all'||t.type===txFilter)
       .sort((a,b) => new Date(b.date)-new Date(a.date));
     renderTxSummaryBanner(allTx);
-    renderTxItems(document.getElementById('tx-list'), txArr, true);
+    const container = document.getElementById('tx-list');
+    if (container) renderTxItems(container, txArr, true);
   }
 
   function renderTxSummaryBanner(allTx) {
@@ -2921,9 +2968,63 @@
 
   // ── TIPO DE CAMBIO & CURRENCY ──
   let appCurrency = 'ARS';
-  let tcOficial = 1000; // fallback, updated from API
+  let tcOficial = 1415; // fallback (approx oficial), updated from API
 
   // Fetch dolar oficial on load
+  // ── FINHUB LIVE TICKER ──
+  async function loadFinHubTicker() {
+    try {
+      const base = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '';
+      const [dolarRes, cedearRes] = await Promise.allSettled([
+        fetch(base+'/api/market?source=dolar').then(r=>r.json()),
+        fetch(base+'/api/market?source=cedears').then(r=>r.json()),
+      ]);
+
+      const items = [];
+      if (dolarRes.status==='fulfilled') {
+        const d = dolarRes.value;
+        if (d.blue?.venta)    items.push({name:'USD Blue',    val:'$'+Math.round(d.blue.venta).toLocaleString('es-AR'),    chg:'', cls:''});
+        if (d.oficial?.venta) items.push({name:'USD Oficial', val:'$'+Math.round(d.oficial.venta).toLocaleString('es-AR'), chg:'', cls:''});
+        if (d.mep?.venta)     items.push({name:'USD MEP',     val:'$'+Math.round(d.mep.venta).toLocaleString('es-AR'),     chg:'', cls:''});
+        if (d.ccl?.venta)     items.push({name:'USD CCL',     val:'$'+Math.round(d.ccl.venta).toLocaleString('es-AR'),     chg:'', cls:''});
+        if (d.oficial?.venta) tcOficial = d.oficial.venta;
+        const badge = document.getElementById('tc-badge');
+        if (badge) badge.textContent = 'TC Oficial: $'+Math.round(tcOficial).toLocaleString('es-AR');
+      }
+      if (cedearRes.status==='fulfilled') {
+        (cedearRes.value.cedears||[]).slice(0,6).forEach(c => {
+          const chg = parseFloat(c.cambio||0);
+          items.push({name:c.symbol, val:'USD '+parseFloat(c.precio).toFixed(1), chg:(chg>=0?'+':'')+chg.toFixed(2)+'%', cls:chg>0?'pos':chg<0?'neg':''});
+        });
+      }
+
+      // Add summary stats
+      const allTx = Object.values(transactions);
+      const now = new Date(), m = now.getMonth(), y = now.getFullYear();
+      const thisMo = allTx.filter(t=>{ const d=new Date(t.date+'T12:00:00'); return d.getMonth()===m&&d.getFullYear()===y; });
+      const ingMo = thisMo.filter(t=>t.type==='income').reduce((s,t)=>s+toDisplayAmount(t.amount,t.moneda||'ARS'),0);
+      const expMo = thisMo.filter(t=>t.type==='expense').reduce((s,t)=>s+toDisplayAmount(t.amount,t.moneda||'ARS'),0);
+      if (ingMo) items.push({name:'Ingresos mes', val:'$'+fmtNum(ingMo), chg:'', cls:''});
+      if (expMo) items.push({name:'Gastos mes',   val:'$'+fmtNum(expMo), chg:'', cls:''});
+      if (ingMo||expMo) items.push({name:'Balance', val:(ingMo-expMo>=0?'+':'-')+'$'+fmtNum(Math.abs(ingMo-expMo)), chg:'', cls:ingMo-expMo>=0?'pos':'neg'});
+
+      if (!items.length) return;
+
+      const html = [...items,...items,...items].map(it =>
+        '<div class="finhub-ticker-item">'+
+        '<span class="finhub-ticker-name">'+it.name+'</span>'+
+        '<span class="finhub-ticker-val">'+it.val+'</span>'+
+        (it.chg?'<span class="finhub-ticker-chg '+it.cls+'">'+it.chg+'</span>':'')+
+        '</div>'
+      ).join('');
+      const track = document.getElementById('finhub-ticker-track');
+      if (track) { track.innerHTML=html; track.style.animation='none'; track.offsetHeight; track.style.animation=''; }
+
+      // Re-render dashboard with real TC
+      renderAll();
+    } catch(e) {}
+  }
+
   async function fetchTCOficial() {
     try {
       const base = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '';
@@ -2968,6 +3069,8 @@
     const prefix = appCurrency === 'USD' ? 'USD ' : '$';
     return prefix + fmtNum(display);
   }
+
+  setInterval(() => { if(uid) loadFinHubTicker(); }, 60000);
 
   // ── DARK MODE ──
   window.toggleDark = (on) => {
