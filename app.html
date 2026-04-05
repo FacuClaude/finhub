@@ -623,6 +623,17 @@
     <div class="page" id="page-transactions">
       <div class="page-title">Movimientos</div>
       <div class="page-sub">Ingresos y gastos</div>
+
+      <!-- Resumen fijo -->
+      <div id="tx-summary-banner" style="background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--accent);padding:20px 24px;margin-bottom:20px;display:grid;grid-template-columns:repeat(6,1fr);gap:16px;">
+        <div><div style="font-size:0.6rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Ingresos</div><div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.1rem;font-weight:600;color:var(--green);" id="txs-ingresos">$0</div></div>
+        <div><div style="font-size:0.6rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Gastos fijos</div><div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.1rem;font-weight:600;color:var(--ink);" id="txs-fijos">$0</div></div>
+        <div><div style="font-size:0.6rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Gastos variables</div><div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.1rem;font-weight:600;color:var(--accent2);" id="txs-variables">$0</div></div>
+        <div><div style="font-size:0.6rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Saldo</div><div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.1rem;font-weight:600;" id="txs-saldo">$0</div></div>
+        <div><div style="font-size:0.6rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Tasa ahorro</div><div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.1rem;font-weight:600;" id="txs-ahorro">0%</div></div>
+        <div><div style="font-size:0.6rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Mayor gasto</div><div style="font-size:0.78rem;font-weight:500;color:var(--ink2);margin-top:4px;line-height:1.3;" id="txs-mayor">&mdash;</div></div>
+      </div>
+
       <div class="section-header">
         <div class="filters">
           <button class="filter-chip active" onclick="setFilter('all',this)">Todos</button>
@@ -1030,6 +1041,17 @@
       </select>
     </div>
     <div class="field"><label>Fecha</label><input type="date" id="edit-tx-date" /></div>
+    <div class="field">
+      <label>Tipo de gasto / ingreso</label>
+      <div style="display:flex;gap:10px;margin-top:4px;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.85rem;font-weight:400;text-transform:none;letter-spacing:0;color:var(--ink2);">
+          <input type="radio" name="edit-tx-variabilidad" id="edit-tx-fijo" value="fijo" checked style="accent-color:var(--accent);width:16px;height:16px;"> Fijo
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.85rem;font-weight:400;text-transform:none;letter-spacing:0;color:var(--ink2);">
+          <input type="radio" name="edit-tx-variabilidad" id="edit-tx-variable" value="variable" style="accent-color:var(--accent);width:16px;height:16px;"> Variable
+        </label>
+      </div>
+    </div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal('edit-tx')" style="flex:1">Cancelar</button>
       <button class="btn-primary" onclick="saveEditTx()" style="flex:2">Guardar cambios</button>
@@ -1059,6 +1081,17 @@
       </select>
     </div>
     <div class="field"><label>Fecha</label><input type="date" id="tx-date" /></div>
+    <div class="field">
+      <label>Tipo de gasto / ingreso</label>
+      <div style="display:flex;gap:10px;margin-top:4px;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.85rem;font-weight:400;text-transform:none;letter-spacing:0;color:var(--ink2);">
+          <input type="radio" name="tx-variabilidad" id="tx-fijo" value="fijo" checked style="accent-color:var(--accent);width:16px;height:16px;"> Fijo
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.85rem;font-weight:400;text-transform:none;letter-spacing:0;color:var(--ink2);">
+          <input type="radio" name="tx-variabilidad" id="tx-variable" value="variable" style="accent-color:var(--accent);width:16px;height:16px;"> Variable
+        </label>
+      </div>
+    </div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal('tx')" style="flex:1">Cancelar</button>
       <button class="btn-primary" onclick="saveTx()" style="flex:2">Guardar</button>
@@ -1319,11 +1352,42 @@
   };
 
   function renderTxList() {
-    const txArr = Object.entries(transactions)
-      .map(([id,t]) => ({id,...t}))
+    const allTx = Object.entries(transactions).map(([id,t]) => ({id,...t}));
+    const txArr = allTx
       .filter(t => txFilter==='all'||t.type===txFilter)
       .sort((a,b) => new Date(b.date)-new Date(a.date));
+    renderTxSummaryBanner(allTx);
     renderTxItems(document.getElementById('tx-list'), txArr, true);
+  }
+
+  function renderTxSummaryBanner(allTx) {
+    const now = new Date();
+    const m = now.getMonth(), y = now.getFullYear();
+    const thisMonth = allTx.filter(t => {
+      const d = new Date(t.date+'T12:00:00');
+      return d.getMonth()===m && d.getFullYear()===y;
+    });
+    const ingresos  = thisMonth.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+    const fijos     = thisMonth.filter(t=>t.type==='expense'&&t.variabilidad!=='variable').reduce((s,t)=>s+t.amount,0);
+    const variables = thisMonth.filter(t=>t.type==='expense'&&t.variabilidad==='variable').reduce((s,t)=>s+t.amount,0);
+    const totalExp  = fijos + variables;
+    const saldo     = ingresos - totalExp;
+    const ahorro    = ingresos > 0 ? Math.round((saldo/ingresos)*100) : 0;
+    // Mayor gasto (variable o fijo)
+    const expArr    = thisMonth.filter(t=>t.type==='expense').sort((a,b)=>b.amount-a.amount);
+    const mayor     = expArr[0];
+
+    const el = (id, val) => { const e=document.getElementById(id); if(e) e.textContent=val; };
+    const elStyle = (id, prop, val) => { const e=document.getElementById(id); if(e) e.style[prop]=val; };
+
+    el('txs-ingresos', fmt(ingresos));
+    el('txs-fijos',    fmt(fijos));
+    el('txs-variables',fmt(variables));
+    el('txs-saldo',    (saldo>=0?'+':'')+fmt(saldo));
+    elStyle('txs-saldo','color', saldo>=0?'var(--green)':'var(--red)');
+    el('txs-ahorro',   ahorro+'%');
+    elStyle('txs-ahorro','color', ahorro>=20?'var(--green)':ahorro>=10?'var(--warn)':'var(--red)');
+    el('txs-mayor',    mayor ? mayor.description+' '+fmt(mayor.amount) : '—');
   }
 
   window.toggleMonth = (el) => {
@@ -1334,9 +1398,15 @@
   };
 
   function txItemHtml(t, showDelete) {
+    const varLabel = t.variabilidad === 'variable' ? 'Variable' : 'Fijo';
+    const varColor = t.variabilidad === 'variable' ? 'var(--accent2)' : 'var(--accent)';
+    const varBg    = t.variabilidad === 'variable' ? 'rgba(193,122,74,0.1)' : 'rgba(61,107,82,0.08)';
     return `<div class="tx-item">
         <div class="tx-item-left">
-          <div class="tx-desc">${esc(t.description)}</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="tx-desc">${esc(t.description)}</div>
+            <span style="font-size:0.55rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:${varColor};background:${varBg};padding:2px 7px;border-radius:3px;flex-shrink:0;">${varLabel}</span>
+          </div>
           <div class="tx-cat">${esc(t.category)}</div>
           <div class="tx-date">${fmtDate(t.date)}</div>
         </div>
@@ -1663,7 +1733,8 @@
     if (!desc)            { alert('Agregá una descripción'); return; }
     if (!amount||amount<=0) { alert('Ingresá un monto válido'); return; }
     if (!date)            { alert('Seleccioná una fecha'); return; }
-    await push(ref(db,`users/${uid}/transactions`),{description:desc,amount,category:cat,type:txType,date,createdAt:Date.now()});
+    const variabilidad = document.querySelector('input[name="tx-variabilidad"]:checked')?.value || 'fijo';
+    await push(ref(db,`users/${uid}/transactions`),{description:desc,amount,category:cat,type:txType,date,variabilidad,createdAt:Date.now()});
     closeModal('tx');
   };
 
@@ -2001,6 +2072,9 @@
     document.getElementById('edit-tx-date').value  = t.date;
     document.getElementById('edit-tx-cat').value   = t.category;
     setEditType(t.type);
+    const varVal = t.variabilidad || 'fijo';
+    document.getElementById('edit-tx-fijo').checked     = varVal === 'fijo';
+    document.getElementById('edit-tx-variable').checked = varVal === 'variable';
     openModal('edit-tx');
   };
 
@@ -2019,8 +2093,9 @@
     if (!desc)            { alert('Agregá una descripción'); return; }
     if (!amount||amount<=0) { alert('Ingresá un monto válido'); return; }
     if (!date)            { alert('Seleccioná una fecha'); return; }
+    const varEdit = document.querySelector('input[name="edit-tx-variabilidad"]:checked')?.value || 'fijo';
     await set(ref(db, 'users/'+uid+'/transactions/'+id), {
-      description: desc, amount, category: cat, type: editTxType, date, createdAt: transactions[id].createdAt || Date.now()
+      description: desc, amount, category: cat, type: editTxType, date, variabilidad: varEdit, createdAt: transactions[id]?.createdAt || Date.now()
     });
     closeModal('edit-tx');
   };
