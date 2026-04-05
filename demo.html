@@ -609,7 +609,7 @@
   </div>
 </div>
 
-<div class="shell" id="shell" style="opacity:0;transition:opacity 0.3s">
+<div class="shell" id="shell">
 
   <!-- SIDEBAR -->
   <aside class="sidebar">
@@ -703,7 +703,7 @@
   </aside>
 
   <!-- MAIN -->
-  <main>
+  <main id="main-content" style="opacity:0;transition:opacity 0.3s">
 
     <!-- DASHBOARD -->
     <div class="page active" id="page-dashboard">
@@ -1489,7 +1489,7 @@
     const p = document.getElementById('dp').value.trim();
     if (u==='test' && p==='test') {
       document.getElementById('demo-ov').remove();
-      document.getElementById('shell').style.opacity='1';
+      const _mc2 = document.getElementById('main-content'); if(_mc2) _mc2.style.opacity='1';
       uid='demo-user';
       document.getElementById('user-email').textContent='test@finhub.demo';
       fetchTCOficial();
