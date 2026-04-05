@@ -449,6 +449,38 @@
     /* ── EMPTY ── */
     .empty-state { padding: 52px; text-align: center; font-size: 0.82rem; color: var(--muted); background: var(--surface); border: 1px solid var(--border); grid-column: 1 / -1; }
 
+    /* ── MODO FOCO ── */
+    .foco-active .tx-amount,
+    .foco-active .card-value,
+    .foco-active #dash-balance,
+    .foco-active #dash-income,
+    .foco-active #dash-expense,
+    .foco-active #txs-ingresos,
+    .foco-active #txs-fijos,
+    .foco-active #txs-variables,
+    .foco-active #txs-saldo,
+    .foco-active #txs-ahorro,
+    .foco-active #txs-mayor,
+    .foco-active .nw-value,
+    .foco-active #nw-total,
+    .foco-active #nw-assets,
+    .foco-active #nw-debts {
+      color: transparent !important;
+      background: var(--border) !important;
+      border-radius: 4px !important;
+      user-select: none !important;
+    }
+    .foco-btn { 
+      display:flex; align-items:center; gap:8px; width:100%;
+      padding:8px 12px; border:1px solid var(--border);
+      background:transparent; color:var(--muted);
+      font-family:'DM Sans',sans-serif; font-size:0.7rem;
+      font-weight:500; letter-spacing:0.1em; text-transform:uppercase;
+      cursor:pointer; border-radius:4px; transition:all 0.2s;
+    }
+    .foco-btn:hover { border-color:var(--accent); color:var(--accent); }
+    .foco-btn.active { background:var(--accent); color:white; border-color:var(--accent); }
+
     /* ── CURRENCY SWITCH ── */
     .currency-bar {
       display: flex; align-items: center; justify-content: space-between;
@@ -607,6 +639,10 @@
       </div>
     </nav>
     <div class="sidebar-footer">
+      <button class="foco-btn" id="foco-btn" onclick="toggleFoco()" title="Ocultar montos">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+        Modo foco
+      </button>
       <div class="theme-toggle">
         <span class="theme-label">Modo noche</span>
         <label class="switch">
@@ -889,6 +925,11 @@
       <div class="page-sub">Cómo usar finHub</div>
       <div style="display:grid;gap:16px;max-width:720px;">
 
+        <div style="background:var(--accent);color:white;padding:20px 24px;border-radius:2px;">
+          <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:8px;opacity:0.8;">Novedades recientes</div>
+          <div style="font-size:0.85rem;line-height:1.7;opacity:0.95;">Switch ARS/USD con TC Oficial · Fijo/Variable por movimiento · Moneda por movimiento (ARS o USD) · Modo Foco · Selector de período en Dashboard · Importar Excel · Barra finHub. Live</div>
+        </div>
+
         <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:24px;">
           <div style="font-size:0.72rem;font-weight:500;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;">📊 Dashboard</div>
           <div style="font-size:0.85rem;color:var(--ink2);line-height:1.75;">Pantalla principal. Balance del mes, ingresos y gastos, gráfico de los últimos 6 meses y desglose por categoría. Muestra alertas de pagos próximos y alertas de presupuesto superado.</div>
@@ -947,6 +988,36 @@
         <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:24px;">
           <div style="font-size:0.72rem;font-weight:500;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;">📂 Importar Excel</div>
           <div style="font-size:0.85rem;color:var(--ink2);line-height:1.75;">En Movimientos, botón "↑ Importar". Subí tu archivo .xlsx o .csv, mapeá las columnas (fecha, descripción, monto, categoría) y la app importa todos los registros automáticamente. Compatible con cualquier formato.</div>
+        </div>
+
+        <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:24px;">
+          <div style="font-size:0.72rem;font-weight:500;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;">&#128065; Modo Foco</div>
+          <div style="font-size:0.85rem;color:var(--ink2);line-height:1.75;">Ocultá todos los montos con un clic para mayor privacidad cuando estás en público. Botón en el panel izquierdo, abajo del menú. Hacé clic de nuevo para volver a mostrar los valores.</div>
+        </div>
+
+        <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:24px;">
+          <div style="font-size:0.72rem;font-weight:500;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;">&#128183; ARS / USD por movimiento</div>
+          <div style="font-size:0.85rem;color:var(--ink2);line-height:1.75;">Al agregar un movimiento podés indicar si es en pesos o en dólares. El switch ARS/USD en Movimientos convierte todos los montos al tipo de cambio oficial. Siempre se muestra el equivalente en la otra moneda debajo del monto.</div>
+        </div>
+
+        <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:24px;">
+          <div style="font-size:0.72rem;font-weight:500;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;">&#128197; Selector de período</div>
+          <div style="font-size:0.85rem;color:var(--ink2);line-height:1.75;">El Dashboard tiene un selector de mes arriba a la derecha. Elegí cualquier mes con datos para ver su resumen. Útil cuando tenés historial importado de varios meses.</div>
+        </div>
+
+        <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:24px;">
+          <div style="font-size:0.72rem;font-weight:500;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;">&#128202; Fijo / Variable</div>
+          <div style="font-size:0.85rem;color:var(--ink2);line-height:1.75;">Cada movimiento tiene una etiqueta Fijo o Variable. Al elegir "Gasto" se preselecciona Variable, al elegir "Ingreso" se preselecciona Fijo. El resumen de Movimientos muestra el total de gastos fijos y variables por separado.</div>
+        </div>
+
+        <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:24px;">
+          <div style="font-size:0.72rem;font-weight:500;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;">&#128228; Importar Excel</div>
+          <div style="font-size:0.85rem;color:var(--ink2);line-height:1.75;">En Movimientos → Importar. Subí un .xlsx o .csv, mapeá las columnas (fecha, descripción, monto, categoría) y la app importa todo automáticamente en lotes. <strong>Importante:</strong> usá montos negativos para gastos y positivos para ingresos con el modo "El signo del monto".</div>
+        </div>
+
+        <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:24px;">
+          <div style="font-size:0.72rem;font-weight:500;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;">&#9883; finHub. Live</div>
+          <div style="font-size:0.85rem;color:var(--ink2);line-height:1.75;">Barra animada en la parte superior con datos en tiempo real: tipos de dólar (Blue, Oficial, MEP, CCL), CEDEARs principales, tus ingresos/gastos del mes, tasa de ahorro y próximo vencimiento. Se actualiza cada 60 segundos.</div>
         </div>
 
         <div style="background:var(--surface);border:1px solid var(--border);padding:24px;">
@@ -1090,8 +1161,8 @@
     <input type="hidden" id="edit-tx-id" />
     <div class="field">
       <div class="type-toggle">
-        <button type="button" class="type-btn active-income" id="edit-type-income" onclick="window.setEditType('income')">Ingreso</button>
-        <button type="button" class="type-btn" id="edit-type-expense" onclick="window.setEditType('expense')">Gasto</button>
+        <button type="button" class="type-btn active-income" id="edit-type-income" data-type="income">Ingreso</button>
+        <button type="button" class="type-btn" id="edit-type-expense" data-type="expense">Gasto</button>
       </div>
     </div>
     <div class="field"><label>Descripción</label><input type="text" id="edit-tx-desc" placeholder="Ej: Sueldo, Supermercado…" /></div>
@@ -1141,8 +1212,8 @@
     <div class="modal-title">Nueva transacción</div>
     <div class="field">
       <div class="type-toggle">
-        <button type="button" class="type-btn active-income" id="type-income" onclick="window.setType('income')">Ingreso</button>
-        <button type="button" class="type-btn" id="type-expense" onclick="window.setType('expense')">Gasto</button>
+        <button type="button" class="type-btn active-income" id="type-income" data-type="income">Ingreso</button>
+        <button type="button" class="type-btn" id="type-expense" data-type="expense">Gasto</button>
       </div>
     </div>
     <div class="field"><label>Descripción</label><input type="text" id="tx-desc" placeholder="Ej: Sueldo, Supermercado…" /></div>
@@ -1298,6 +1369,19 @@
   let monthlyChart, catChart;
 
   // ── AUTH ──
+  // ── TYPE TOGGLE LISTENERS (immune to module scoping) ──
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('[data-type]');
+    if (!btn) return;
+    const type = btn.dataset.type;
+    const isEdit = btn.id.startsWith('edit-');
+    if (isEdit) {
+      window.setEditType(type);
+    } else {
+      window.setType(type);
+    }
+  });
+
   onAuthStateChanged(auth, user => {
     if (!user) { window.location.href = 'index.html'; return; }
     uid = user.uid;
@@ -1889,7 +1973,6 @@
 
   window.setType = type => {
     txType = type;
-    window._txType = type; // backup for onclick scope
     document.getElementById('type-income').className  = 'type-btn'+(type==='income' ?' active-income':'');
     document.getElementById('type-expense').className = 'type-btn'+(type==='expense'?' active-expense':'');
     const fijoRadio = document.getElementById('tx-fijo');
@@ -1910,8 +1993,7 @@
     if (!date)            { alert('Seleccioná una fecha'); return; }
     const variabilidad = document.querySelector('input[name="tx-variabilidad"]:checked')?.value || 'fijo';
     const monedaTx = document.querySelector('input[name="tx-moneda"]:checked')?.value || 'ARS';
-    const finalType = window._txType || txType;
-    await push(ref(db,`users/${uid}/transactions`),{description:desc,amount,category:cat,type:finalType,date,variabilidad,moneda:monedaTx,createdAt:Date.now()});
+    await push(ref(db,`users/${uid}/transactions`),{description:desc,amount,category:cat,type:txType,date,variabilidad,moneda:monedaTx,createdAt:Date.now()});
     // Point dashboard to the month of the new transaction
     dashMonthKey = date.substring(0,7);
     closeModal('tx');
@@ -3071,7 +3153,22 @@
       const expMo = thisMo.filter(t=>t.type==='expense').reduce((s,t)=>s+toDisplayAmount(t.amount,t.moneda||'ARS'),0);
       if (ingMo) items.push({name:'Ingresos mes', val:'$'+fmtNum(ingMo), chg:'', cls:''});
       if (expMo) items.push({name:'Gastos mes',   val:'$'+fmtNum(expMo), chg:'', cls:''});
-      if (ingMo||expMo) items.push({name:'Balance', val:(ingMo-expMo>=0?'+':'-')+'$'+fmtNum(Math.abs(ingMo-expMo)), chg:'', cls:ingMo-expMo>=0?'pos':'neg'});
+      if (ingMo||expMo) {
+        items.push({name:'Balance', val:(ingMo-expMo>=0?'+':'-')+'$'+fmtNum(Math.abs(ingMo-expMo)), chg:'', cls:ingMo-expMo>=0?'pos':'neg'});
+        const ahorro = ingMo>0 ? Math.round(((ingMo-expMo)/ingMo)*100) : 0;
+        items.push({name:'Tasa ahorro', val:ahorro+'%', chg:'', cls:ahorro>=20?'pos':ahorro>=0?'neu':'neg'});
+      }
+      // Days to next reminder
+      const todayNum = now.getDate();
+      const rems = Object.values(reminders).filter(r=>!r.paidMonth||r.paidMonth!==y+'-'+m);
+      if (rems.length) {
+        const next = rems.map(r=>{
+          let dias = r.day - todayNum;
+          if (dias < 0) dias += new Date(y, m+1, 0).getDate();
+          return {name:r.name, dias};
+        }).sort((a,b)=>a.dias-b.dias)[0];
+        items.push({name:'Vence: '+next.name, val:next.dias===0?'hoy':next.dias+' días', chg:'', cls:next.dias<=3?'neg':next.dias<=7?'neu':''});
+      }
 
       if (!items.length) return;
 
@@ -3136,6 +3233,20 @@
   }
 
   setInterval(() => { if(uid) loadFinHubTicker(); }, 60000);
+
+  // ── MODO FOCO ──
+  let focoActive = false;
+  window.toggleFoco = () => {
+    focoActive = !focoActive;
+    document.getElementById('shell').classList.toggle('foco-active', focoActive);
+    const btn = document.getElementById('foco-btn');
+    if (btn) {
+      btn.classList.toggle('active', focoActive);
+      btn.innerHTML = focoActive
+        ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Modo foco'
+        : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg> Modo foco';
+    }
+  };
 
   // ── DARK MODE ──
   window.toggleDark = (on) => {
