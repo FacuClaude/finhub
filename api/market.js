@@ -107,6 +107,31 @@ export default async function handler(req) {
       ] };
     }
 
+    else if (source === 'crypto') {
+      const symbols = ['BTC-USD','ETH-USD','SOL-USD','BNB-USD'];
+      const res = await fetch(
+        `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbols.join(',')}&fields=symbol,shortName,regularMarketPrice,regularMarketChangePercent`,
+        { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' } }
+      );
+      if (res.ok) {
+        const raw = await res.json();
+        const quotes = raw?.quoteResponse?.result || [];
+        data = { crypto: quotes.map(q => ({
+          symbol: q.symbol.replace('-USD',''),
+          nombre: q.shortName || q.symbol,
+          precio: q.regularMarketPrice,
+          cambio: q.regularMarketChangePercent?.toFixed(2)
+        })) };
+      } else {
+        data = { crypto: [
+          { symbol:'BTC',  nombre:'Bitcoin',  precio:67500, cambio:'2.40' },
+          { symbol:'ETH',  nombre:'Ethereum', precio:3420,  cambio:'1.80' },
+          { symbol:'SOL',  nombre:'Solana',   precio:168.5, cambio:'3.10' },
+          { symbol:'BNB',  nombre:'BNB',      precio:585.2, cambio:'0.90' },
+        ], source:'fallback' };
+      }
+    }
+
     return new Response(JSON.stringify(data), { headers: CORS });
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: CORS });
