@@ -1347,43 +1347,35 @@
 
   // ── DASHBOARD ──
   function renderDashboard() {
-    const now = new Date(), month = now.getMonth(), year = now.getFullYear();
     const txArr = Object.entries(transactions).map(([id,t]) => ({id,...t}));
-    // Try current month first, fall back to most recent month with data
-    let thisMonth = txArr.filter(t => {
-      const d = new Date(t.date+'T12:00:00');
-      return d.getMonth()===month && d.getFullYear()===year;
-    });
-    let dashLabel = null;
-    if (!thisMonth.length && txArr.length) {
-      const sorted = [...txArr].sort((a,b) => new Date(b.date)-new Date(a.date));
-      const latestDate = new Date(sorted[0].date+'T12:00:00');
-      const lm = latestDate.getMonth(), ly = latestDate.getFullYear();
-      thisMonth = txArr.filter(t => {
-        const d = new Date(t.date+'T12:00:00');
-        return d.getMonth()===lm && d.getFullYear()===ly;
-      });
-      dashLabel = latestDate.toLocaleString('es-AR',{month:'long',year:'numeric'});
+    const { txs: thisMonth, key: activeKey } = getActiveMonth(txArr);
+
+    // Render month selector
+    const months = getAvailableMonths(txArr);
+    const selectorEl = document.getElementById('dash-month-selector');
+    if (selectorEl) {
+      selectorEl.innerHTML = months.map(k =>
+        '<option value="'+k+'"'+(k===activeKey?' selected':'')+'>'+getMonthLabel(k)+'</option>'
+      ).join('');
     }
     const subEl = document.querySelector('#page-dashboard .page-sub');
-    if (subEl) subEl.textContent = dashLabel ? 'Mostrando: '+dashLabel : 'Tu panorama financiero';
+    if (subEl) subEl.textContent = 'Tu panorama financiero';
+
     const incomes  = thisMonth.filter(t => t.type==='income');
     const expenses = thisMonth.filter(t => t.type==='expense');
-    // Convert using tcOficial - simple direct conversion, no dependency on appCurrency
     const toARS = t => (t.moneda === 'USD') ? (t.amount * tcOficial) : t.amount;
     const totalIn  = incomes.reduce((s,t) => s+toARS(t), 0);
     const totalEx  = expenses.reduce((s,t) => s+toARS(t), 0);
     const balance  = totalIn - totalEx;
-    const prefix   = appCurrency === 'USD' ? 'USD ' : '$';
 
-    document.getElementById('dash-balance').textContent      = fmt(balance);
-    document.getElementById('dash-income').textContent       = fmt(totalIn);
-    document.getElementById('dash-expense').textContent      = fmt(totalEx);
-    document.getElementById('dash-income-count').textContent  = `${incomes.length} ingreso${incomes.length!==1?'s':''}`;
-    document.getElementById('dash-expense-count').textContent = `${expenses.length} gasto${expenses.length!==1?'s':''}`;
-    document.getElementById('dash-balance').className = 'card-value ' + (balance>=0?'positive':'negative');
+    document.getElementById('dash-balance').textContent       = fmt(balance);
+    document.getElementById('dash-income').textContent        = fmt(totalIn);
+    document.getElementById('dash-expense').textContent       = fmt(totalEx);
+    document.getElementById('dash-income-count').textContent  = incomes.length+' ingreso'+(incomes.length!==1?'s':'');
+    document.getElementById('dash-expense-count').textContent = expenses.length+' gasto'+(expenses.length!==1?'s':'');
+    document.getElementById('dash-balance').className = 'card-value '+(balance>=0?'positive':'negative');
 
-    const recent = [...txArr].sort((a,b) => new Date(b.date)-new Date(a.date)).slice(0,5);
+    const recent = [...txArr].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,5);
     renderTxItems(document.getElementById('dash-recent'), recent, false);
     renderMonthlyChart(txArr);
     renderCatChart(expenses);
@@ -1472,22 +1464,7 @@
   }
 
   function renderTxSummaryBanner(allTx) {
-    const now = new Date();
-    let m = now.getMonth(), y = now.getFullYear();
-    let thisMonth = allTx.filter(t => {
-      const d = new Date(t.date+'T12:00:00');
-      return d.getMonth()===m && d.getFullYear()===y;
-    });
-    // If no data this month, use most recent month with data
-    if (!thisMonth.length && allTx.length) {
-      const sorted = [...allTx].sort((a,b) => new Date(b.date)-new Date(a.date));
-      const ld = new Date(sorted[0].date+'T12:00:00');
-      m = ld.getMonth(); y = ld.getFullYear();
-      thisMonth = allTx.filter(t => {
-        const d = new Date(t.date+'T12:00:00');
-        return d.getMonth()===m && d.getFullYear()===y;
-      });
-    }
+    const { txs: thisMonth } = getActiveMonth(allTx);
     // Convert everything to display currency
     const conv = t => toDisplayAmount(t.amount, t.moneda || 'ARS');
     const prefix = appCurrency === 'USD' ? 'USD ' : '$';
@@ -2993,6 +2970,54 @@
   let tcOficial = 1415; // fallback (approx oficial), updated from API
 
   // Fetch dolar oficial on load
+  // ── ACTIVE MONTH HELPER ──
+  function getActiveMonth(txArr) {
+    const now = new Date();
+    const curKey = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+    // If dashMonthKey set, use it
+    const key = dashMonthKey || curKey;
+    const [ky, km] = key.split('-').map(Number);
+    let filtered = txArr.filter(t => {
+      const d = new Date(t.date+'T12:00:00');
+      return d.getFullYear()===ky && d.getMonth()+1===km;
+    });
+    // If no data for selected key, fall back to most recent month with data
+    if (!filtered.length && txArr.length) {
+      const sorted = [...txArr].sort((a,b) => new Date(b.date)-new Date(a.date));
+      const ld = new Date(sorted[0].date+'T12:00:00');
+      const fallKey = ld.getFullYear()+'-'+String(ld.getMonth()+1).padStart(2,'0');
+      if (dashMonthKey === null) dashMonthKey = fallKey;
+      filtered = txArr.filter(t => {
+        const d = new Date(t.date+'T12:00:00');
+        return d.getFullYear()===ld.getFullYear() && d.getMonth()===ld.getMonth();
+      });
+      return { txs: filtered, key: fallKey };
+    }
+    return { txs: filtered, key };
+  }
+
+  function getMonthLabel(key) {
+    if (!key) return '';
+    const [y,m] = key.split('-').map(Number);
+    return new Date(y, m-1, 1).toLocaleString('es-AR',{month:'long',year:'numeric'});
+  }
+
+  function getAvailableMonths(txArr) {
+    const keys = new Set();
+    txArr.forEach(t => {
+      const d = new Date(t.date+'T12:00:00');
+      keys.add(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'));
+    });
+    return [...keys].sort((a,b) => b.localeCompare(a));
+  }
+
+  window.setDashMonth = key => {
+    dashMonthKey = key;
+    renderDashboard();
+    const allTx = Object.entries(transactions).map(([id,t])=>({id,...t}));
+    renderTxSummaryBanner(allTx);
+  };
+
   // ── FINHUB LIVE TICKER ──
   async function loadFinHubTicker() {
     try {
