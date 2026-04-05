@@ -3292,12 +3292,18 @@
   window.toggleMobileNav = () => {
     const sidebar = document.querySelector('.sidebar');
     const overlay = document.getElementById('mobile-overlay');
+    const main = document.getElementById('main-content');
     const isOpen = sidebar.classList.toggle('mobile-open');
     overlay.classList.toggle('open', isOpen);
+    if (main) main.style.pointerEvents = isOpen ? 'none' : '';
   };
   window.closeMobileNav = () => {
-    document.querySelector('.sidebar').classList.remove('mobile-open');
-    document.getElementById('mobile-overlay').classList.remove('open');
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('mobile-overlay');
+    const main = document.getElementById('main-content');
+    sidebar.classList.remove('mobile-open');
+    overlay.classList.remove('open');
+    if (main) main.style.pointerEvents = '';
   };
   // Close nav when navigating on mobile
   const _origGoTo = window.goTo;
