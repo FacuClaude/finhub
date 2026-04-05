@@ -478,6 +478,7 @@
       .budget-grid, .goals-grid { grid-template-columns: 1fr; }
     }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 <div class="shell" id="shell" style="opacity:0;transition:opacity 0.3s">
@@ -627,7 +628,8 @@
           <button class="filter-chip" onclick="setFilter('expense',this)">Gastos</button>
         </div>
         <div style="display:flex;gap:8px;">
-          <button class="btn-export" onclick="exportSection('transactions')">↓ Excel</button>
+          <button class="btn-export" onclick="openModal('import')">&#8679; Importar</button>
+          <button class="btn-export" onclick="exportSection('transactions')">&#8681; Excel</button>
           <button class="btn-primary" onclick="openModal('tx')">+ Agregar</button>
         </div>
       </div>
@@ -856,6 +858,67 @@
     </div>
 
   </main>
+</div>
+
+<!-- MODAL IMPORTAR EXCEL -->
+<div class="overlay" id="modal-import" onclick="closeModal('import')">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:580px;">
+    <div class="modal-title">Importar desde Excel</div>
+
+    <!-- Step 1: Upload -->
+    <div id="import-step1">
+      <div style="font-size:0.8rem;color:var(--ink2);line-height:1.7;margin-bottom:20px;">
+        Subí tu archivo Excel o CSV. La app va a detectar las columnas y te va a pedir que las mapees a los campos de finHub.
+      </div>
+      <div style="border:2px dashed var(--border2);padding:32px;text-align:center;cursor:pointer;border-radius:4px;transition:border-color 0.2s;" id="import-dropzone" onclick="document.getElementById('import-file').click()">
+        <div style="font-size:2rem;margin-bottom:8px;">&#128196;</div>
+        <div style="font-size:0.82rem;color:var(--muted);">Clic para seleccionar archivo</div>
+        <div style="font-size:0.7rem;color:var(--muted2);margin-top:4px;">.xlsx, .xls, .csv</div>
+      </div>
+      <input type="file" id="import-file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleImportFile(this)">
+    </div>
+
+    <!-- Step 2: Map columns -->
+    <div id="import-step2" style="display:none;">
+      <div style="font-size:0.78rem;color:var(--muted);margin-bottom:16px;" id="import-file-info"></div>
+      <div style="font-size:0.7rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">Mapeá las columnas de tu archivo</div>
+      <div id="import-mapping" style="display:grid;gap:10px;"></div>
+      <div style="margin-top:16px;padding:12px 16px;background:var(--accent-bg);border:1px solid var(--accent);border-radius:4px;font-size:0.78rem;color:var(--ink2);">
+        <strong>Tipo de movimiento:</strong>
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+            <input type="radio" name="import-type-src" value="column" onchange="toggleImportTypeMode('column')"> Una columna indica el tipo (Ingreso/Gasto)
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+            <input type="radio" name="import-type-src" value="sign" checked onchange="toggleImportTypeMode('sign')"> El signo del monto (+/-)
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+            <input type="radio" name="import-type-src" value="all-expense" onchange="toggleImportTypeMode('all-expense')"> Todo son gastos
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+            <input type="radio" name="import-type-src" value="all-income" onchange="toggleImportTypeMode('all-income')"> Todo son ingresos
+          </label>
+        </div>
+        <div id="import-type-col-wrap" style="display:none;margin-top:10px;">
+          <label style="font-size:0.7rem;color:var(--muted);">Columna de tipo:</label>
+          <select id="import-type-col" style="margin-top:4px;width:100%;"></select>
+        </div>
+      </div>
+      <div style="font-size:0.7rem;color:var(--muted2);margin-top:12px;" id="import-preview-label"></div>
+    </div>
+
+    <!-- Step 3: Result -->
+    <div id="import-step3" style="display:none;text-align:center;padding:20px 0;">
+      <div style="font-size:2.5rem;margin-bottom:12px;">&#10003;</div>
+      <div style="font-size:1rem;font-weight:600;color:var(--ink);" id="import-result-msg"></div>
+      <div style="font-size:0.8rem;color:var(--muted);margin-top:6px;" id="import-result-sub"></div>
+    </div>
+
+    <div class="modal-actions" style="margin-top:24px;">
+      <button class="btn-secondary" onclick="closeModal('import');resetImport();" style="flex:1">Cancelar</button>
+      <button class="btn-primary" id="import-action-btn" onclick="runImportStep()" style="flex:2;display:none;">Siguiente</button>
+    </div>
+  </div>
 </div>
 
 <!-- MODAL ACTIVO -->
@@ -1532,6 +1595,7 @@
     if (name==='reminder') {
       ['rem-name','rem-amount','rem-day'].forEach(id => document.getElementById(id).value='');
     }
+    if (name==='import') { resetImport(); }
     if (name==='asset') {
       ['asset-name','asset-value'].forEach(id => document.getElementById(id).value='');
     }
@@ -2170,6 +2234,193 @@
   }
 
   // ── EXPORT TO EXCEL ──
+  // ── IMPORT EXCEL ──
+  let importData = { rows: [], headers: [], step: 1 };
+  let importTypeMode = 'sign';
+
+  window.toggleImportTypeMode = mode => {
+    importTypeMode = mode;
+    document.getElementById('import-type-col-wrap').style.display = mode === 'column' ? 'block' : 'none';
+  };
+
+  window.handleImportFile = async (input) => {
+    const file = input.files[0];
+    if (!file) return;
+
+    const info = document.getElementById('import-file-info');
+    if (info) info.textContent = 'Archivo: ' + file.name + ' (' + (file.size/1024).toFixed(1) + ' KB)';
+
+    let rows = [];
+    if (file.name.endsWith('.csv')) {
+      const text = await file.text();
+      const lines = text.split('\n').filter(l => l.trim());
+      rows = lines.map(l => l.split(',').map(c => c.replace(/^"|"$/g,'').trim()));
+    } else {
+      const buf = await file.arrayBuffer();
+      const wb  = XLSX.read(buf, { type: 'array' });
+      const ws  = wb.Sheets[wb.SheetNames[0]];
+      rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+    }
+
+    rows = rows.filter(r => r.some(c => String(c).trim()));
+    if (rows.length < 2) { alert('El archivo no tiene datos suficientes.'); return; }
+
+    importData.headers = rows[0].map((h,i) => h ? String(h).trim() : 'Columna '+(i+1));
+    importData.rows    = rows.slice(1);
+    importData.step    = 2;
+
+    document.getElementById('import-step1').style.display = 'none';
+    document.getElementById('import-step2').style.display = 'block';
+    document.getElementById('import-action-btn').style.display = 'block';
+    document.getElementById('import-action-btn').textContent = 'Importar';
+
+    renderImportMapping();
+  };
+
+  function renderImportMapping() {
+    const fields = [
+      { id: 'map-fecha',       label: 'Fecha',       required: true  },
+      { id: 'map-descripcion', label: 'Descripción', required: true  },
+      { id: 'map-monto',       label: 'Monto',       required: true  },
+      { id: 'map-categoria',   label: 'Categoría',   required: false },
+    ];
+
+    const options = ['-- No mapear --', ...importData.headers];
+    const typeColSel = document.getElementById('import-type-col');
+    typeColSel.innerHTML = importData.headers.map(h => '<option value="'+h+'">'+h+'</option>').join('');
+
+    const mapping = document.getElementById('import-mapping');
+    mapping.innerHTML = fields.map(f => {
+      const autoIdx = importData.headers.findIndex(h => {
+        const hl = h.toLowerCase();
+        if (f.id==='map-fecha')       return hl.includes('fecha') || hl.includes('date') || hl.includes('dia');
+        if (f.id==='map-descripcion') return hl.includes('desc') || hl.includes('detalle') || hl.includes('concepto') || hl.includes('nombre');
+        if (f.id==='map-monto')       return hl.includes('monto') || hl.includes('importe') || hl.includes('total') || hl.includes('amount');
+        if (f.id==='map-categoria')   return hl.includes('categ') || hl.includes('rubro') || hl.includes('tipo');
+        return false;
+      });
+      const selected = autoIdx >= 0 ? importData.headers[autoIdx] : '';
+      return '<div style="display:grid;grid-template-columns:130px 1fr;align-items:center;gap:12px;">' +
+        '<label style="font-size:0.72rem;font-weight:500;color:var(--ink2);">' + f.label + (f.required?' *':'') + '</label>' +
+        '<select id="'+f.id+'" style="font-size:0.82rem;">' +
+          options.map(o => '<option value="'+o+'"'+(o===selected?' selected':'')+'>'+o+'</option>').join('') +
+        '</select>' +
+      '</div>';
+    }).join('');
+
+    // Preview
+    const preview = document.getElementById('import-preview-label');
+    if (preview) preview.textContent = importData.rows.length + ' filas detectadas. Las primeras 3: ' +
+      importData.rows.slice(0,3).map(r => r.join(' | ')).join(' • ');
+  }
+
+  function parseImportDate(raw) {
+    if (!raw) return null;
+    const s = String(raw).trim();
+    // Excel serial number
+    if (/^\d{4,5}$/.test(s)) {
+      const d = new Date(Math.round((parseInt(s) - 25569) * 86400 * 1000));
+      return d.toISOString().slice(0,10);
+    }
+    // Common formats: DD/MM/YYYY, MM/DD/YYYY, YYYY-MM-DD
+    const patterns = [
+      /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/, // DD/MM/YYYY
+      /^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/,  // YYYY-MM-DD
+    ];
+    for (const p of patterns) {
+      const m = s.match(p);
+      if (m) {
+        // Detect if first group is year
+        if (m[1].length === 4) return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');
+        return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');
+      }
+    }
+    // Try native parse
+    const d = new Date(s);
+    if (!isNaN(d)) return d.toISOString().slice(0,10);
+    return null;
+  }
+
+  function parseImportAmount(raw) {
+    if (!raw && raw !== 0) return null;
+    const s = String(raw).replace(/[^\d.,\-]/g,'').replace(/\.(?=.*\.)/g,'').replace(',','.');
+    return parseFloat(s);
+  }
+
+  window.runImportStep = async () => {
+    const mapFecha = document.getElementById('map-fecha')?.value;
+    const mapDesc  = document.getElementById('map-descripcion')?.value;
+    const mapMonto = document.getElementById('map-monto')?.value;
+    const mapCat   = document.getElementById('map-categoria')?.value;
+    const mapTypeCol = document.getElementById('import-type-col')?.value;
+
+    if (!mapFecha || mapFecha === '-- No mapear --') { alert('Selecci\u00f3n la columna de fecha'); return; }
+    if (!mapDesc  || mapDesc  === '-- No mapear --') { alert('Selecci\u00f3n la columna de descripci\u00f3n'); return; }
+    if (!mapMonto || mapMonto === '-- No mapear --') { alert('Selecci\u00f3n la columna de monto'); return; }
+
+    const hIdx = (col) => importData.headers.indexOf(col);
+    const fi = hIdx(mapFecha), di = hIdx(mapDesc), mi = hIdx(mapMonto);
+    const ci = mapCat && mapCat !== '-- No mapear --' ? hIdx(mapCat) : -1;
+    const ti = importTypeMode === 'column' ? hIdx(mapTypeCol) : -1;
+
+    let ok = 0, skip = 0;
+    const promises = [];
+
+    for (const row of importData.rows) {
+      const dateStr = parseImportDate(row[fi]);
+      const desc    = String(row[di]||'').trim();
+      const amount  = parseImportAmount(row[mi]);
+      const cat     = ci >= 0 ? String(row[ci]||'Otros').trim() : 'Importado';
+
+      if (!dateStr || !desc || amount === null || isNaN(amount)) { skip++; continue; }
+      if (amount === 0) { skip++; continue; }
+
+      let type;
+      if (importTypeMode === 'sign')        type = amount >= 0 ? 'income' : 'expense';
+      else if (importTypeMode === 'all-expense') type = 'expense';
+      else if (importTypeMode === 'all-income')  type = 'income';
+      else if (importTypeMode === 'column' && ti >= 0) {
+        const tv = String(row[ti]||'').toLowerCase();
+        type = (tv.includes('ingreso') || tv.includes('income') || tv.includes('entrada') || tv === '+') ? 'income' : 'expense';
+      } else type = 'expense';
+
+      promises.push(push(ref(db, 'users/'+uid+'/transactions'), {
+        description: desc,
+        amount: Math.abs(amount),
+        category: cat,
+        type,
+        date: dateStr,
+        createdAt: Date.now()
+      }));
+      ok++;
+    }
+
+    await Promise.all(promises);
+
+    document.getElementById('import-step2').style.display = 'none';
+    document.getElementById('import-step3').style.display = 'block';
+    document.getElementById('import-action-btn').textContent = 'Cerrar';
+    document.getElementById('import-action-btn').onclick = () => { closeModal('import'); resetImport(); };
+    document.getElementById('import-result-msg').textContent = ok + ' movimientos importados correctamente.';
+    document.getElementById('import-result-sub').textContent = skip > 0 ? skip + ' filas omitidas por datos incompletos o monto cero.' : 'Todos los registros fueron procesados.';
+  };
+
+  window.resetImport = () => {
+    importData = { rows: [], headers: [], step: 1 };
+    importTypeMode = 'sign';
+    const s1 = document.getElementById('import-step1');
+    const s2 = document.getElementById('import-step2');
+    const s3 = document.getElementById('import-step3');
+    const btn = document.getElementById('import-action-btn');
+    if (s1) s1.style.display = 'block';
+    if (s2) s2.style.display = 'none';
+    if (s3) s3.style.display = 'none';
+    if (btn) { btn.style.display = 'none'; btn.onclick = window.runImportStep; }
+    const fi = document.getElementById('import-file');
+    if (fi) fi.value = '';
+  };
+
+  // ── EXPORT ──
   window.exportSection = (section) => {
     let rows = [], filename = 'finhub';
 
