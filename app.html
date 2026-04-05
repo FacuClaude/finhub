@@ -1478,10 +1478,19 @@
     const varBg    = t.variabilidad === 'variable' ? 'rgba(193,122,74,0.1)' : 'rgba(61,107,82,0.08)';
     const txMoneda = t.moneda || 'ARS';
     const isUSD    = txMoneda === 'USD';
-    // Show original amount + converted if different currency
     const displayAmt = fmtTxAmount(t);
-    const originalAmt = isUSD ? ('USD ' + fmtNum(t.amount)) : ('$' + fmtNum(t.amount));
-    const showOrig = (isUSD && appCurrency === 'ARS') || (!isUSD && appCurrency === 'USD');
+    // Always show equivalent in the OTHER currency
+    let altAmt = '';
+    if (appCurrency === 'ARS') {
+      // Showing ARS → show USD equivalent below
+      const usdVal = isUSD ? t.amount : t.amount / tcOficial;
+      altAmt = '≈ USD ' + fmtNum(usdVal);
+    } else {
+      // Showing USD → show ARS equivalent below
+      const arsVal = isUSD ? t.amount * tcOficial : t.amount;
+      altAmt = '≈ $' + fmtNum(arsVal);
+    }
+    const showOrig = false; // replaced by altAmt always visible
     return `<div class="tx-item">
         <div class="tx-item-left">
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
@@ -1494,6 +1503,7 @@
         </div>
         <div class="tx-item-right">
           <div class="tx-amount ${t.type==='income'?'income':'expense'}">${t.type==='income'?'+':'−'}${displayAmt}</div>
+          <div style="font-size:0.65rem;color:var(--muted2);text-align:right;">${altAmt}</div>
           ${showDelete?`<div class="tx-item-actions">
             <button class="tx-btn-edit" data-id="${t.id}" onclick="openEditTx(this.dataset.id)">Editar</button>
             <button class="tx-btn-del" data-id="${t.id}" onclick="deleteTx(this.dataset.id)">Eliminar</button>
@@ -2895,6 +2905,8 @@
         tcOficial = data.oficial.venta;
         const badge = document.getElementById('tc-badge');
         if (badge) badge.textContent = 'TC Oficial: $' + Math.round(tcOficial).toLocaleString('es-AR');
+        // Re-render with real TC
+        renderTxList();
       }
     } catch(e) {}
   }
