@@ -470,16 +470,7 @@
       border-radius: 4px !important;
       user-select: none !important;
     }
-    .foco-btn { 
-      display:flex; align-items:center; gap:8px; width:100%;
-      padding:8px 12px; border:1px solid var(--border);
-      background:transparent; color:var(--muted);
-      font-family:'DM Sans',sans-serif; font-size:0.7rem;
-      font-weight:500; letter-spacing:0.1em; text-transform:uppercase;
-      cursor:pointer; border-radius:4px; transition:all 0.2s;
-    }
-    .foco-btn:hover { border-color:var(--accent); color:var(--accent); }
-    .foco-btn.active { background:var(--accent); color:white; border-color:var(--accent); }
+
 
     /* ── CURRENCY SWITCH ── */
     .currency-bar {
@@ -639,10 +630,13 @@
       </div>
     </nav>
     <div class="sidebar-footer">
-      <button class="foco-btn" id="foco-btn" onclick="toggleFoco()" title="Ocultar montos">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-        Modo foco
-      </button>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <span style="font-size:0.68rem;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;">Privacidad</span>
+        <label class="switch">
+          <input type="checkbox" id="foco-toggle" onchange="toggleFoco(this.checked)">
+          <span class="slider"></span>
+        </label>
+      </div>
       <div class="theme-toggle">
         <span class="theme-label">Modo noche</span>
         <label class="switch">
@@ -3236,16 +3230,11 @@
 
   // ── MODO FOCO ──
   let focoActive = false;
-  window.toggleFoco = () => {
-    focoActive = !focoActive;
+  window.toggleFoco = (checked) => {
+    focoActive = checked !== undefined ? checked : !focoActive;
     document.getElementById('shell').classList.toggle('foco-active', focoActive);
-    const btn = document.getElementById('foco-btn');
-    if (btn) {
-      btn.classList.toggle('active', focoActive);
-      btn.innerHTML = focoActive
-        ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Modo foco'
-        : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg> Modo foco';
-    }
+    const tog = document.getElementById('foco-toggle');
+    if (tog) tog.checked = focoActive;
   };
 
   // ── DARK MODE ──
