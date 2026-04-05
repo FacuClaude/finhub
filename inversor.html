@@ -183,9 +183,9 @@
     .ticker { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.82rem; font-weight: 600; color: var(--ink); }
     .nombre { font-size: 0.82rem; color: var(--ink2); }
     .precio { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.88rem; font-weight: 500; text-align: right; }
-    .cambio { font-size: 0.72rem; font-weight: 500; text-align: right; padding: 2px 5px; border-radius: 3px; display: inline-block; white-space: nowrap; max-width: 100%; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; }
-    .cambio.pos { color: var(--green); background: var(--green-bg); }
-    .cambio.neg { color: var(--red); background: var(--red-bg); }
+    .cambio { font-size: 0.78rem; font-weight: 500; text-align: right; white-space: nowrap; }
+    .cambio.pos { color: var(--green); }
+    .cambio.neg { color: var(--red); }
     .cambio.neu { color: var(--muted); }
     .tir { font-size: 0.78rem; color: var(--muted); text-align: right; }
 
@@ -363,24 +363,25 @@
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(20,20,14,0.25);
-      z-index: 400;
+      background: rgba(20,20,14,0.4);
+      z-index: 8000;
     }
     .mobile-overlay.open { display: block; }
 
     @media (max-width: 900px) {
       .shell { grid-template-columns: 1fr; max-width: 100vw; overflow-x: hidden; }
       .sidebar {
-        position: fixed;
-        left: -280px; top: 0; bottom: 0;
-        width: 280px;
-        z-index: 410;
+        position: fixed !important;
+        left: -280px !important; top: 0 !important; bottom: 0 !important;
+        width: 280px !important;
+        z-index: 9000 !important;
         background: #f5f0eb !important;
         transition: left 0.28s cubic-bezier(0.4,0,0.2,1);
-        overflow-y: auto;
+        overflow-y: auto !important;
+        pointer-events: auto !important;
       }
-      .sidebar.mobile-open { left: 0; box-shadow: 4px 0 24px rgba(0,0,0,0.15); }
-      .hamburger { display: flex; }
+      .sidebar.mobile-open { left: 0 !important; box-shadow: 6px 0 32px rgba(0,0,0,0.2) !important; }
+      .hamburger { display: flex !important; }
       main { padding: 20px 14px; max-width: 100vw; overflow-x: hidden; }
       .cards-row { grid-template-columns: 1fr 1fr; }
       .dolar-grid { grid-template-columns: 1fr 1fr; }
