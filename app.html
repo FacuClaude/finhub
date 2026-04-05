@@ -1322,11 +1322,13 @@
 
   function renderAll() {
     renderDashboard();
-    // Always update summary banner even if not on transactions page
     const allTx = Object.entries(transactions).map(([id,t]) => ({id,...t}));
     renderTxSummaryBanner(allTx);
-    if (document.getElementById('page-transactions').classList.contains('active')) {
-      renderTxItems(document.getElementById('tx-list'), allTx.sort((a,b)=>new Date(b.date)-new Date(a.date)), true);
+    const txContainer = document.getElementById('tx-list');
+    if (txContainer && document.getElementById('page-transactions').classList.contains('active')) {
+      const txArr = allTx.filter(t => txFilter==='all'||t.type===txFilter)
+        .sort((a,b)=>new Date(b.date)-new Date(a.date));
+      renderTxItems(txContainer, txArr, true);
     }
     renderBudgets();
     renderRecurring();
@@ -2658,7 +2660,7 @@
     const ti = importTypeMode === 'column' ? hIdx(mapTypeCol) : -1;
 
     let ok = 0, skip = 0;
-    const promises = [];
+    const toInsert = [];
 
     for (const row of importData.rows) {
       const dateStr = parseImportDate(row[fi]);
@@ -2678,18 +2680,22 @@
         type = (tv.includes('ingreso') || tv.includes('income') || tv.includes('entrada') || tv === '+') ? 'income' : 'expense';
       } else type = 'expense';
 
-      promises.push(push(ref(db, 'users/'+uid+'/transactions'), {
-        description: desc,
-        amount: Math.abs(amount),
-        category: cat,
-        type,
-        date: dateStr,
-        createdAt: Date.now()
-      }));
+      toInsert.push({ description: desc, amount: Math.abs(amount), category: cat, type, date: dateStr, variabilidad: 'fijo', createdAt: Date.now() });
       ok++;
     }
 
-    await Promise.all(promises);
+    // Show progress
+    const btn = document.getElementById('import-action-btn');
+    if (btn) btn.textContent = 'Importando 0/' + ok + '...';
+
+    // Write in batches of 8 to avoid freezing
+    const BATCH = 8;
+    for (let i = 0; i < toInsert.length; i += BATCH) {
+      const batch = toInsert.slice(i, i + BATCH);
+      await Promise.all(batch.map(tx => push(ref(db, 'users/'+uid+'/transactions'), tx)));
+      if (btn) btn.textContent = 'Importando ' + Math.min(i+BATCH, ok) + '/' + ok + '...';
+      await new Promise(r => setTimeout(r, 100)); // small pause between batches
+    }
 
     document.getElementById('import-step2').style.display = 'none';
     document.getElementById('import-step3').style.display = 'block';
