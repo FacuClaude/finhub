@@ -1322,14 +1322,7 @@
 
   function renderAll() {
     renderDashboard();
-    const allTx = Object.entries(transactions).map(([id,t]) => ({id,...t}));
-    renderTxSummaryBanner(allTx);
-    const txContainer = document.getElementById('tx-list');
-    if (txContainer && document.getElementById('page-transactions').classList.contains('active')) {
-      const txArr = allTx.filter(t => txFilter==='all'||t.type===txFilter)
-        .sort((a,b)=>new Date(b.date)-new Date(a.date));
-      renderTxItems(txContainer, txArr, true);
-    }
+    renderTxList();  // handles banner + grouped months
     renderBudgets();
     renderRecurring();
     checkBudgetAlerts();
@@ -1363,7 +1356,6 @@
     });
     let dashLabel = null;
     if (!thisMonth.length && txArr.length) {
-      // Find most recent month with data
       const sorted = [...txArr].sort((a,b) => new Date(b.date)-new Date(a.date));
       const latestDate = new Date(sorted[0].date+'T12:00:00');
       const lm = latestDate.getMonth(), ly = latestDate.getFullYear();
@@ -1373,21 +1365,20 @@
       });
       dashLabel = latestDate.toLocaleString('es-AR',{month:'long',year:'numeric'});
     }
-    // Update subtitle to reflect which month is shown
     const subEl = document.querySelector('#page-dashboard .page-sub');
     if (subEl) subEl.textContent = dashLabel ? 'Mostrando: '+dashLabel : 'Tu panorama financiero';
     const incomes  = thisMonth.filter(t => t.type==='income');
     const expenses = thisMonth.filter(t => t.type==='expense');
-    // Use toDisplayAmount to convert USD transactions correctly
-    const conv = t => toDisplayAmount(t.amount, t.moneda || 'ARS');
-    const totalIn  = incomes.reduce((s,t) => s+conv(t), 0);
-    const totalEx  = expenses.reduce((s,t) => s+conv(t), 0);
+    // Convert using tcOficial - simple direct conversion, no dependency on appCurrency
+    const toARS = t => (t.moneda === 'USD') ? (t.amount * tcOficial) : t.amount;
+    const totalIn  = incomes.reduce((s,t) => s+toARS(t), 0);
+    const totalEx  = expenses.reduce((s,t) => s+toARS(t), 0);
     const balance  = totalIn - totalEx;
     const prefix   = appCurrency === 'USD' ? 'USD ' : '$';
 
-    document.getElementById('dash-balance').textContent      = (balance>=0?'':'-')+prefix+fmtNum(Math.abs(balance));
-    document.getElementById('dash-income').textContent       = prefix+fmtNum(totalIn);
-    document.getElementById('dash-expense').textContent      = prefix+fmtNum(totalEx);
+    document.getElementById('dash-balance').textContent      = fmt(balance);
+    document.getElementById('dash-income').textContent       = fmt(totalIn);
+    document.getElementById('dash-expense').textContent      = fmt(totalEx);
     document.getElementById('dash-income-count').textContent  = `${incomes.length} ingreso${incomes.length!==1?'s':''}`;
     document.getElementById('dash-expense-count').textContent = `${expenses.length} gasto${expenses.length!==1?'s':''}`;
     document.getElementById('dash-balance').className = 'card-value ' + (balance>=0?'positive':'negative');
@@ -1477,17 +1468,31 @@
       .filter(t => txFilter==='all'||t.type===txFilter)
       .sort((a,b) => new Date(b.date)-new Date(a.date));
     renderTxSummaryBanner(allTx);
+    // Only render the list items when the transactions page is visible
+    const page = document.getElementById('page-transactions');
     const container = document.getElementById('tx-list');
-    if (container) renderTxItems(container, txArr, true);
+    if (container && page && page.classList.contains('active')) {
+      renderTxItems(container, txArr, true);
+    }
   }
 
   function renderTxSummaryBanner(allTx) {
     const now = new Date();
-    const m = now.getMonth(), y = now.getFullYear();
-    const thisMonth = allTx.filter(t => {
+    let m = now.getMonth(), y = now.getFullYear();
+    let thisMonth = allTx.filter(t => {
       const d = new Date(t.date+'T12:00:00');
       return d.getMonth()===m && d.getFullYear()===y;
     });
+    // If no data this month, use most recent month with data
+    if (!thisMonth.length && allTx.length) {
+      const sorted = [...allTx].sort((a,b) => new Date(b.date)-new Date(a.date));
+      const ld = new Date(sorted[0].date+'T12:00:00');
+      m = ld.getMonth(); y = ld.getFullYear();
+      thisMonth = allTx.filter(t => {
+        const d = new Date(t.date+'T12:00:00');
+        return d.getMonth()===m && d.getFullYear()===y;
+      });
+    }
     // Convert everything to display currency
     const conv = t => toDisplayAmount(t.amount, t.moneda || 'ARS');
     const prefix = appCurrency === 'USD' ? 'USD ' : '$';
