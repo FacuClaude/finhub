@@ -639,10 +639,13 @@
       </div>
     </nav>
     <div class="sidebar-footer">
-      <button class="foco-btn" id="foco-btn" onclick="toggleFoco()" title="Ocultar montos">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-        Modo foco
-      </button>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <span style="font-size:0.68rem;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;">Privacidad</span>
+        <label class="switch">
+          <input type="checkbox" id="foco-toggle" onchange="toggleFoco(this.checked)">
+          <span class="slider"></span>
+        </label>
+      </div>
       <div class="theme-toggle">
         <span class="theme-label">Modo noche</span>
         <label class="switch">
@@ -1384,22 +1387,49 @@
 
   // ── DEMO MODE ──
   (function() {
+    const style = document.createElement('style');
+    style.textContent = `
+      #demo-ov { position:fixed;inset:0;z-index:9999;display:grid;grid-template-columns:1fr 1fr;min-height:100vh; }
+      #demo-ov .d-left { background:#3d6b52;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;padding:60px 40px;position:relative;overflow:hidden; }
+      #demo-ov .d-left::before { content:'';position:absolute;width:480px;height:480px;border-radius:50%;border:1px solid rgba(255,255,255,0.07);bottom:-200px;right:-140px; }
+      #demo-ov .d-left::after { content:'';position:absolute;width:260px;height:260px;border-radius:50%;border:1px solid rgba(255,255,255,0.05);top:60px;left:40px; }
+      #demo-ov .d-right { background:#f5f0e8;display:flex;align-items:center;justify-content:center;padding:60px 48px; }
+      #demo-ov .d-wrap { width:100%;max-width:340px; }
+      #demo-ov .d-badge { display:inline-flex;align-items:center;gap:6px;background:rgba(255,193,70,0.15);border:1px solid rgba(255,193,70,0.4);color:#c17a4a;padding:5px 12px;font-size:0.65rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;border-radius:3px;margin-bottom:28px; }
+      #demo-ov label { display:block;font-size:0.68rem;color:#8a8070;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px; }
+      #demo-ov input { width:100%;padding:12px 14px;border:1px solid #e0d8cc;background:#fdfaf4;color:#1a1a14;font-size:0.9rem;border-radius:4px;margin-bottom:14px;box-sizing:border-box;font-family:inherit;outline:none; }
+      #demo-ov input:focus { border-color:#3d6b52;box-shadow:0 0 0 3px rgba(61,107,82,0.1); }
+      #demo-ov .d-btn { width:100%;background:#3d6b52;color:white;border:none;padding:13px;font-size:0.75rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;border-radius:4px;margin-top:8px;transition:background 0.2s; }
+      #demo-ov .d-btn:hover { background:#2d5240; }
+      #demo-ov .d-note { font-size:0.7rem;color:#8a8070;text-align:center;margin-top:16px; }
+      @media(max-width:700px){ #demo-ov{grid-template-columns:1fr;} #demo-ov .d-left{display:none;} }
+    `;
+    document.head.appendChild(style);
+
     const ov = document.createElement('div');
     ov.id = 'demo-ov';
-    ov.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(20,20,14,0.82);backdrop-filter:blur(6px);';
-    ov.innerHTML = '<div style="background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--accent);padding:48px 40px;width:360px;max-width:90vw;">' +
-      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">' +
-        '<svg width="26" height="22" viewBox="0 0 96 80" fill="none"><rect x="0" y="52" width="20" height="28" rx="3" fill="#3d6b52" opacity="0.4"/><rect x="25" y="34" width="20" height="46" rx="3" fill="#3d6b52" opacity="0.65"/><rect x="50" y="8" width="20" height="72" rx="3" fill="#3d6b52"/></svg>' +
-        '<span style="font-size:1.5rem;font-weight:700;"><span style="color:#8a8070">fin</span><span style="color:#3d6b52">Hub.</span></span>' +
+    ov.innerHTML =
+      '<div class="d-left">' +
+        '<div style="position:relative;z-index:1;text-align:center;">' +
+          '<svg width="80" height="66" viewBox="0 0 96 80" fill="none"><rect x="0" y="52" width="20" height="28" rx="3" fill="rgba(255,255,255,0.4)"/><rect x="25" y="34" width="20" height="46" rx="3" fill="rgba(255,255,255,0.6)"/><rect x="50" y="8" width="20" height="72" rx="3" fill="white"/><circle cx="60" cy="24" r="12" fill="rgba(61,107,82,0.6)" stroke="white" stroke-width="1.5"/><path d="M55 29 L60 19 L65 29" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/><line x1="60" y1="19" x2="60" y2="29" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>' +
+          '<div style="font-size:2.2rem;font-weight:700;color:white;margin-top:16px;letter-spacing:-0.02em;"><span style="opacity:0.65">fin</span>Hub.</div>' +
+          '<div style="font-size:0.8rem;color:rgba(255,255,255,0.55);margin-top:8px;">Finanzas simples, mente tranquila</div>' +
+        '</div>' +
       '</div>' +
-      '<div style="font-size:0.65rem;color:#b4ac9e;margin-bottom:32px;">Finanzas simples, mente tranquila</div>' +
-      '<div style="font-size:0.68rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:16px;">Modo Demo</div>' +
-      '<input id="du" type="text" placeholder="Usuario" value="test" style="width:100%;padding:11px 14px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-size:0.88rem;border-radius:3px;margin-bottom:10px;box-sizing:border-box;font-family:DM Sans,sans-serif;">' +
-      '<input id="dp" type="password" placeholder="Contraseña" value="test" style="width:100%;padding:11px 14px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-size:0.88rem;border-radius:3px;margin-bottom:20px;box-sizing:border-box;font-family:DM Sans,sans-serif;">' +
-      '<button onclick="demoLogin()" style="width:100%;background:var(--accent);color:white;border:none;padding:13px;font-family:DM Sans,sans-serif;font-size:0.75rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;border-radius:3px;">Ingresar al demo</button>' +
-      '<div id="de" style="color:var(--red);font-size:0.75rem;margin-top:10px;display:none;">Usuá: test / test</div>' +
-      '<div style="font-size:0.68rem;color:var(--muted2);margin-top:20px;text-align:center;">Los cambios no se guardan permanentemente</div>' +
-    '</div>';
+      '<div class="d-right">' +
+        '<div class="d-wrap">' +
+          '<div class="d-badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Testing environment</div>' +
+          '<div style="font-size:1.6rem;font-weight:700;color:#1a1a14;margin-bottom:4px;"><span style="color:#8a8070">fin</span><span style="color:#3d6b52">Hub.</span> Demo</div>' +
+          '<div style="font-size:0.82rem;color:#8a8070;margin-bottom:32px;">Ingres\u00e1 con las credenciales de prueba</div>' +
+          '<label>Usuario</label>' +
+          '<input id="du" type="text" value="test" placeholder="test">' +
+          '<label>Contrase\u00f1a</label>' +
+          '<input id="dp" type="password" value="test" placeholder="test">' +
+          '<div id="de" style="color:#b85050;font-size:0.75rem;margin-bottom:8px;display:none;">Credenciales incorrectas. Us\u00e1: test / test</div>' +
+          '<button class="d-btn" onclick="demoLogin()">Ingresar al demo</button>' +
+          '<div class="d-note">Los cambios no se guardan permanentemente</div>' +
+        '</div>' +
+      '</div>';
     document.body.appendChild(ov);
   })();
 
@@ -3289,16 +3319,11 @@
 
   // ── MODO FOCO ──
   let focoActive = false;
-  window.toggleFoco = () => {
-    focoActive = !focoActive;
+  window.toggleFoco = (checked) => {
+    focoActive = checked !== undefined ? checked : !focoActive;
     document.getElementById('shell').classList.toggle('foco-active', focoActive);
-    const btn = document.getElementById('foco-btn');
-    if (btn) {
-      btn.classList.toggle('active', focoActive);
-      btn.innerHTML = focoActive
-        ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Modo foco'
-        : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg> Modo foco';
-    }
+    const tog = document.getElementById('foco-toggle');
+    if (tog) tog.checked = focoActive;
   };
 
   // ── DARK MODE ──
