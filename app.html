@@ -640,7 +640,9 @@
           <button class="filter-chip" onclick="setFilter('income',this)">Ingresos</button>
           <button class="filter-chip" onclick="setFilter('expense',this)">Gastos</button>
         </div>
-        <div style="display:flex;gap:8px;">
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="btn-export" onclick="expandAllMonths()">&#9660; Expandir</button>
+          <button class="btn-export" onclick="collapseAllMonths()">&#9650; Colapsar</button>
           <button class="btn-export" onclick="openModal('import')">&#8679; Importar</button>
           <button class="btn-export" onclick="exportSection('transactions')">&#8681; Excel</button>
           <button class="btn-primary" onclick="openModal('tx')">+ Agregar</button>
@@ -1397,6 +1399,27 @@
     toggle.classList.toggle('collapsed');
   };
 
+  window.expandAllMonths = () => {
+    document.querySelectorAll('.tx-month-body').forEach(b => b.classList.remove('hidden'));
+    document.querySelectorAll('.tx-month-toggle').forEach(t => t.classList.remove('collapsed'));
+  };
+
+  window.collapseAllMonths = () => {
+    document.querySelectorAll('.tx-month-body').forEach(b => b.classList.add('hidden'));
+    document.querySelectorAll('.tx-month-toggle').forEach(t => t.classList.add('collapsed'));
+  };
+
+  // Track which months are open so re-renders preserve state
+  function getOpenMonths() {
+    const open = new Set();
+    document.querySelectorAll('.tx-month-group').forEach(g => {
+      const body = g.querySelector('.tx-month-body');
+      const key  = g.dataset.monthKey;
+      if (key && body && !body.classList.contains('hidden')) open.add(key);
+    });
+    return open;
+  }
+
   function txItemHtml(t, showDelete) {
     const varLabel = t.variabilidad === 'variable' ? 'Variable' : 'Fijo';
     const varColor = t.variabilidad === 'variable' ? 'var(--accent2)' : 'var(--accent)';
@@ -1440,6 +1463,11 @@
     const now = new Date();
     const currentKey = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
 
+    // Preserve which months were open before re-render
+    const openMonths = getOpenMonths();
+    // If no state yet (first render), open only current month
+    const hasState = openMonths.size > 0;
+
     let html = '';
     monthKeys.forEach(key => {
       const items = groups[key];
@@ -1448,9 +1476,9 @@
       const label = d.toLocaleString('es-AR', {month:'long', year:'numeric'});
       const income  = items.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
       const expense = items.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
-      const isOpen = key === currentKey;
+      const isOpen  = hasState ? openMonths.has(key) : key === currentKey;
 
-      html += '<div class="tx-month-group">';
+      html += '<div class="tx-month-group" data-month-key="'+key+'">';
       html += '<div class="tx-month-header" onclick="toggleMonth(this)">';
       html += '<span class="tx-month-label">' + label + '</span>';
       html += '<span class="tx-month-summary">';
