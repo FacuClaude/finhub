@@ -331,12 +331,13 @@
     /* ── FILTERS ── */
     .filters { display: flex; gap: 8px; }
     .filter-chip {
-      font-family: 'DM Sans', sans-serif; font-size: 0.7rem; font-weight: 400;
+      font-family: 'DM Sans', sans-serif; font-size: 0.7rem; font-weight: 500;
       letter-spacing: 0.1em; text-transform: uppercase; padding: 7px 16px;
       border: 1px solid var(--border); background: transparent; color: var(--muted);
       cursor: pointer; transition: all 0.2s; border-radius: 4px;
     }
-    .filter-chip.active { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); font-weight: 500; }
+    .filter-chip:hover { border-color: var(--accent); color: var(--accent); }
+    .filter-chip.active { border-color: var(--accent); background: var(--accent); color: white; font-weight: 600; }
 
     /* ── BUDGETS ── */
     .budget-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
