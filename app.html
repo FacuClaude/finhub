@@ -62,7 +62,7 @@
     .theme-toggle {
       display: flex;
       align-items: center;
-      gap: 10px;
+      justify-content: space-between;
       margin-bottom: 14px;
     }
     .theme-label {
@@ -471,16 +471,7 @@
       border-radius: 4px !important;
       user-select: none !important;
     }
-    .foco-btn { 
-      display:flex; align-items:center; gap:8px; width:100%;
-      padding:8px 12px; border:1px solid var(--border);
-      background:transparent; color:var(--muted);
-      font-family:'DM Sans',sans-serif; font-size:0.7rem;
-      font-weight:500; letter-spacing:0.1em; text-transform:uppercase;
-      cursor:pointer; border-radius:4px; transition:all 0.2s;
-    }
-    .foco-btn:hover { border-color:var(--accent); color:var(--accent); }
-    .foco-btn.active { background:var(--accent); color:white; border-color:var(--accent); }
+
 
     /* ── CURRENCY SWITCH ── */
     .currency-bar {
@@ -682,8 +673,8 @@
       </div>
     </nav>
     <div class="sidebar-footer">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-        <span style="font-size:0.68rem;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;">Privacidad</span>
+      <div class="theme-toggle">
+        <span class="theme-label">Privacidad</span>
         <label class="switch">
           <input type="checkbox" id="foco-toggle" onchange="toggleFoco(this.checked)">
           <span class="slider"></span>
@@ -1438,110 +1429,28 @@
     }
   });
 
-  // ── DEMO MODE ──
-  (function() {
-    const style = document.createElement('style');
-    style.textContent = `
-      #demo-ov { position:fixed;inset:0;z-index:9999;display:grid;grid-template-columns:1fr 1fr;min-height:100vh; }
-      #demo-ov .d-left { background:#3d6b52;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;padding:60px 40px;position:relative;overflow:hidden; }
-      #demo-ov .d-left::before { content:'';position:absolute;width:480px;height:480px;border-radius:50%;border:1px solid rgba(255,255,255,0.07);bottom:-200px;right:-140px; }
-      #demo-ov .d-left::after { content:'';position:absolute;width:260px;height:260px;border-radius:50%;border:1px solid rgba(255,255,255,0.05);top:60px;left:40px; }
-      #demo-ov .d-right { background:#f5f0e8;display:flex;align-items:center;justify-content:center;padding:60px 48px; }
-      #demo-ov .d-wrap { width:100%;max-width:340px; }
-      #demo-ov .d-badge { display:inline-flex;align-items:center;gap:6px;background:rgba(255,193,70,0.15);border:1px solid rgba(255,193,70,0.4);color:#c17a4a;padding:5px 12px;font-size:0.65rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;border-radius:3px;margin-bottom:28px; }
-      #demo-ov label { display:block;font-size:0.68rem;color:#8a8070;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px; }
-      #demo-ov input { width:100%;padding:12px 14px;border:1px solid #e0d8cc;background:#fdfaf4;color:#1a1a14;font-size:0.9rem;border-radius:4px;margin-bottom:14px;box-sizing:border-box;font-family:inherit;outline:none; }
-      #demo-ov input:focus { border-color:#3d6b52;box-shadow:0 0 0 3px rgba(61,107,82,0.1); }
-      #demo-ov .d-btn { width:100%;background:#3d6b52;color:white;border:none;padding:13px;font-size:0.75rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;border-radius:4px;margin-top:8px;transition:background 0.2s; }
-      #demo-ov .d-btn:hover { background:#2d5240; }
-      #demo-ov .d-note { font-size:0.7rem;color:#8a8070;text-align:center;margin-top:16px; }
-      @media(max-width:700px){ #demo-ov{grid-template-columns:1fr;} #demo-ov .d-left{display:none;} }
-    `;
-    document.head.appendChild(style);
+  onAuthStateChanged(auth, user => {
+    if (!user) { window.location.href = 'index.html'; return; }
+    uid = user.uid;
+    document.getElementById('user-email').textContent = user.email;
+    document.getElementById('shell').style.opacity = '1';
+    subscribeAll();
+  });
 
-    const ov = document.createElement('div');
-    ov.id = 'demo-ov';
-    ov.innerHTML =
-      '<div class="d-left">' +
-        '<div style="position:relative;z-index:1;text-align:center;">' +
-          '<svg width="80" height="66" viewBox="0 0 96 80" fill="none"><rect x="0" y="52" width="20" height="28" rx="3" fill="rgba(255,255,255,0.4)"/><rect x="25" y="34" width="20" height="46" rx="3" fill="rgba(255,255,255,0.6)"/><rect x="50" y="8" width="20" height="72" rx="3" fill="white"/><circle cx="60" cy="24" r="12" fill="rgba(61,107,82,0.6)" stroke="white" stroke-width="1.5"/><path d="M55 29 L60 19 L65 29" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/><line x1="60" y1="19" x2="60" y2="29" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>' +
-          '<div style="font-size:2.2rem;font-weight:700;color:white;margin-top:16px;letter-spacing:-0.02em;"><span style="opacity:0.65">fin</span>Hub.</div>' +
-          '<div style="font-size:0.8rem;color:rgba(255,255,255,0.55);margin-top:8px;">Finanzas simples, mente tranquila</div>' +
-        '</div>' +
-      '</div>' +
-      '<div class="d-right">' +
-        '<div class="d-wrap">' +
-          '<div class="d-badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Testing environment</div>' +
-          '<div style="font-size:1.6rem;font-weight:700;color:#1a1a14;margin-bottom:4px;"><span style="color:#8a8070">fin</span><span style="color:#3d6b52">Hub.</span> Demo</div>' +
-          '<div style="font-size:0.82rem;color:#8a8070;margin-bottom:32px;">Ingres\u00e1 con las credenciales de prueba</div>' +
-          '<label>Usuario</label>' +
-          '<input id="du" type="text" value="test" placeholder="test">' +
-          '<label>Contrase\u00f1a</label>' +
-          '<input id="dp" type="password" value="test" placeholder="test">' +
-          '<div id="de" style="color:#b85050;font-size:0.75rem;margin-bottom:8px;display:none;">Credenciales incorrectas. Us\u00e1: test / test</div>' +
-          '<button class="d-btn" onclick="demoLogin()">Ingresar al demo</button>' +
-          '<div class="d-note">Los cambios no se guardan permanentemente</div>' +
-        '</div>' +
-      '</div>';
-    document.body.appendChild(ov);
-  })();
-
-  window.demoLogin = () => {
-    const u = document.getElementById('du').value.trim();
-    const p = document.getElementById('dp').value.trim();
-    if (u==='test' && p==='test') {
-      document.getElementById('demo-ov').remove();
-      document.getElementById('shell').style.opacity='1';
-      uid='demo-user';
-      document.getElementById('user-email').textContent='test@finhub.demo';
-      fetchTCOficial();
-      loadDemoData();
-    } else {
-      document.getElementById('de').style.display='block';
-    }
-  };
-  document.addEventListener('keydown', e => { if(e.key==='Enter'&&document.getElementById('demo-ov')) demoLogin(); });
-
-  window.logout = () => window.location.reload();
-
-  function loadDemoData() {
-    const now=new Date(), y=now.getFullYear(), m=now.getMonth()+1;
-    const pm=m===1?12:m-1, py=m===1?y-1:y;
-    const ppm=pm===1?12:pm-1, ppy=pm===1?py-1:py;
-    const p=n=>String(n).padStart(2,'0');
-    const cur=`${y}-${p(m)}`, prev=`${py}-${p(pm)}`, prev2=`${ppy}-${p(ppm)}`;
-    transactions={
-      't1':{description:'Sueldo',amount:850000,category:'Sueldo',type:'income',date:`${cur}-05`,variabilidad:'fijo',moneda:'ARS',createdAt:1},
-      't2':{description:'Alquiler',amount:180000,category:'Vivienda',type:'expense',date:`${cur}-01`,variabilidad:'fijo',moneda:'ARS',createdAt:2},
-      't3':{description:'Supermercado Coto',amount:38000,category:'Alimentación',type:'expense',date:`${cur}-08`,variabilidad:'variable',moneda:'ARS',createdAt:3},
-      't4':{description:'Netflix',amount:8500,category:'Entretenimiento',type:'expense',date:`${cur}-10`,variabilidad:'fijo',moneda:'ARS',createdAt:4},
-      't5':{description:'OSDE',amount:48000,category:'Salud',type:'expense',date:`${cur}-15`,variabilidad:'fijo',moneda:'ARS',createdAt:5},
-      't6':{description:'Freelance proyecto',amount:1500,category:'Freelance',type:'income',date:`${cur}-20`,variabilidad:'variable',moneda:'USD',createdAt:6},
-      't7':{description:'Restaurante',amount:32000,category:'Restaurantes',type:'expense',date:`${cur}-22`,variabilidad:'variable',moneda:'ARS',createdAt:7},
-      't8':{description:'Nafta YPF',amount:25000,category:'Transporte',type:'expense',date:`${cur}-18`,variabilidad:'variable',moneda:'ARS',createdAt:8},
-      't9':{description:'Spotify',amount:3200,category:'Entretenimiento',type:'expense',date:`${cur}-10`,variabilidad:'fijo',moneda:'ARS',createdAt:9},
-      'p1':{description:'Sueldo',amount:820000,category:'Sueldo',type:'income',date:`${prev}-05`,variabilidad:'fijo',moneda:'ARS',createdAt:10},
-      'p2':{description:'Alquiler',amount:180000,category:'Vivienda',type:'expense',date:`${prev}-01`,variabilidad:'fijo',moneda:'ARS',createdAt:11},
-      'p3':{description:'Supermercado',amount:35000,category:'Alimentación',type:'expense',date:`${prev}-09`,variabilidad:'variable',moneda:'ARS',createdAt:12},
-      'p4':{description:'Netflix',amount:8500,category:'Entretenimiento',type:'expense',date:`${prev}-10`,variabilidad:'fijo',moneda:'ARS',createdAt:13},
-      'p5':{description:'OSDE',amount:48000,category:'Salud',type:'expense',date:`${prev}-15`,variabilidad:'fijo',moneda:'ARS',createdAt:14},
-      'q1':{description:'Sueldo',amount:800000,category:'Sueldo',type:'income',date:`${prev2}-05`,variabilidad:'fijo',moneda:'ARS',createdAt:15},
-      'q2':{description:'Alquiler',amount:165000,category:'Vivienda',type:'expense',date:`${prev2}-01`,variabilidad:'fijo',moneda:'ARS',createdAt:16},
-      'q3':{description:'Supermercado',amount:29000,category:'Alimentación',type:'expense',date:`${prev2}-10`,variabilidad:'variable',moneda:'ARS',createdAt:17},
-    };
-    budgets={'b1':{category:'Alimentación',limit:80000},'b2':{category:'Vivienda',limit:200000},'b3':{category:'Salud',limit:60000}};
-    globalBudgets={monthly:{amount:400000}};
-    goals={'g1':{name:'Vacaciones',target:500000,current:180000,dueDate:`${y+1}-01-31`},'g2':{name:'Fondo emergencia',target:1000000,current:320000,dueDate:`${y+1}-06-30`}};
-    reminders={'r1':{name:'Expensas',amount:42000,category:'Vivienda',day:5},'r2':{name:'Seguro auto',amount:18000,category:'Servicios',day:15}};
-    assets={'a1':{name:'Ahorros ARS',category:'Efectivo y ahorros',value:350000},'a2':{name:'Dólares MEP',category:'Inversiones',value:3000000}};
-    debts={'d1':{name:'Tarjeta Visa',category:'Tarjeta de crédito',value:85000}};
-    dashMonthKey=cur;
-    renderAll();
-    loadFinHubTicker();
-  }
+  window.logout = async () => { await signOut(auth); window.location.href = 'index.html'; };
 
   // ── SUBSCRIPTIONS ──
-  function subscribeAll() {} // no-op in demo
+  function subscribeAll() {
+    loadFinHubTicker();
+    onValue(ref(db, `users/${uid}/transactions`), s => { transactions = s.val() || {}; renderAll(); });
+    onValue(ref(db, `users/${uid}/budgets`),      s => { budgets      = s.val() || {}; renderBudgets(); });
+    onValue(ref(db, `users/${uid}/goals`),         s => { goals        = s.val() || {}; renderGoals(); });
+    onValue(ref(db, `users/${uid}/reminders`),     s => { reminders    = s.val() || {}; renderReminders(); updateReminderBadge(); });
+    onValue(ref(db, `users/${uid}/globalBudgets`), s => { globalBudgets = s.val() || {}; renderBudgets(); });
+    onValue(ref(db, `users/${uid}/assets`),        s => { assets = s.val() || {}; renderNetWorth(); });
+    onValue(ref(db, `users/${uid}/patSnapshots`),  s => { patSnapshots = s.val() || {}; renderPatHistorial(); });
+    onValue(ref(db, `users/${uid}/debts`),         s => { debts  = s.val() || {}; renderNetWorth(); });
+  }
 
   function renderAll() {
     renderDashboard();
@@ -1871,7 +1780,7 @@
 
   window.deleteTx = async id => {
     if (!confirm('¿Eliminar este movimiento?')) return;
-    delete transactions[id];
+    await remove(ref(db,`users/${uid}/transactions/${id}`));
   };
 
   // ── BUDGETS ──
@@ -2131,7 +2040,9 @@
     if (!date)            { alert('Seleccioná una fecha'); return; }
     const variabilidad = document.querySelector('input[name="tx-variabilidad"]:checked')?.value || 'fijo';
     const monedaTx = document.querySelector('input[name="tx-moneda"]:checked')?.value || 'ARS';
-    const nid='tx_'+Date.now(); transactions[nid]={description:desc,amount,category:cat,type:txType,date,variabilidad,moneda:monedaTx,createdAt:Date.now()}; dashMonthKey=date.substring(0,7); renderAll();
+    await push(ref(db,`users/${uid}/transactions`),{description:desc,amount,category:cat,type:txType,date,variabilidad,moneda:monedaTx,createdAt:Date.now()});
+    // Point dashboard to the month of the new transaction
+    dashMonthKey = date.substring(0,7);
     closeModal('tx');
   };
 
@@ -3379,7 +3290,7 @@
     if (tog) tog.checked = focoActive;
   };
 
-// ── MOBILE NAV ──
+  // ── MOBILE NAV ──
   window.toggleMobileNav = () => {
     const sidebar = document.querySelector('.sidebar');
     const overlay = document.getElementById('mobile-overlay');
