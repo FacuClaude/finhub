@@ -1338,6 +1338,7 @@
     document.querySelectorAll('.nav-item').forEach(n => {
       if (n.getAttribute('onclick')?.includes(page)) n.classList.add('active');
     });
+    if (page === 'transactions') renderTxList();
     if (page === 'summary') renderSummary();
     if (page === 'recurring') renderRecurring();
     if (page === 'networth') { renderNetWorth(); renderPatHistorial(); }
