@@ -481,7 +481,7 @@
       <div class="market-section">
         <div class="market-title">Bonos y Lecaps <span class="refreshing" id="bonos-status">cargando...</span></div>
         <div class="market-table">
-          <div class="market-row header" style="grid-template-columns:80px 1fr 80px 120px 90px;"><span>Ticker</span><span>Instrumento</span><span style="text-align:right">Vence</span><span style="text-align:right">Precio</span><span style="text-align:right">TIR %</span></div>
+          <div class="market-row header" style="grid-template-columns:70px 1fr 70px 80px 65px 65px 80px;"><span>Ticker</span><span>Instrumento</span><span style="text-align:right">Vence</span><span style="text-align:right">Precio</span><span style="text-align:right">TIR/TNA</span><span style="text-align:right">TEM</span><span style="text-align:right">Ganancia</span></div>
           <div id="bonos-list"></div>
         </div>
       </div>
@@ -999,6 +999,16 @@ function updateTicker() {
     items.push({ name:b.ticker, price:'TIR '+b.tir?.toFixed(1)+'%', chg:'', cls:'neu' });
   });
 
+  // Crypto
+  const cryptoTick = marketData.crypto.length ? marketData.crypto : [
+    {symbol:'BTC',precio:67500,cambio:'2.40'},{symbol:'ETH',precio:3420,cambio:'1.80'},
+    {symbol:'SOL',precio:168.5,cambio:'3.10'},{symbol:'BNB',precio:585.2,cambio:'0.90'},
+  ];
+  cryptoTick.forEach(c => {
+    const chg = parseFloat(c.cambio||0);
+    items.push({ name:c.symbol, price:'USD '+fmtNum(c.precio), chg:(chg>=0?'+':'')+chg.toFixed(2)+'%', cls:chg>0?'pos':chg<0?'neg':'neu' });
+  });
+
   if (!items.length) return;
 
   // Triplicate for truly seamless scroll from right
@@ -1085,13 +1095,33 @@ function renderBonos() {
     { ticker:'S28F6', nombre:'Lecap Feb 2026',    precio:93.8,  tir:4.4,  moneda:'ARS', vence:'Feb 2026' },
     { ticker:'TZX25', nombre:'Bono CER Mar 2025', precio:102.1, tir:2.1,  moneda:'ARS', vence:'Mar 2025' },
   ];
+  const today = new Date();
   list.innerHTML = bonos.map(b => {
-    return '<div class="market-row" style="grid-template-columns:80px 1fr 80px 120px 90px;">'+
+    // Calculate TEM from TIR (annual) or from TIR for ARS monthly instruments
+    let tem, tna, ganancia;
+    if (b.moneda === 'ARS' && b.tir) {
+      // Lecaps: TIR is already monthly TEM
+      tem = b.tir;
+      tna = ((Math.pow(1 + tem/100, 12) - 1) * 100);
+    } else if (b.tir) {
+      // Bonos USD: TIR is annual
+      tem = (Math.pow(1 + b.tir/100, 1/12) - 1) * 100;
+      tna = b.tir;
+    }
+    // Ganancia directa: (100 / precio - 1) * 100 — how much you make holding to maturity
+    if (b.precio && b.precio < 100) {
+      ganancia = (100 / b.precio - 1) * 100;
+    } else if (b.precio && b.precio > 0) {
+      ganancia = (100 / b.precio - 1) * 100;
+    }
+    return '<div class="market-row" style="grid-template-columns:70px 1fr 70px 80px 65px 65px 80px;">'+
       '<span class="ticker">'+(b.ticker||'—')+'</span>'+
       '<span class="nombre">'+(b.nombre||b.description||'—')+'</span>'+
-      '<span class="tir" style="text-align:right">'+(b.vence||'—')+'</span>'+
+      '<span class="tir" style="text-align:right;color:var(--muted2);font-size:0.72rem;">'+(b.vence||'—')+'</span>'+
       '<span class="precio">'+(b.moneda==='USD'?'USD ':'$')+fmtNum(b.precio||0)+'</span>'+
-      '<span class="tir">'+(b.tir?b.tir.toFixed(1)+'%':'—')+'</span>'+
+      '<span class="tir">'+(tna?tna.toFixed(1)+'%':'—')+'</span>'+
+      '<span class="tir" style="color:var(--accent);">'+(tem?tem.toFixed(2)+'%':'—')+'</span>'+
+      '<span class="cambio pos">'+(ganancia?'+'+ganancia.toFixed(1)+'%':'—')+'</span>'+
     '</div>';
   }).join('');
   const st = document.getElementById('bonos-status');
