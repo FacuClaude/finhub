@@ -401,6 +401,14 @@
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         Chat IA
       </div>
+      <div class="nav-item" onclick="goTo('simulador')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/></svg>
+        Simulador
+      </div>
+      <div class="nav-item" onclick="goTo('calculadoras')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg>
+        Calculadoras
+      </div>
     </nav>
 
     <div class="sidebar-footer">
@@ -457,6 +465,15 @@
         <div class="market-table">
           <div class="market-row header"><span>Ticker</span><span>Empresa</span><span style="text-align:right">USD</span><span style="text-align:right">Var %</span><span></span></div>
           <div id="cedears-list"></div>
+        </div>
+      </div>
+
+      <!-- Crypto -->
+      <div class="market-section">
+        <div class="market-title">Crypto <span class="refreshing" id="crypto-status">cargando...</span></div>
+        <div class="market-table">
+          <div class="market-row header"><span>Ticker</span><span>Nombre</span><span style="text-align:right">USD</span><span style="text-align:right">Var %</span><span></span></div>
+          <div id="crypto-list"></div>
         </div>
       </div>
 
@@ -598,6 +615,143 @@
       </div>
     </div>
 
+    <!-- SIMULADOR -->
+    <div class="page" id="page-simulador">
+      <div class="page-title">Simulador</div>
+      <div class="page-sub">Proyectá el rendimiento de tu inversión</div>
+
+      <div style="background:var(--surface);border:1px solid var(--border);padding:28px;margin-bottom:28px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+          <div class="field">
+            <label>Monto a invertir</label>
+            <input type="number" id="sim-monto" placeholder="0.00" min="0" step="1000" oninput="calcSimulador()">
+          </div>
+          <div class="field">
+            <label>Moneda</label>
+            <select id="sim-moneda" onchange="calcSimulador()">
+              <option value="ARS">ARS (Pesos)</option>
+              <option value="USD">USD (Dólares)</option>
+            </select>
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:20px;">
+          <label>Instrumento</label>
+          <select id="sim-instrumento" onchange="calcSimulador()">
+            <optgroup label="Renta Fija ARS">
+              <option value="lecap_t2x5">Lecap T2X5 — TEM 3.8%</option>
+              <option value="lecap_s31e6">Lecap S31E6 — TEM 4.2%</option>
+              <option value="plazo_fijo">Plazo Fijo — TNA 37%</option>
+              <option value="pf_uva">Plazo Fijo UVA — Inflación + 1%</option>
+            </optgroup>
+            <optgroup label="Renta Fija USD">
+              <option value="bono_al30">Bono AL30 — TIR 18.2%</option>
+              <option value="bono_gd30">Bono GD30 — TIR 16.8%</option>
+              <option value="bono_ae38">Bono AE38 — TIR 14.5%</option>
+            </optgroup>
+            <optgroup label="Dolar">
+              <option value="dolar_mep">Dólar MEP (capital en USD)</option>
+              <option value="dolar_blue">Dólar Blue (capital en USD)</option>
+            </optgroup>
+            <optgroup label="Crypto">
+              <option value="bitcoin">Bitcoin (precio actual)</option>
+              <option value="ethereum">Ethereum (precio actual)</option>
+            </optgroup>
+          </select>
+        </div>
+        <div style="font-size:0.7rem;color:var(--muted);margin-bottom:8px;letter-spacing:0.08em;text-transform:uppercase;">Horizonte de tiempo</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="period-tab active" onclick="setSimPlazo(30,this)">30 días</button>
+          <button class="period-tab" onclick="setSimPlazo(60,this)">60 días</button>
+          <button class="period-tab" onclick="setSimPlazo(90,this)">90 días</button>
+          <button class="period-tab" onclick="setSimPlazo(180,this)">6 meses</button>
+          <button class="period-tab" onclick="setSimPlazo(365,this)">1 año</button>
+        </div>
+      </div>
+
+      <div id="sim-result" style="display:none;">
+        <div style="background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--accent);padding:28px;margin-bottom:20px;">
+          <div style="font-size:0.68rem;font-weight:500;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;" id="sim-result-label">Resultado</div>
+          <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:2.8rem;font-weight:700;color:var(--green);" id="sim-result-total">$0</div>
+          <div style="display:flex;gap:32px;margin-top:16px;">
+            <div><div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Capital inicial</div><div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.1rem;font-weight:600;" id="sim-capital">$0</div></div>
+            <div><div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Ganancia</div><div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.1rem;font-weight:600;color:var(--green);" id="sim-ganancia">$0</div></div>
+            <div><div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Rendimiento</div><div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.1rem;font-weight:600;color:var(--accent);" id="sim-rendimiento">0%</div></div>
+          </div>
+        </div>
+        <div id="sim-breakdown" style="background:var(--surface);border:1px solid var(--border);padding:20px 24px;font-size:0.82rem;color:var(--ink2);line-height:1.9;"></div>
+      </div>
+    </div>
+
+    <!-- CALCULADORAS -->
+    <div class="page" id="page-calculadoras">
+      <div class="page-title">Calculadoras</div>
+      <div class="page-sub">Herramientas financieras</div>
+
+      <div style="display:grid;gap:20px;">
+
+        <!-- Dolar MEP -->
+        <div style="background:var(--surface);border:1px solid var(--border);padding:24px;">
+          <div style="font-size:0.72rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent);margin-bottom:16px;">Dólar MEP / CCL</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;align-items:end;">
+            <div class="field" style="margin:0;">
+              <label>Tengo (ARS)</label>
+              <input type="number" id="mep-ars" placeholder="0" oninput="calcMep('ars')">
+            </div>
+            <div class="field" style="margin:0;">
+              <label>Tengo (USD)</label>
+              <input type="number" id="mep-usd" placeholder="0" oninput="calcMep('usd')">
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;">Resultado</div>
+              <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1rem;font-weight:600;" id="mep-result">—</div>
+              <div style="font-size:0.72rem;color:var(--muted);" id="mep-detail">—</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Comparador -->
+        <div style="background:var(--surface);border:1px solid var(--border);padding:24px;">
+          <div style="font-size:0.72rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent);margin-bottom:16px;">Comparador de instrumentos</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+            <div class="field" style="margin:0;"><label>Monto (ARS)</label><input type="number" id="comp-monto" placeholder="100000" oninput="calcComparador()"></div>
+            <div class="field" style="margin:0;">
+              <label>Plazo</label>
+              <select id="comp-plazo" onchange="calcComparador()">
+                <option value="30">30 días</option>
+                <option value="60">60 días</option>
+                <option value="90">90 días</option>
+                <option value="180">6 meses</option>
+                <option value="365">1 año</option>
+              </select>
+            </div>
+          </div>
+          <div id="comp-result" style="display:none;">
+            <div class="market-table">
+              <div class="market-row header" style="grid-template-columns:1fr 90px 90px 100px;">
+                <span>Instrumento</span><span style="text-align:right">TEM</span><span style="text-align:right">Rendim.</span><span style="text-align:right">Capital final</span>
+              </div>
+              <div id="comp-rows"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Calculadora Inflacion -->
+        <div style="background:var(--surface);border:1px solid var(--border);padding:24px;">
+          <div style="font-size:0.72rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent);margin-bottom:16px;">Calculadora de inflación</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;align-items:end;">
+            <div class="field" style="margin:0;"><label>Monto original ($)</label><input type="number" id="inf-monto" placeholder="100000" oninput="calcInflacion()"></div>
+            <div class="field" style="margin:0;"><label>Meses atrás</label><input type="number" id="inf-meses" placeholder="12" min="1" max="60" oninput="calcInflacion()"></div>
+            <div>
+              <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;">Valor hoy</div>
+              <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.2rem;font-weight:700;color:var(--green);" id="inf-result">—</div>
+              <div style="font-size:0.72rem;color:var(--muted);margin-top:4px;" id="inf-detail">—</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
   </main>
 </div>
 
@@ -696,7 +850,7 @@ const db   = getDatabase(app);
 
 let uid = null;
 let currency = 'ARS';
-let marketData = { dolar: {}, acciones: [], cedears: [], bonos: [] };
+let marketData = { dolar: {}, acciones: [], cedears: [], bonos: [], crypto: [] };
 let inversiones = {}, patAssets = {}, patDebts = {};
 let selectedProfile = null;
 let chatHistory = [];
@@ -721,6 +875,8 @@ window.goTo = page => {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
   if (page === 'fci') renderFci();
+  if (page === 'simulador') calcSimulador();
+  if (page === 'calculadoras') { calcMep('ars'); calcComparador(); }
   document.querySelectorAll('.nav-item').forEach(n => { if (n.getAttribute('onclick')?.includes(page)) n.classList.add('active'); });
 };
 
@@ -739,11 +895,12 @@ window.loadAllData = async () => {
   document.getElementById('last-update').textContent = 'Actualizando...';
   const base = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '';
 
-  const [dolarRes, accionesRes, cedearRes, bonosRes] = await Promise.allSettled([
+  const [dolarRes, accionesRes, cedearRes, bonosRes, cryptoRes] = await Promise.allSettled([
     fetch(base+'/api/market?source=dolar').then(r=>r.json()),
     fetch(base+'/api/market?source=acciones').then(r=>r.json()),
     fetch(base+'/api/market?source=cedears').then(r=>r.json()),
     fetch(base+'/api/market?source=bonos').then(r=>r.json()),
+    fetch(base+'/api/market?source=crypto').then(r=>r.json()),
   ]);
 
   if (dolarRes.status === 'fulfilled') {
@@ -761,6 +918,10 @@ window.loadAllData = async () => {
   if (bonosRes.status === 'fulfilled') {
     marketData.bonos = bonosRes.value.bonos || [];
     renderBonos();
+  }
+  if (cryptoRes.status === 'fulfilled') {
+    marketData.crypto = cryptoRes.value.crypto || [];
+    renderCrypto();
   }
 
   renderCartera();
@@ -1361,6 +1522,208 @@ function buildChatContext() {
   ].filter(s => s !== '').join('\n');
 }
 
+
+// ── CRYPTO ──
+function renderCrypto() {
+  const list = document.getElementById('crypto-list');
+  if (!list) return;
+  const crypto = marketData.crypto.length ? marketData.crypto : [
+    { symbol:'BTC', nombre:'Bitcoin',  precio:67500, cambio:'2.40' },
+    { symbol:'ETH', nombre:'Ethereum', precio:3420,  cambio:'1.80' },
+    { symbol:'USDT',nombre:'Tether',   precio:1.00,  cambio:'0.01' },
+  ];
+  list.innerHTML = crypto.map(c => {
+    const chg = parseFloat(c.cambio||0);
+    const cls = chg>0?'pos':chg<0?'neg':'neu';
+    return '<div class="market-row">'+
+      '<span class="ticker">'+c.symbol+'</span>'+
+      '<span class="nombre">'+c.nombre+'</span>'+
+      '<span class="precio">USD '+fmtNum(c.precio)+'</span>'+
+      '<span class="cambio '+cls+'">'+(chg>=0?'+':'')+chg.toFixed(2)+'%</span>'+
+      '<span></span></div>';
+  }).join('');
+  const st = document.getElementById('crypto-status');
+  if (st) st.textContent = marketData.crypto.length ? 'actualizado' : 'datos de referencia';
+  // Also add crypto to ticker
+  updateTicker();
+}
+
+// ── SIMULADOR ──
+let simPlazo = 30;
+window.setSimPlazo = (dias, el) => {
+  simPlazo = dias;
+  document.querySelectorAll('#page-simulador .period-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  calcSimulador();
+};
+
+window.calcSimulador = () => {
+  const monto = parseFloat(document.getElementById('sim-monto')?.value) || 0;
+  const moneda = document.getElementById('sim-moneda')?.value || 'ARS';
+  const instrumento = document.getElementById('sim-instrumento')?.value || 'lecap_t2x5';
+  if (!monto || monto <= 0) { document.getElementById('sim-result').style.display='none'; return; }
+
+  const d = marketData.dolar;
+  const ccl = d?.ccl?.venta || 1300;
+  const montoARS = moneda==='USD' ? monto*ccl : monto;
+
+  const tasas = {
+    lecap_t2x5: { tem: 3.8,  tipo: 'ARS', nombre: 'Lecap T2X5' },
+    lecap_s31e6:{ tem: 4.2,  tipo: 'ARS', nombre: 'Lecap S31E6' },
+    plazo_fijo: { tna: 37,   tipo: 'ARS', nombre: 'Plazo Fijo' },
+    pf_uva:     { inflMes: 3.7, tipo: 'ARS', nombre: 'Plazo Fijo UVA' },
+    bono_al30:  { tir: 18.2, tipo: 'USD', nombre: 'Bono AL30' },
+    bono_gd30:  { tir: 16.8, tipo: 'USD', nombre: 'Bono GD30' },
+    bono_ae38:  { tir: 14.5, tipo: 'USD', nombre: 'Bono AE38' },
+    dolar_mep:  { tipo: 'USD', nombre: 'Dolar MEP', precio: d?.mep?.venta||1300 },
+    dolar_blue: { tipo: 'USD', nombre: 'Dolar Blue', precio: d?.blue?.venta||1400 },
+    bitcoin:    { tipo: 'USD', nombre: 'Bitcoin', precio: (marketData.crypto.find(c=>c.symbol==='BTC')?.precio||67500) },
+    ethereum:   { tipo: 'USD', nombre: 'Ethereum', precio: (marketData.crypto.find(c=>c.symbol==='ETH')?.precio||3420) },
+  };
+
+  const inst = tasas[instrumento];
+  const meses = simPlazo / 30;
+  let total, rendPct, breakdown = '';
+
+  if (inst.tem) {
+    const tem = inst.tem / 100;
+    total = monto * Math.pow(1 + tem, meses);
+    rendPct = ((total/monto)-1)*100;
+    const tna = ((Math.pow(1+tem,12)-1)*100).toFixed(2);
+    breakdown = inst.nombre + ' — TEM ' + inst.tem + '% | TNA equiv. ' + tna + '% | Plazo: ' + simPlazo + ' días';
+  } else if (inst.tna) {
+    const tasaDia = inst.tna / 100 / 365;
+    total = monto * (1 + tasaDia * simPlazo);
+    rendPct = ((total/monto)-1)*100;
+    breakdown = inst.nombre + ' — TNA ' + inst.tna + '% | Plazo: ' + simPlazo + ' días';
+  } else if (inst.inflMes) {
+    const tem = inst.inflMes / 100;
+    total = monto * Math.pow(1 + tem, meses);
+    rendPct = ((total/monto)-1)*100;
+    breakdown = inst.nombre + ' — Inflación estimada ' + inst.inflMes + '% mensual | Plazo: ' + simPlazo + ' días';
+  } else if (inst.tir) {
+    const tirMensual = Math.pow(1 + inst.tir/100, 1/12) - 1;
+    total = monto * Math.pow(1 + tirMensual, meses);
+    rendPct = ((total/monto)-1)*100;
+    breakdown = inst.nombre + ' — TIR anual ' + inst.tir + '% | TEM equiv. ' + (tirMensual*100).toFixed(2) + '% | Plazo: ' + simPlazo + ' días';
+  } else {
+    // Dolar / crypto - capital preservation, show ARS equivalent
+    total = monto;
+    rendPct = 0;
+    const precio = inst.precio;
+    const enPesos = monto * precio;
+    breakdown = inst.nombre + ' — Precio actual: $' + fmtNum(precio) + ' | En ARS: $' + fmtNum(enPesos) + '. El rendimiento en USD depende de la variación del precio.';
+  }
+
+  const ganancia = total - monto;
+  const prefix = moneda==='USD' ? 'USD ' : '$';
+
+  document.getElementById('sim-result').style.display = 'block';
+  document.getElementById('sim-result-label').textContent = inst.nombre + ' — ' + simPlazo + ' días';
+  document.getElementById('sim-result-total').textContent = prefix + fmtNum(total);
+  document.getElementById('sim-capital').textContent = prefix + fmtNum(monto);
+  document.getElementById('sim-ganancia').textContent = (ganancia>=0?'+':'')+prefix + fmtNum(ganancia);
+  document.getElementById('sim-rendimiento').textContent = (rendPct>=0?'+':'')+rendPct.toFixed(2)+'%';
+  document.getElementById('sim-breakdown').textContent = breakdown;
+};
+
+// ── CALCULADORA MEP ──
+window.calcMep = (from) => {
+  const d = marketData.dolar;
+  const mep = d?.mep?.venta || 1300;
+  const ccl = d?.ccl?.venta || 1310;
+
+  if (from === 'ars') {
+    const ars = parseFloat(document.getElementById('mep-ars')?.value) || 0;
+    document.getElementById('mep-usd').value = '';
+    const usdMep = ars / mep;
+    const usdCcl = ars / ccl;
+    document.getElementById('mep-result').textContent = 'USD ' + fmtNum(usdMep) + ' (MEP)';
+    document.getElementById('mep-detail').textContent = 'USD ' + fmtNum(usdCcl) + ' via CCL | Tipo MEP: $' + fmtNum(mep) + ' | CCL: $' + fmtNum(ccl);
+  } else {
+    const usd = parseFloat(document.getElementById('mep-usd')?.value) || 0;
+    document.getElementById('mep-ars').value = '';
+    const arsMep = usd * mep;
+    const arsCcl = usd * ccl;
+    document.getElementById('mep-result').textContent = '$' + fmtNum(arsMep) + ' (MEP)';
+    document.getElementById('mep-detail').textContent = '$' + fmtNum(arsCcl) + ' via CCL | Tipo MEP: $' + fmtNum(mep) + ' | CCL: $' + fmtNum(ccl);
+  }
+};
+
+// ── COMPARADOR ──
+window.calcComparador = () => {
+  const monto = parseFloat(document.getElementById('comp-monto')?.value) || 0;
+  const plazo = parseInt(document.getElementById('comp-plazo')?.value) || 30;
+  if (!monto || monto <= 0) { document.getElementById('comp-result').style.display='none'; return; }
+
+  const meses = plazo / 30;
+  const d = marketData.dolar;
+  const ccl = d?.ccl?.venta || 1300;
+
+  const instrumentos = [
+    { nombre: 'Lecap S31E6',  tem: 4.2,   moneda: 'ARS' },
+    { nombre: 'Lecap T2X5',   tem: 3.8,   moneda: 'ARS' },
+    { nombre: 'Plazo Fijo',   tna: 37,    moneda: 'ARS' },
+    { nombre: 'Bono AL30',    tir: 18.2,  moneda: 'USD' },
+    { nombre: 'Bono GD30',    tir: 16.8,  moneda: 'USD' },
+    { nombre: 'Dolar MEP',    tipo:'usd', moneda: 'USD', precio: d?.mep?.venta||1300 },
+  ];
+
+  const results = instrumentos.map(inst => {
+    let total, rendPct, tem;
+    if (inst.tem) {
+      total = monto * Math.pow(1 + inst.tem/100, meses);
+      tem = inst.tem;
+    } else if (inst.tna) {
+      total = monto * (1 + inst.tna/100/365*plazo);
+      tem = ((Math.pow(1+inst.tna/100/365*30,1)-1)*100);
+    } else if (inst.tir) {
+      const tirM = Math.pow(1+inst.tir/100,1/12)-1;
+      total = monto * Math.pow(1+tirM, meses);
+      tem = tirM*100;
+    } else {
+      total = monto; tem = 0;
+    }
+    rendPct = ((total/monto)-1)*100;
+    return { nombre: inst.nombre, tem: tem.toFixed(2), rend: rendPct.toFixed(2), total: total, moneda: inst.moneda };
+  }).sort((a,b) => parseFloat(b.rend)-parseFloat(a.rend));
+
+  const rows = document.getElementById('comp-rows');
+  if (rows) {
+    rows.innerHTML = results.map((r,i) => {
+      const isTop = i===0;
+      return '<div class="market-row" style="grid-template-columns:1fr 90px 90px 100px;'+(isTop?'background:var(--accent-bg);':'')+'">' +
+        '<span class="nombre" style="'+(isTop?'font-weight:600;color:var(--accent);':'')+'">'+r.nombre+'</span>'+
+        '<span class="tir" style="text-align:right;">'+r.tem+'%</span>'+
+        '<span class="cambio pos" style="">+'+r.rend+'%</span>'+
+        '<span class="precio" style="'+(isTop?'font-weight:700;':'')+'">$'+fmtNum(r.total)+'</span>'+
+      '</div>';
+    }).join('');
+  }
+  document.getElementById('comp-result').style.display = 'block';
+};
+
+// ── INFLACION ──
+const INFLACION_MENSUAL = [6.7,4.2,3.7,4.0,2.4,2.7,2.4,4.2,3.5,3.3,2.4,2.7,3.7,4.0,3.7]; // ultimos meses aprox
+
+window.calcInflacion = () => {
+  const monto = parseFloat(document.getElementById('inf-monto')?.value) || 0;
+  const meses = parseInt(document.getElementById('inf-meses')?.value) || 12;
+  if (!monto || meses < 1) return;
+
+  // Use available data or estimate
+  const tasasUsadas = INFLACION_MENSUAL.slice(0, Math.min(meses, INFLACION_MENSUAL.length));
+  while (tasasUsadas.length < meses) tasasUsadas.push(3.5); // fill with estimate
+  const acum = tasasUsadas.reduce((acc, t) => acc * (1 + t/100), 1);
+  const valorHoy = monto * acum;
+  const pctTotal = ((acum-1)*100).toFixed(1);
+
+  document.getElementById('inf-result').textContent = '$' + fmtNum(valorHoy);
+  document.getElementById('inf-detail').textContent = 'Inflación acumulada estimada: +' + pctTotal + '% en ' + meses + ' meses';
+};
+
+// ── GOTOS ──
+// (added to existing goTo function below)
 
 // Dark mode sync
 if (localStorage.getItem('finhub-dark')==='1') {
