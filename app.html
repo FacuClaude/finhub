@@ -571,6 +571,11 @@
     .mobile-overlay.open { display: block; }
     @media (max-width: 900px) {
       .shell { grid-template-columns: 1fr; }
+      .section-header { flex-wrap: wrap; gap: 8px; }
+      .section-header > div:last-child { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; }
+      .section-header > div:last-child .btn-primary { flex: 1; }
+      .filter-row { flex-wrap: wrap; gap: 6px; }
+      #tx-summary-banner { grid-template-columns: 1fr 1fr 1fr !important; gap: 12px 8px !important; }
       .hamburger { display: flex !important; }
       .sidebar {
         position: fixed !important;
@@ -779,7 +784,7 @@
           <button class="filter-chip" onclick="setFilter('income',this)">Ingresos</button>
           <button class="filter-chip" onclick="setFilter('expense',this)">Gastos</button>
         </div>
-        <div style="display:flex;gap:8px;align-items:center;">
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
           <button class="btn-export" onclick="expandAllMonths()">&#9660; Expandir</button>
           <button class="btn-export" onclick="collapseAllMonths()">&#9650; Colapsar</button>
           <button class="btn-export" onclick="openModal('import')">&#8679; Importar</button>
@@ -1212,8 +1217,8 @@
     <input type="hidden" id="edit-tx-id" />
     <div class="field">
       <div class="type-toggle">
-        <button type="button" class="type-btn active-income" id="edit-type-income" data-type="income">Ingreso</button>
-        <button type="button" class="type-btn" id="edit-type-expense" data-type="expense">Gasto</button>
+        <button type="button" class="type-btn active-income" id="edit-type-income" onclick="window.setEditType('income')">Ingreso</button>
+        <button type="button" class="type-btn" id="edit-type-expense" onclick="window.setEditType('expense')">Gasto</button>
       </div>
     </div>
     <div class="field"><label>Descripción</label><input type="text" id="edit-tx-desc" placeholder="Ej: Sueldo, Supermercado…" /></div>
@@ -1250,6 +1255,23 @@
         </label>
       </div>
     </div>
+    <div class="field">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:400;text-transform:none;letter-spacing:0;font-size:0.85rem;color:var(--ink2);">
+        <input type="checkbox" id="edit-tx-tarjeta" style="accent-color:var(--accent);width:16px;height:16px;">
+        <span>Gasto con tarjeta de crédito</span>
+      </label>
+      <div id="edit-tx-tarjeta-tipo-wrap" style="display:none;margin-top:10px;padding:10px 14px;background:var(--surface2);border-radius:4px;">
+        <div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Tipo de tarjeta</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.82rem;color:var(--ink2);">
+            <input type="radio" name="edit-tx-tarjeta-tipo" value="fija" checked style="accent-color:#4a90c4;width:14px;height:14px;"> <span style="color:#4a90c4;font-weight:500;">Fija</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.82rem;color:var(--ink2);">
+            <input type="radio" name="edit-tx-tarjeta-tipo" value="variable" style="accent-color:#c17a4a;width:14px;height:14px;"> <span style="color:#c17a4a;font-weight:500;">Variable</span>
+          </label>
+        </div>
+      </div>
+    </div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal('edit-tx')" style="flex:1">Cancelar</button>
       <button class="btn-primary" onclick="saveEditTx()" style="flex:2">Guardar cambios</button>
@@ -1263,8 +1285,8 @@
     <div class="modal-title">Nueva transacción</div>
     <div class="field">
       <div class="type-toggle">
-        <button type="button" class="type-btn active-income" id="type-income" data-type="income">Ingreso</button>
-        <button type="button" class="type-btn" id="type-expense" data-type="expense">Gasto</button>
+        <button type="button" class="type-btn active-income" id="type-income" onclick="window.setType('income')">Ingreso</button>
+        <button type="button" class="type-btn" id="type-expense" onclick="window.setType('expense')">Gasto</button>
       </div>
     </div>
     <div class="field"><label>Descripción</label><input type="text" id="tx-desc" placeholder="Ej: Sueldo, Supermercado…" /></div>
@@ -1299,6 +1321,23 @@
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.85rem;font-weight:400;text-transform:none;letter-spacing:0;color:var(--ink2);">
           <input type="radio" name="tx-variabilidad" id="tx-variable" value="variable" style="accent-color:var(--accent);width:16px;height:16px;"> Variable
         </label>
+      </div>
+    </div>
+    <div class="field">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:400;text-transform:none;letter-spacing:0;font-size:0.85rem;color:var(--ink2);">
+        <input type="checkbox" id="tx-tarjeta" style="accent-color:var(--accent);width:16px;height:16px;">
+        <span>Gasto con tarjeta de crédito</span>
+      </label>
+      <div id="tx-tarjeta-tipo-wrap" style="display:none;margin-top:10px;padding:10px 14px;background:var(--surface2);border-radius:4px;">
+        <div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Tipo de tarjeta</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.82rem;color:var(--ink2);">
+            <input type="radio" name="tx-tarjeta-tipo" value="fija" checked style="accent-color:#4a90c4;width:14px;height:14px;"> <span style="color:#4a90c4;font-weight:500;">Fija</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.82rem;color:var(--ink2);">
+            <input type="radio" name="tx-tarjeta-tipo" value="variable" style="accent-color:#c17a4a;width:14px;height:14px;"> <span style="color:#c17a4a;font-weight:500;">Variable</span>
+          </label>
+        </div>
       </div>
     </div>
     <div class="modal-actions">
@@ -1420,18 +1459,7 @@
   let monthlyChart, catChart;
 
   // ── AUTH ──
-  // ── TYPE TOGGLE LISTENERS (immune to module scoping) ──
-  document.addEventListener('click', e => {
-    const btn = e.target.closest('[data-type]');
-    if (!btn) return;
-    const type = btn.dataset.type;
-    const isEdit = btn.id.startsWith('edit-');
-    if (isEdit) {
-      window.setEditType(type);
-    } else {
-      window.setType(type);
-    }
-  });
+  // ── TYPE TOGGLE ── (handled via onclick)
 
   onAuthStateChanged(auth, user => {
     if (!user) { window.location.href = 'index.html'; return; }
@@ -1680,7 +1708,7 @@
             <span style="font-size:0.55rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:${varColor};background:${varBg};padding:2px 7px;border-radius:3px;flex-shrink:0;">${varLabel}</span>
             ${isUSD ? '<span style="font-size:0.55rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#4a90c4;background:rgba(74,144,196,0.1);padding:2px 7px;border-radius:3px;flex-shrink:0;">USD</span>' : ''}
           </div>
-          <div class="tx-cat">${esc(t.category)}</div>
+          <div class="tx-cat">${esc(t.category)}${t.tarjeta ? (' &nbsp;<span style="font-size:0.55rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:'+(t.tarjetaTipo==='variable'?'var(--accent2)':'#4a90c4')+';background:'+(t.tarjetaTipo==='variable'?'rgba(193,122,74,0.1)':'rgba(74,144,196,0.1)')+';padding:1px 6px;border-radius:3px;">TC '+(t.tarjetaTipo==='variable'?'VAR':'FIJA')+'</span>') : ''}</div>
           <div class="tx-date">${fmtDate(t.date)}${showOrig ? ' &nbsp;·&nbsp; <span style="color:var(--muted2);font-size:0.65rem;">' + originalAmt + '</span>' : ''}</div>
         </div>
         <div class="tx-item-right">
@@ -1999,7 +2027,9 @@
       document.getElementById('tx-desc').value   = '';
       document.getElementById('tx-amount').value = '';
       document.getElementById('tx-date').value   = new Date().toISOString().split('T')[0];
-      window.setType('income'); window._txType = 'income';
+      document.getElementById('tx-tarjeta').checked = false;
+      document.getElementById('tx-tarjeta-tipo-wrap').style.display = 'none';
+      window.setType('income');
     }
     if (name==='budget')        document.getElementById('budget-limit').value  = '';
     if (name==='global-budget') document.getElementById('gb-amount').value     = globalBudgets[budgetPeriod]?.amount || '';
@@ -2044,7 +2074,9 @@
     if (!date)            { alert('Seleccioná una fecha'); return; }
     const variabilidad = document.querySelector('input[name="tx-variabilidad"]:checked')?.value || 'fijo';
     const monedaTx = document.querySelector('input[name="tx-moneda"]:checked')?.value || 'ARS';
-    await push(ref(db,`users/${uid}/transactions`),{description:desc,amount,category:cat,type:txType,date,variabilidad,moneda:monedaTx,createdAt:Date.now()});
+    const esTarjeta = document.getElementById('tx-tarjeta')?.checked || false;
+    const tarjetaTipo = esTarjeta ? (document.querySelector('input[name="tx-tarjeta-tipo"]:checked')?.value || 'fija') : null;
+    await push(ref(db,`users/${uid}/transactions`),{description:desc,amount,category:cat,type:txType,date,variabilidad,moneda:monedaTx,tarjeta:esTarjeta||false,tarjetaTipo:tarjetaTipo||null,createdAt:Date.now()});
     // Point dashboard to the month of the new transaction
     dashMonthKey = date.substring(0,7);
     closeModal('tx');
@@ -2390,6 +2422,10 @@
     const monedaVal = t.moneda || 'ARS';
     document.getElementById('edit-tx-ars').checked = monedaVal === 'ARS';
     document.getElementById('edit-tx-usd').checked = monedaVal === 'USD';
+    const tarjetaEl = document.getElementById('edit-tx-tarjeta');
+    const tarjetaWrap = document.getElementById('edit-tx-tarjeta-tipo-wrap');
+    if (tarjetaEl) { tarjetaEl.checked = t.tarjeta || false; tarjetaWrap.style.display = t.tarjeta ? 'block' : 'none'; }
+    if (t.tarjetaTipo) { const ttr = document.querySelector('input[name="edit-tx-tarjeta-tipo"][value="'+t.tarjetaTipo+'"]'); if(ttr) ttr.checked = true; }
     openModal('edit-tx');
   };
 
@@ -2416,8 +2452,10 @@
     if (!date)            { alert('Seleccioná una fecha'); return; }
     const varEdit = document.querySelector('input[name="edit-tx-variabilidad"]:checked')?.value || 'fijo';
     const monedaEdit = document.querySelector('input[name="edit-tx-moneda"]:checked')?.value || 'ARS';
+    const esTarjetaEdit = document.getElementById('edit-tx-tarjeta')?.checked || false;
+    const tarjetaTipoEdit = esTarjetaEdit ? (document.querySelector('input[name="edit-tx-tarjeta-tipo"]:checked')?.value || 'fija') : null;
     await set(ref(db, 'users/'+uid+'/transactions/'+id), {
-      description: desc, amount, category: cat, type: editTxType, date, variabilidad: varEdit, moneda: monedaEdit, createdAt: transactions[id]?.createdAt || Date.now()
+      description: desc, amount, category: cat, type: editTxType, date, variabilidad: varEdit, moneda: monedaEdit, tarjeta: esTarjetaEdit, tarjetaTipo: tarjetaTipoEdit, createdAt: transactions[id]?.createdAt || Date.now()
     });
     dashMonthKey = date.substring(0,7);
     closeModal('edit-tx');
@@ -3317,6 +3355,16 @@
     _origGoTo(page);
     if (window.innerWidth <= 900) closeMobileNav();
   };
+
+  // ── TARJETA TOGGLE ──
+  document.addEventListener('change', e => {
+    if (e.target.id === 'tx-tarjeta') {
+      document.getElementById('tx-tarjeta-tipo-wrap').style.display = e.target.checked ? 'block' : 'none';
+    }
+    if (e.target.id === 'edit-tx-tarjeta') {
+      document.getElementById('edit-tx-tarjeta-tipo-wrap').style.display = e.target.checked ? 'block' : 'none';
+    }
+  });
 
   // ── DARK MODE ──
   window.toggleDark = (on) => {
