@@ -747,6 +747,23 @@
         </div>
       </div>
 
+      <!-- TARJETAS DE CRÉDITO -->
+      <div id="dash-tarjetas-section" style="margin-bottom:28px;display:none;">
+        <div class="section-header">
+          <div class="section-title">Tarjetas de crédito</div>
+          <div style="font-size:0.72rem;color:var(--muted);" id="dash-tarjetas-mes"></div>
+        </div>
+        <!-- Summary cards per tarjeta -->
+        <div id="dash-tarjetas-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:20px;"></div>
+        <!-- Stacked bar chart -->
+        <div class="chart-card" style="margin-bottom:16px;">
+          <div style="font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;">Evolución últimos 6 meses</div>
+          <canvas id="chart-tarjetas" height="200"></canvas>
+        </div>
+        <!-- Fija vs Variable breakdown -->
+        <div id="dash-tarjetas-breakdown" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;"></div>
+      </div>
+
       <div class="section-header">
         <div class="section-title">Últimos movimientos</div>
         <button class="btn-secondary" onclick="goTo('transactions')">Ver todos</button>
@@ -1260,15 +1277,28 @@
         <input type="checkbox" id="edit-tx-tarjeta" style="accent-color:var(--accent);width:16px;height:16px;">
         <span>Gasto con tarjeta de crédito</span>
       </label>
-      <div id="edit-tx-tarjeta-tipo-wrap" style="display:none;margin-top:10px;padding:10px 14px;background:var(--surface2);border-radius:4px;">
-        <div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Tipo de tarjeta</div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;">
-          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.82rem;color:var(--ink2);">
-            <input type="radio" name="edit-tx-tarjeta-tipo" value="fija" checked style="accent-color:#4a90c4;width:14px;height:14px;"> <span style="color:#4a90c4;font-weight:500;">Fija</span>
-          </label>
-          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.82rem;color:var(--ink2);">
-            <input type="radio" name="edit-tx-tarjeta-tipo" value="variable" style="accent-color:#c17a4a;width:14px;height:14px;"> <span style="color:#c17a4a;font-weight:500;">Variable</span>
-          </label>
+      <div id="edit-tx-tarjeta-tipo-wrap" style="display:none;margin-top:10px;padding:12px 14px;background:var(--surface2);border-radius:4px;flex-direction:column;gap:10px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div>
+            <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Red</div>
+            <select id="edit-tx-tarjeta-red" style="width:100%;padding:8px 10px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-size:0.82rem;border-radius:3px;font-family:'DM Sans',sans-serif;">
+              <option value="Visa">Visa</option>
+              <option value="Mastercard">Mastercard</option>
+              <option value="Amex">American Express</option>
+              <option value="Otra">Otra</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Tipo</div>
+            <select id="edit-tx-tarjeta-tipo-sel" style="width:100%;padding:8px 10px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-size:0.82rem;border-radius:3px;font-family:'DM Sans',sans-serif;">
+              <option value="fija">Fija</option>
+              <option value="variable">Variable</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Identificador</div>
+          <input type="text" id="edit-tx-tarjeta-nombre" placeholder="ej: Visa Galicia - Facundo" style="width:100%;padding:8px 10px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-size:0.82rem;border-radius:3px;font-family:'DM Sans',sans-serif;box-sizing:border-box;">
         </div>
       </div>
     </div>
@@ -1328,15 +1358,28 @@
         <input type="checkbox" id="tx-tarjeta" style="accent-color:var(--accent);width:16px;height:16px;">
         <span>Gasto con tarjeta de crédito</span>
       </label>
-      <div id="tx-tarjeta-tipo-wrap" style="display:none;margin-top:10px;padding:10px 14px;background:var(--surface2);border-radius:4px;">
-        <div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Tipo de tarjeta</div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;">
-          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.82rem;color:var(--ink2);">
-            <input type="radio" name="tx-tarjeta-tipo" value="fija" checked style="accent-color:#4a90c4;width:14px;height:14px;"> <span style="color:#4a90c4;font-weight:500;">Fija</span>
-          </label>
-          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.82rem;color:var(--ink2);">
-            <input type="radio" name="tx-tarjeta-tipo" value="variable" style="accent-color:#c17a4a;width:14px;height:14px;"> <span style="color:#c17a4a;font-weight:500;">Variable</span>
-          </label>
+      <div id="tx-tarjeta-tipo-wrap" style="display:none;margin-top:10px;padding:12px 14px;background:var(--surface2);border-radius:4px;display:none;flex-direction:column;gap:10px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div>
+            <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Red</div>
+            <select id="tx-tarjeta-red" style="width:100%;padding:8px 10px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-size:0.82rem;border-radius:3px;font-family:'DM Sans',sans-serif;">
+              <option value="Visa">Visa</option>
+              <option value="Mastercard">Mastercard</option>
+              <option value="Amex">American Express</option>
+              <option value="Otra">Otra</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Tipo</div>
+            <select id="tx-tarjeta-tipo-sel" style="width:100%;padding:8px 10px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-size:0.82rem;border-radius:3px;font-family:'DM Sans',sans-serif;">
+              <option value="fija">Fija</option>
+              <option value="variable">Variable</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Identificador (ej: Visa Galicia - Facundo)</div>
+          <input type="text" id="tx-tarjeta-nombre" placeholder="ej: Visa Galicia - Facundo" style="width:100%;padding:8px 10px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-size:0.82rem;border-radius:3px;font-family:'DM Sans',sans-serif;box-sizing:border-box;">
         </div>
       </div>
     </div>
@@ -1544,6 +1587,7 @@
     renderMonthlyChart(txArr);
     renderCatChart(expenses);
     renderDashAlert();
+    renderTarjetas();
   }
 
   function renderDashAlert() {
@@ -1708,7 +1752,7 @@
             <span style="font-size:0.55rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:${varColor};background:${varBg};padding:2px 7px;border-radius:3px;flex-shrink:0;">${varLabel}</span>
             ${isUSD ? '<span style="font-size:0.55rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#4a90c4;background:rgba(74,144,196,0.1);padding:2px 7px;border-radius:3px;flex-shrink:0;">USD</span>' : ''}
           </div>
-          <div class="tx-cat">${esc(t.category)}${t.tarjeta ? (' &nbsp;<span style="font-size:0.55rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:'+(t.tarjetaTipo==='variable'?'var(--accent2)':'#4a90c4')+';background:'+(t.tarjetaTipo==='variable'?'rgba(193,122,74,0.1)':'rgba(74,144,196,0.1)')+';padding:1px 6px;border-radius:3px;">TC '+(t.tarjetaTipo==='variable'?'VAR':'FIJA')+'</span>') : ''}</div>
+          <div class="tx-cat">${esc(t.category)}${t.tarjeta ? (' &nbsp;<span style="font-size:0.55rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:'+(t.tarjetaTipo==='variable'?'var(--accent2)':'#4a90c4')+';background:'+(t.tarjetaTipo==='variable'?'rgba(193,122,74,0.1)':'rgba(74,144,196,0.1)')+';padding:1px 6px;border-radius:3px;">'+(t.tarjetaNombre||t.tarjetaRed||'TC')+' '+(t.tarjetaTipo==='variable'?'VAR':'FIJA')+'</span>') : ''}</div>
           <div class="tx-date">${fmtDate(t.date)}${showOrig ? ' &nbsp;·&nbsp; <span style="color:var(--muted2);font-size:0.65rem;">' + originalAmt + '</span>' : ''}</div>
         </div>
         <div class="tx-item-right">
@@ -2029,6 +2073,9 @@
       document.getElementById('tx-date').value   = new Date().toISOString().split('T')[0];
       document.getElementById('tx-tarjeta').checked = false;
       document.getElementById('tx-tarjeta-tipo-wrap').style.display = 'none';
+      const tnReset = document.getElementById('tx-tarjeta-nombre'); if(tnReset) tnReset.value = '';
+      const trReset = document.getElementById('tx-tarjeta-red'); if(trReset) trReset.value = 'Visa';
+      const ttReset = document.getElementById('tx-tarjeta-tipo-sel'); if(ttReset) ttReset.value = 'fija';
       window.setType('income');
     }
     if (name==='budget')        document.getElementById('budget-limit').value  = '';
@@ -2075,8 +2122,10 @@
     const variabilidad = document.querySelector('input[name="tx-variabilidad"]:checked')?.value || 'fijo';
     const monedaTx = document.querySelector('input[name="tx-moneda"]:checked')?.value || 'ARS';
     const esTarjeta = document.getElementById('tx-tarjeta')?.checked || false;
-    const tarjetaTipo = esTarjeta ? (document.querySelector('input[name="tx-tarjeta-tipo"]:checked')?.value || 'fija') : null;
-    await push(ref(db,`users/${uid}/transactions`),{description:desc,amount,category:cat,type:txType,date,variabilidad,moneda:monedaTx,tarjeta:esTarjeta||false,tarjetaTipo:tarjetaTipo||null,createdAt:Date.now()});
+    const tarjetaRed = esTarjeta ? (document.getElementById('tx-tarjeta-red')?.value || 'Visa') : null;
+    const tarjetaTipo = esTarjeta ? (document.getElementById('tx-tarjeta-tipo-sel')?.value || 'fija') : null;
+    const tarjetaNombre = esTarjeta ? (document.getElementById('tx-tarjeta-nombre')?.value.trim() || tarjetaRed) : null;
+    await push(ref(db,`users/${uid}/transactions`),{description:desc,amount,category:cat,type:txType,date,variabilidad,moneda:monedaTx,tarjeta:esTarjeta||false,tarjetaRed,tarjetaTipo,tarjetaNombre,createdAt:Date.now()});
     // Point dashboard to the month of the new transaction
     dashMonthKey = date.substring(0,7);
     closeModal('tx');
@@ -2424,8 +2473,14 @@
     document.getElementById('edit-tx-usd').checked = monedaVal === 'USD';
     const tarjetaEl = document.getElementById('edit-tx-tarjeta');
     const tarjetaWrap = document.getElementById('edit-tx-tarjeta-tipo-wrap');
-    if (tarjetaEl) { tarjetaEl.checked = t.tarjeta || false; tarjetaWrap.style.display = t.tarjeta ? 'block' : 'none'; }
-    if (t.tarjetaTipo) { const ttr = document.querySelector('input[name="edit-tx-tarjeta-tipo"][value="'+t.tarjetaTipo+'"]'); if(ttr) ttr.checked = true; }
+    if (tarjetaEl) {
+      tarjetaEl.checked = t.tarjeta || false;
+      tarjetaWrap.style.display = t.tarjeta ? 'flex' : 'none';
+      if (t.tarjetaRed) { const sel = document.getElementById('edit-tx-tarjeta-red'); if(sel) sel.value = t.tarjetaRed; }
+      if (t.tarjetaTipo) { const sel = document.getElementById('edit-tx-tarjeta-tipo-sel'); if(sel) sel.value = t.tarjetaTipo; }
+      const tnEl = document.getElementById('edit-tx-tarjeta-nombre');
+      if (tnEl) tnEl.value = t.tarjetaNombre || '';
+    }
     openModal('edit-tx');
   };
 
@@ -2453,9 +2508,11 @@
     const varEdit = document.querySelector('input[name="edit-tx-variabilidad"]:checked')?.value || 'fijo';
     const monedaEdit = document.querySelector('input[name="edit-tx-moneda"]:checked')?.value || 'ARS';
     const esTarjetaEdit = document.getElementById('edit-tx-tarjeta')?.checked || false;
-    const tarjetaTipoEdit = esTarjetaEdit ? (document.querySelector('input[name="edit-tx-tarjeta-tipo"]:checked')?.value || 'fija') : null;
+    const tarjetaRedEdit = esTarjetaEdit ? (document.getElementById('edit-tx-tarjeta-red')?.value || 'Visa') : null;
+    const tarjetaTipoEdit = esTarjetaEdit ? (document.getElementById('edit-tx-tarjeta-tipo-sel')?.value || 'fija') : null;
+    const tarjetaNombreEdit = esTarjetaEdit ? (document.getElementById('edit-tx-tarjeta-nombre')?.value.trim() || tarjetaRedEdit) : null;
     await set(ref(db, 'users/'+uid+'/transactions/'+id), {
-      description: desc, amount, category: cat, type: editTxType, date, variabilidad: varEdit, moneda: monedaEdit, tarjeta: esTarjetaEdit, tarjetaTipo: tarjetaTipoEdit, createdAt: transactions[id]?.createdAt || Date.now()
+      description: desc, amount, category: cat, type: editTxType, date, variabilidad: varEdit, moneda: monedaEdit, tarjeta: esTarjetaEdit, tarjetaRed: tarjetaRedEdit, tarjetaTipo: tarjetaTipoEdit, tarjetaNombre: tarjetaNombreEdit, createdAt: transactions[id]?.createdAt || Date.now()
     });
     dashMonthKey = date.substring(0,7);
     closeModal('edit-tx');
@@ -3359,12 +3416,140 @@
   // ── TARJETA TOGGLE ──
   document.addEventListener('change', e => {
     if (e.target.id === 'tx-tarjeta') {
-      document.getElementById('tx-tarjeta-tipo-wrap').style.display = e.target.checked ? 'block' : 'none';
+      const w = document.getElementById('tx-tarjeta-tipo-wrap');
+      w.style.display = e.target.checked ? 'flex' : 'none';
     }
     if (e.target.id === 'edit-tx-tarjeta') {
-      document.getElementById('edit-tx-tarjeta-tipo-wrap').style.display = e.target.checked ? 'block' : 'none';
+      const w = document.getElementById('edit-tx-tarjeta-tipo-wrap');
+      w.style.display = e.target.checked ? 'flex' : 'none';
     }
   });
+
+  // ── TARJETAS DE CRÉDITO ──
+  let chartTarjetas = null;
+
+  function renderTarjetas() {
+    const txArr = Object.entries(transactions).map(([id,t]) => ({id,...t}));
+    const tarjetaTxs = txArr.filter(t => t.tarjeta && t.type === 'expense');
+
+    const section = document.getElementById('dash-tarjetas-section');
+    if (!section) return;
+    if (!tarjetaTxs.length) { section.style.display = 'none'; return; }
+    section.style.display = 'block';
+
+    const { txs: thisMonth, key: activeKey } = getActiveMonth(txArr);
+    const mesLabel = getMonthLabel(activeKey);
+    const mesEl = document.getElementById('dash-tarjetas-mes');
+    if (mesEl) mesEl.textContent = mesLabel;
+
+    const toARS = t => (t.moneda === 'USD') ? t.amount * tcOficial : t.amount;
+
+    // Group by tarjetaNombre
+    const byCard = {};
+    tarjetaTxs.forEach(t => {
+      const key = t.tarjetaNombre || t.tarjetaRed || 'Sin identificar';
+      const red = t.tarjetaRed || 'Otra';
+      if (!byCard[key]) byCard[key] = { red, fija: 0, variable: 0, total: 0, txs: [] };
+      const amt = toARS(t);
+      byCard[key].total += amt;
+      byCard[key][t.tarjetaTipo === 'variable' ? 'variable' : 'fija'] += amt;
+      byCard[key].txs.push(t);
+    });
+
+    // Colors per card network
+    const redColors = { Visa: '#1a1f71', Mastercard: '#eb001b', Amex: '#007bc1', Otra: '#6b7280' };
+
+    // Summary cards
+    const cardsEl = document.getElementById('dash-tarjetas-cards');
+    if (cardsEl) {
+      const thisMonthByCard = {};
+      thisMonth.filter(t => t.tarjeta && t.type === 'expense').forEach(t => {
+        const key = t.tarjetaNombre || t.tarjetaRed || 'Sin identificar';
+        if (!thisMonthByCard[key]) thisMonthByCard[key] = { red: t.tarjetaRed || 'Otra', total: 0 };
+        thisMonthByCard[key].total += toARS(t);
+      });
+
+      cardsEl.innerHTML = Object.entries(byCard).map(([name, data]) => {
+        const mesTotal = thisMonthByCard[name]?.total || 0;
+        const color = redColors[data.red] || '#6b7280';
+        return '<div style="background:var(--surface);border:1px solid var(--border);border-top:3px solid '+color+';padding:16px 18px;">' +
+          '<div style="font-size:0.62rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:'+color+';margin-bottom:6px;">'+name+'</div>' +
+          '<div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.3rem;font-weight:700;color:var(--ink);">'+fmt(mesTotal)+'</div>' +
+          '<div style="font-size:0.7rem;color:var(--muted);margin-top:4px;">este mes</div>' +
+          '<div style="display:flex;gap:12px;margin-top:10px;font-size:0.72rem;">' +
+            '<span style="color:#4a90c4;">Fija: '+fmt(data.fija)+'</span>' +
+            '<span style="color:var(--accent2);">Variable: '+fmt(data.variable)+'</span>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    // 6-month evolution chart
+    const now = new Date();
+    const months = [];
+    const labels = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push(d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'));
+      labels.push(d.toLocaleString('es-AR', {month: 'short'}));
+    }
+
+    const cardNames = Object.keys(byCard);
+    const palette = ['#1a1f71','#eb001b','#007bc1','#3d6b52','#c17a4a','#6b7280'];
+    const datasets = cardNames.map((name, i) => ({
+      label: name,
+      data: months.map(mo => {
+        return tarjetaTxs
+          .filter(t => (t.tarjetaNombre || t.tarjetaRed || 'Sin identificar') === name && t.date?.startsWith(mo))
+          .reduce((s, t) => s + toARS(t), 0);
+      }),
+      backgroundColor: (palette[i] || '#888') + 'cc',
+      borderColor: palette[i] || '#888',
+      borderWidth: 1,
+    }));
+
+    const ctx = document.getElementById('chart-tarjetas');
+    if (!ctx) return;
+    if (chartTarjetas) chartTarjetas.destroy();
+    const isDark = document.body.classList.contains('dark');
+    const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+    const textColor = isDark ? '#888' : '#999';
+    chartTarjetas = new Chart(ctx, {
+      type: 'bar',
+      data: { labels, datasets },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom', labels: { color: textColor, font: { size: 11 }, boxWidth: 12 } },
+          tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + fmt(ctx.raw) } }
+        },
+        scales: {
+          x: { stacked: true, grid: { color: gridColor }, ticks: { color: textColor } },
+          y: { stacked: true, grid: { color: gridColor }, ticks: { color: textColor, callback: v => '$' + fmtNum(v) } }
+        }
+      }
+    });
+
+    // Fija vs Variable breakdown per card
+    const breakdownEl = document.getElementById('dash-tarjetas-breakdown');
+    if (breakdownEl) {
+      breakdownEl.innerHTML = Object.entries(byCard).map(([name, data]) => {
+        const total = data.fija + data.variable || 1;
+        const pctFija = Math.round((data.fija / total) * 100);
+        const pctVar = 100 - pctFija;
+        return '<div style="background:var(--surface);border:1px solid var(--border);padding:14px 16px;">' +
+          '<div style="font-size:0.65rem;font-weight:600;color:var(--ink);margin-bottom:10px;">'+name+'</div>' +
+          '<div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:8px;">' +
+            '<div style="height:100%;width:'+pctFija+'%;background:#4a90c4;border-radius:3px;"></div>' +
+          '</div>' +
+          '<div style="display:flex;justify-content:space-between;font-size:0.68rem;">' +
+            '<span style="color:#4a90c4;">Fija '+pctFija+'%</span>' +
+            '<span style="color:var(--accent2);">Variable '+pctVar+'%</span>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+  }
 
   // ── DARK MODE ──
   window.toggleDark = (on) => {
