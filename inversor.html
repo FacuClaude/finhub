@@ -1167,12 +1167,9 @@ YPE html>
       <div class="page-title">Noticias</div>
       <div class="page-sub" id="noticias-sub">Mercados y economía</div>
 
-      <!-- Filter tabs -->
-      <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
-        <button class="period-tab active" onclick="setNoticiasFuente('todas', this)">Todas</button>
-        <button class="period-tab" onclick="setNoticiasFuente('Ámbito', this)">Ámbito</button>
-        <button class="period-tab" onclick="setNoticiasFuente('El Cronista', this)">El Cronista</button>
-        <button class="period-tab" onclick="setNoticiasFuente('Infobae Economía', this)">Infobae</button>
+      <!-- Refresh button -->
+      <div style="display:flex;justify-content:flex-end;margin-bottom:16px;">
+        <button onclick="allNoticias=[];loadNoticias()" style="background:transparent;color:var(--muted);border:1px solid var(--border);padding:7px 14px;font-size:0.72rem;cursor:pointer;border-radius:3px;font-family:'DM Sans',sans-serif;">↻ Actualizar</button>
       </div>
 
       <!-- News list -->
@@ -3288,57 +3285,72 @@ async function loadNoticias() {
   const subEl  = document.getElementById('noticias-sub');
   if (listEl) listEl.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--muted);font-size:0.85rem;">Cargando noticias...</div>';
 
-  const feeds = [
-    { rss: 'https://www.ambito.com/rss/economia.xml',                        fuente: 'Ámbito' },
-    { rss: 'https://www.cronista.com/arc/outboundfeeds/rss/?outputType=xml', fuente: 'El Cronista' },
-    { rss: 'https://www.infobae.com/feeds/rss/economia/',                    fuente: 'Infobae Economía' },
+  // Google News RSS - works from browser, no auth needed, returns Argentine finance news
+  const gnFeeds = [
+    { url: 'https://news.google.com/rss/search?q=economia+argentina+mercados&hl=es-419&gl=AR&ceid=AR:es-419', fuente: 'Google News' },
+    { url: 'https://news.google.com/rss/search?q=dolar+inflacion+argentina+bolsa&hl=es-419&gl=AR&ceid=AR:es-419', fuente: 'Google News' },
   ];
 
   const allNews = [];
 
-  // Fetch via rss2json directly from browser (no server needed, CORS allowed)
-  await Promise.allSettled(feeds.map(async ({ rss, fuente }) => {
+  await Promise.allSettled(gnFeeds.map(async ({ url, fuente }) => {
     try {
-      const url = 'https://api.rss2json.com/v1/api.json?count=10&rss_url=' + encodeURIComponent(rss);
-      const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      // Use allorigins as CORS proxy - reliable and free
+      const proxy = 'https://api.allorigins.win/get?url=' + encodeURIComponent(url);
+      const res = await fetch(proxy, { signal: AbortSignal.timeout(8000) });
       if (!res.ok) return;
-      const raw = await res.json();
-      if (raw.status !== 'ok' || !raw.items?.length) return;
-      raw.items.forEach(item => {
-        if (!item.title || !item.link) return;
+      const data = await res.json();
+      const xml = data.contents || '';
+      if (!xml) return;
+
+      // Parse RSS items from XML string
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(xml, 'text/xml');
+      const items = Array.from(doc.querySelectorAll('item'));
+
+      items.slice(0, 12).forEach(item => {
+        const title   = item.querySelector('title')?.textContent?.trim();
+        const link    = item.querySelector('link')?.textContent?.trim();
+        const pubDate = item.querySelector('pubDate')?.textContent?.trim();
+        const source  = item.querySelector('source')?.textContent?.trim() || fuente;
+        const desc    = item.querySelector('description')?.textContent?.trim();
+
+        if (!title || !link) return;
+        // Skip duplicate titles
+        if (allNews.some(n => n.titulo === title)) return;
+
         allNews.push({
-          titulo: item.title.replace(/<[^>]+>/g,'').trim(),
-          link: item.link,
-          fuente,
-          fecha: item.pubDate ? new Date(item.pubDate).toISOString() : new Date().toISOString(),
-          descripcion: (item.description || item.content || '')
-            .replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&nbsp;/g,' ').trim().substring(0, 200),
+          titulo: title.replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&#39;/g,"'"),
+          link,
+          fuente: source,
+          fecha: pubDate ? new Date(pubDate).toISOString() : new Date().toISOString(),
+          descripcion: desc ? desc.replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').substring(0, 180) : '',
         });
       });
-    } catch(e) { console.log('Feed failed:', fuente, e.message); }
+    } catch(e) { console.log('Feed error:', e.message); }
   }));
 
   if (!allNews.length) {
-    // Last resort: show curated links
     if (listEl) listEl.innerHTML =
       '<div style="padding:24px 20px;">' +
-      '<div style="font-size:0.75rem;color:var(--muted);margin-bottom:16px;">Las fuentes RSS no están disponibles en este momento. Accedé directamente:</div>' +
+      '<div style="font-size:0.78rem;color:var(--muted);margin-bottom:16px;">Accedé a las noticias directamente:</div>' +
       [
-        { n:'Ámbito Economía',   u:'https://www.ambito.com/economia', c:'#c17a4a' },
-        { n:'El Cronista',       u:'https://www.cronista.com',         c:'#3d6b52' },
-        { n:'Infobae Economía',  u:'https://www.infobae.com/economia', c:'#4a7a8a' },
-        { n:'iProfesional',      u:'https://www.iprofesional.com',     c:'#8a6b52' },
+        { n:'Ámbito Economía',  u:'https://www.ambito.com/economia',   c:'#c17a4a' },
+        { n:'El Cronista',      u:'https://www.cronista.com',           c:'#3d6b52' },
+        { n:'Infobae Economía', u:'https://www.infobae.com/economia',   c:'#4a7a8a' },
+        { n:'iProfesional',     u:'https://www.iprofesional.com',       c:'#8a6b52' },
+        { n:'Ámbito Mercados',  u:'https://www.ambito.com/mercados',    c:'#c17a4a' },
       ].map(s =>
-        '<a href="'+s.u+'" target="_blank" style="display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--border);text-decoration:none;">' +
-        '<span style="width:8px;height:8px;border-radius:50%;background:'+s.c+';flex-shrink:0;"></span>' +
-        '<span style="font-size:0.88rem;color:var(--ink);">'+s.n+'</span>' +
+        '<a href="'+s.u+'" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--border);text-decoration:none;">' +
+        '<span style="width:8px;height:8px;border-radius:50%;background:'+s.c+';flex-shrink:0;display:inline-block;"></span>' +
+        '<span style="font-size:0.88rem;font-weight:500;color:var(--ink);">'+s.n+'</span>' +
         '<span style="margin-left:auto;font-size:0.72rem;color:var(--muted);">→</span></a>'
       ).join('') + '</div>';
     return;
   }
 
   allNoticias = allNews.sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
-  if (subEl) subEl.textContent = 'Mercados y economía · Actualizado ' + new Date().toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit'});
+  if (subEl) subEl.textContent = 'Mercados y economía Argentina · ' + new Date().toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit'});
   renderNoticias();
 }
 
