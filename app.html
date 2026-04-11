@@ -150,7 +150,7 @@
     }
 
     /* ── SHELL ── */
-    .shell { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; position: relative; z-index: 1; margin-top: 26px; max-width: 100vw; }
+    .shell { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; position: relative; z-index: 1; margin-top: 26px; max-width: 100vw; }
 
     /* ── SIDEBAR ── */
     .sidebar {
@@ -163,15 +163,15 @@
     }
 
     .wordmark {
-      padding: 0 32px 28px;
+      padding: 0 24px 14px;
       border-bottom: 1px solid var(--border);
     }
 
-    nav { padding: 20px 0; flex: 1; }
+    nav { padding: 10px 0; flex: 1; }
 
     .nav-item {
       display: flex; align-items: center; gap: 10px;
-      padding: 9px 24px; width: 100%;
+      padding: 7px 20px; width: 100%;
       font-size: 0.78rem; font-weight: 400; letter-spacing: 0.06em;
       color: var(--muted); cursor: pointer;
       transition: color 0.2s, background 0.2s;
@@ -181,7 +181,7 @@
     }
     .nav-item:hover { color: var(--ink2); background: var(--surface2); }
     .nav-item.active { color: var(--accent); border-left-color: var(--accent); background: var(--accent-bg); font-weight: 500; }
-    .nav-icon { width: 16px; height: 16px; flex-shrink: 0; }
+    .nav-icon { width: 14px; height: 14px; flex-shrink: 0; }
 
     .nav-badge {
       margin-left: auto;
@@ -195,7 +195,7 @@
       text-align: center;
     }
 
-    .sidebar-footer { padding: 24px 32px 0; border-top: 1px solid var(--border); }
+    .sidebar-footer { padding: 14px 24px 16px; border-top: 1px solid var(--border); }
     .user-email { font-size: 0.72rem; color: var(--muted); margin-bottom: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .btn-logout {
       font-family: 'DM Sans', sans-serif; font-size: 0.7rem; font-weight: 400;
@@ -439,7 +439,7 @@
     /* ── MODAL ── */
     .overlay { display: none; position: fixed; inset: 0; background: rgba(26,26,20,0.4); backdrop-filter: blur(4px); z-index: 300; place-items: center; }
     .overlay.open { display: grid; }
-    .modal { background: var(--surface); border: 1px solid var(--border); padding: 44px; width: 100%; max-width: 440px; box-shadow: 0 24px 60px rgba(26,26,20,0.15); animation: slideUp 0.3s cubic-bezier(0.16,1,0.3,1) both; border-radius: 4px; }
+    .modal { background: var(--surface); border: 1px solid var(--border); padding: 28px; width: 100%; max-width: 440px; max-height: 88vh; overflow-y: auto; box-shadow: 0 24px 60px rgba(26,26,20,0.15); animation: slideUp 0.3s cubic-bezier(0.16,1,0.3,1) both; border-radius: 4px; }
     @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
     .modal-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.4rem; font-weight: 600; margin-bottom: 28px; color: var(--ink); }
     .field { margin-bottom: 18px; }
@@ -618,7 +618,7 @@
 
   <!-- SIDEBAR -->
   <aside class="sidebar">
-    <div class="wordmark">
+    <div class="wordmark" style="padding:16px 24px 12px;">
       <div style="display:flex;align-items:center;gap:11px;">
         <svg width="30" height="25" viewBox="0 0 96 80" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="0" y="52" width="20" height="28" rx="3" fill="#3d6b52" opacity="0.4"/>
