@@ -992,6 +992,7 @@ window.goTo = page => {
   document.getElementById('page-'+page).classList.add('active');
   if (page === 'fci') renderFci();
   if (page === 'simulador') calcSimulador();
+  if (page === 'dolar-historico') loadDolarHistorico();
   if (page === 'calculadoras') { calcMep('ars'); calcComparador(); }
   document.querySelectorAll('.nav-item').forEach(n => { if (n.getAttribute('onclick')?.includes(page)) n.classList.add('active'); });
 };
@@ -1070,6 +1071,8 @@ function renderDolar() {
   const st = document.getElementById('dolar-status');
   if (st) st.textContent = 'actualizado';
   updateTicker();
+  // Pre-load TC historico data
+  setTimeout(() => loadDolarHistorico(), 500);
 }
 
 function updateTicker() {
