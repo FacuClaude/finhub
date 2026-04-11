@@ -1689,7 +1689,7 @@
     renderTxList();
   };
 
-  function renderTxList() {
+  window.renderTxList = function renderTxList() {
     const allTx = Object.entries(transactions).map(([id,t]) => ({id,...t}));
     const searchQ = (document.getElementById('tx-search')?.value || '').trim().toLowerCase();
     const clearBtn = document.getElementById('tx-search-clear');
