@@ -1,4 +1,5 @@
-<!DOCTYPE html>
+<!DOCT
+YPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -2606,6 +2607,8 @@ function renderATcharts(activo, data) {
 }
 
 
+
+
 // ── DÓLAR COSTO ──
 window.calcDolarCosto = () => {
   const precioRaw = parseFloat(document.getElementById('dc-precio')?.value) || 0;
@@ -2730,7 +2733,7 @@ window.calcDolarCosto = () => {
         '<div style="font-size:0.8rem;color:var(--ink2);">'+v.desc+'</div></div>'+
       '</div>';
   }
-};
+}
 
 // Dark mode sync
 if (localStorage.getItem('finhub-dark')==='1') {
@@ -2738,6 +2741,9 @@ if (localStorage.getItem('finhub-dark')==='1') {
   const toggle = document.getElementById('dark-toggle-inv');
   if (toggle) toggle.checked = true;
 }
+
+
+
 </script>
 
 <div class="mobile-overlay" id="mobile-overlay" onclick="closeMobileNav()"></div>
@@ -2749,4 +2755,5 @@ if (localStorage.getItem('finhub-dark')==='1') {
   </svg>
 </button>
 </body>
+
 </html>
