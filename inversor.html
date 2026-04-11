@@ -488,6 +488,10 @@ YPE html>
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M7 8l3 3 4-4 3 3"/></svg>
         Portfolio
       </div>
+      <div class="nav-item" onclick="goTo('noticias')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 0-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8M15 18h-5M10 6h8v4h-8V6Z"/></svg>
+        Noticias
+      </div>
     </nav>
 
     <div class="sidebar-footer">
@@ -1158,6 +1162,25 @@ YPE html>
       </div>
     </div>
 
+    <!-- NOTICIAS -->
+    <div class="page" id="page-noticias">
+      <div class="page-title">Noticias</div>
+      <div class="page-sub" id="noticias-sub">Mercados y economía</div>
+
+      <!-- Filter tabs -->
+      <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+        <button class="period-tab active" onclick="setNoticiasFuente('todas', this)">Todas</button>
+        <button class="period-tab" onclick="setNoticiasFuente('Ámbito', this)">Ámbito</button>
+        <button class="period-tab" onclick="setNoticiasFuente('El Cronista', this)">El Cronista</button>
+        <button class="period-tab" onclick="setNoticiasFuente('Infobae Economía', this)">Infobae</button>
+      </div>
+
+      <!-- News list -->
+      <div id="noticias-list">
+        <div style="text-align:center;padding:60px 20px;color:var(--muted);font-size:0.85rem;">Cargando noticias...</div>
+      </div>
+    </div>
+
   </main>
 </div>
 
@@ -1298,6 +1321,7 @@ window.goTo = page => {
   if (page === 'analisis-tecnico') loadAnalisisTecnico();
   if (page === 'dolar-costo') { calcDolarCosto(); };
   if (page === 'portfolio') { window._ptPricesFetched = false; renderPortfolio(); }
+  if (page === 'noticias') loadNoticias();
   if (page === 'calculadoras') { calcMep('ars'); calcComparador(); }
   document.querySelectorAll('.nav-item').forEach(n => { if (n.getAttribute('onclick')?.includes(page)) n.classList.add('active'); });
 };
@@ -1483,7 +1507,8 @@ function renderAcciones() {
       '<span class="cambio '+cambioClass+'">'+(cambio>=0?'+':'')+parseFloat(cambio).toFixed(2)+'%</span>'+
       '<span></span>'+
     '</div>';
-  }).join('');
+  });
+  listEl.innerHTML = items.join('');
   const st = document.getElementById('acciones-status');
   if (st) st.textContent = marketData.acciones.length ? 'actualizado' : 'datos de referencia';
 }
@@ -3245,6 +3270,84 @@ function renderPTcharts(byTipo, positions, tcCCL) {
       }
     });
   }
+}
+
+
+// ── NOTICIAS ──
+let allNoticias = [];
+let noticiasFilter = 'todas';
+
+window.setNoticiasFuente = (fuente, el) => {
+  noticiasFilter = fuente;
+  document.querySelectorAll('#page-noticias .period-tab').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+  renderNoticias();
+};
+
+async function loadNoticias() {
+  const listEl = document.getElementById('noticias-list');
+  const subEl  = document.getElementById('noticias-sub');
+  if (listEl) listEl.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--muted);font-size:0.85rem;">Cargando noticias...</div>';
+
+  try {
+    const base = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '';
+    const res = await fetch(base + '/api/market?source=noticias');
+    if (!res.ok) throw new Error('API error');
+    const raw = await res.json();
+
+    if (raw.source === 'unavailable' || !raw.noticias?.length) {
+      if (listEl) listEl.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--muted);font-size:0.85rem;">No se pudieron cargar las noticias en este momento.</div>';
+      return;
+    }
+
+    allNoticias = raw.noticias;
+    if (subEl) subEl.textContent = 'Mercados y economía · Actualizado ' + new Date().toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit'});
+    renderNoticias();
+
+  } catch(e) {
+    if (listEl) listEl.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--muted);font-size:0.85rem;">Error cargando noticias. Verificá tu conexión.</div>';
+  }
+}
+
+function renderNoticias() {
+  const listEl = document.getElementById('noticias-list');
+  if (!listEl) return;
+
+  const filtered = noticiasFilter === 'todas'
+    ? allNoticias
+    : allNoticias.filter(n => n.fuente === noticiasFilter);
+
+  if (!filtered.length) {
+    listEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-size:0.85rem;">No hay noticias de esta fuente.</div>';
+    return;
+  }
+
+  const fuenteColors = {
+    'Ámbito':          '#c17a4a',
+    'El Cronista':     '#3d6b52',
+    'Infobae Economía':'#4a7a8a',
+  };
+
+  const items = filtered.map(n => {
+    const color = fuenteColors[n.fuente] || 'var(--muted)';
+    const fecha = n.fecha ? new Date(n.fecha).toLocaleDateString('es-AR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }) : '';
+
+    const row = document.createElement('a');
+    row.href = n.link;
+    row.target = '_blank';
+    row.rel = 'noopener';
+    row.style.cssText = 'display:block;text-decoration:none;padding:16px 20px;border-bottom:1px solid var(--border);cursor:pointer;';
+    row.onmouseenter = () => row.style.background = 'var(--surface2)';
+    row.onmouseleave = () => row.style.background = '';
+    row.innerHTML =
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">' +
+        '<span style="font-size:0.6rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:'+color+';background:'+color+'18;padding:2px 7px;border-radius:2px;">'+n.fuente+'</span>' +
+        '<span style="font-size:0.68rem;color:var(--muted);">'+fecha+'</span>' +
+      '</div>' +
+      '<div style="font-size:0.9rem;font-weight:500;color:var(--ink);line-height:1.4;">'+n.titulo+'</div>' +
+      (n.descripcion ? '<div style="font-size:0.76rem;color:var(--ink2);line-height:1.5;margin-top:4px;">'+n.descripcion+'...</div>' : '');
+    return row.outerHTML;
+  }).join('');
 }
 
 // Dark mode sync
