@@ -980,12 +980,14 @@
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
           <div>
             <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Precio del producto</div>
-            <div style="display:flex;gap:0;">
-              <select id="dc-moneda" onchange="calcDolarCosto()" style="padding:10px 12px;border:1px solid var(--border);border-right:none;background:var(--bg);color:var(--ink);font-size:0.85rem;border-radius:4px 0 0 4px;font-family:'DM Sans',sans-serif;cursor:pointer;">
-                <option value="ARS">ARS $</option>
-                <option value="USD">USD $</option>
-              </select>
-              <input type="number" id="dc-precio" placeholder="0" oninput="calcDolarCosto()" style="flex:1;padding:10px 14px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-size:0.88rem;border-radius:0 4px 4px 0;font-family:'DM Sans',sans-serif;outline:none;">
+            <input type="number" id="dc-precio" placeholder="Ej: 1200" oninput="calcDolarCosto()" style="width:100%;padding:10px 14px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-size:0.95rem;border-radius:4px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box;margin-bottom:8px;">
+            <div style="display:flex;gap:8px;">
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.82rem;color:var(--ink2);">
+                <input type="radio" name="dc-moneda" id="dc-moneda-ars" value="ARS" checked onchange="calcDolarCosto()" style="accent-color:var(--accent);"> ARS (pesos)
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.82rem;color:var(--ink2);">
+                <input type="radio" name="dc-moneda" id="dc-moneda-usd" value="USD" onchange="calcDolarCosto()" style="accent-color:var(--accent);"> USD (dólares)
+              </label>
             </div>
           </div>
           <div>
@@ -2606,7 +2608,7 @@ function renderATcharts(activo, data) {
 // ── DÓLAR COSTO ──
 window.calcDolarCosto = () => {
   const precioRaw = parseFloat(document.getElementById('dc-precio')?.value) || 0;
-  const moneda    = document.getElementById('dc-moneda')?.value || 'ARS';
+  const moneda    = document.querySelector('input[name="dc-moneda"]:checked')?.value || 'ARS';
   const cuotas    = parseInt(document.getElementById('dc-cuotas')?.value) || 1;
   const tipo      = document.getElementById('dc-tipo')?.value || 'nacional';
   const tna       = parseFloat(document.getElementById('dc-tna')?.value) || 120;
