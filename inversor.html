@@ -1751,6 +1751,7 @@ window.saveInversion = async () => {
 
 // ── UTILS ──
 function fmtNum(n) { return (n||0).toLocaleString('es-AR',{minimumFractionDigits:0,maximumFractionDigits:2}); }
+function fmt(n) { return '$ ' + fmtNum(n); }
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 // ── FCI ──
