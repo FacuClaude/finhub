@@ -3460,7 +3460,7 @@
     });
 
     // Colors per card network
-    const redColors = { Visa: '#1a1f71', Mastercard: '#eb001b', Amex: '#007bc1', Otra: '#6b7280' };
+    const redColors = { Visa: '#3d6b52', Mastercard: '#c17a4a', Amex: '#4a7a8a', Otra: '#8a8070' };
 
     // Summary cards
     const cardsEl = document.getElementById('dash-tarjetas-cards');
@@ -3498,7 +3498,7 @@
     }
 
     const cardNames = Object.keys(byCard);
-    const palette = ['#1a1f71','#eb001b','#007bc1','#3d6b52','#c17a4a','#6b7280'];
+    const palette = ['#3d6b52','#c17a4a','#4a7a8a','#8a6b52','#6b8a52','#7a526b'];
     const datasets = cardNames.map((name, i) => ({
       label: name,
       data: months.map(mo => {
@@ -3506,9 +3506,10 @@
           .filter(t => (t.tarjetaNombre || t.tarjetaRed || 'Sin identificar') === name && t.date?.startsWith(mo))
           .reduce((s, t) => s + toARS(t), 0);
       }),
-      backgroundColor: (palette[i] || '#888') + 'cc',
+      backgroundColor: (palette[i] || '#888') + '99',
       borderColor: palette[i] || '#888',
-      borderWidth: 1,
+      borderWidth: 0,
+      borderRadius: 2,
     }));
 
     const ctx = document.getElementById('chart-tarjetas');
@@ -3523,12 +3524,20 @@
       options: {
         responsive: true,
         plugins: {
-          legend: { position: 'bottom', labels: { color: textColor, font: { size: 11 }, boxWidth: 12 } },
-          tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + fmt(ctx.raw) } }
+          legend: { position: 'bottom', labels: { color: textColor, font: { size: 10 }, boxWidth: 8, boxHeight: 8, padding: 12 } },
+          tooltip: {
+            backgroundColor: isDark ? '#1c1c1c' : '#fff',
+            borderColor: isDark ? '#2a2a2a' : '#e0ddd8',
+            borderWidth: 1,
+            titleColor: isDark ? '#aaa' : '#888',
+            bodyColor: isDark ? '#ddd' : '#444',
+            padding: 10,
+            callbacks: { label: ctx => ' ' + ctx.dataset.label + ': ' + fmt(ctx.raw) }
+          }
         },
         scales: {
-          x: { stacked: true, grid: { color: gridColor }, ticks: { color: textColor } },
-          y: { stacked: true, grid: { color: gridColor }, ticks: { color: textColor, callback: v => '$' + fmtNum(v) } }
+          x: { stacked: true, grid: { color: gridColor, lineWidth: 0.5 }, border: { display: false }, ticks: { color: textColor, font: { size: 10 } } },
+          y: { stacked: true, grid: { color: gridColor, lineWidth: 0.5 }, border: { display: false }, ticks: { color: textColor, font: { size: 10 }, callback: v => '$' + fmtNum(v) } }
         }
       }
     });
