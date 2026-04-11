@@ -1818,6 +1818,8 @@
       return;
     }
 
+    const searchQ = (document.getElementById('tx-search')?.value || '').trim();
+
     // Group by month key YYYY-MM
     const groups = {};
     txArr.forEach(t => {
@@ -1843,7 +1845,8 @@
       const label = d.toLocaleString('es-AR', {month:'long', year:'numeric'});
       const income  = items.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
       const expense = items.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
-      const isOpen  = hasState ? openMonths.has(key) : key === currentKey;
+      // Always open when searching
+      const isOpen  = searchQ ? true : (hasState ? openMonths.has(key) : key === currentKey);
 
       html += '<div class="tx-month-group" data-month-key="'+key+'">';
       html += '<div class="tx-month-header" onclick="toggleMonth(this)">';
