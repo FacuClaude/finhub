@@ -1478,7 +1478,7 @@
   import { initializeApp }     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getAuth, onAuthStateChanged, signOut }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  import { getDatabase, ref, push, set, remove, onValue }
+  import { getDatabase, ref, push, set, remove, onValue, get, update }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
   // ─── REEMPLAZÁ CON TU CONFIG ───
@@ -1520,7 +1520,11 @@
   // ── SUBSCRIPTIONS ──
   function subscribeAll() {
     loadFinHubTicker();
-    onValue(ref(db, `users/${uid}/transactions`), s => { transactions = s.val() || {}; renderAll(); });
+    onValue(ref(db, `users/${uid}/transactions`), s => {
+      transactions = s.val() || {};
+      renderAll();
+      checkMonthlyReplication();
+    });
     onValue(ref(db, `users/${uid}/budgets`),      s => { budgets      = s.val() || {}; renderBudgets(); });
     onValue(ref(db, `users/${uid}/goals`),         s => { goals        = s.val() || {}; renderGoals(); });
     onValue(ref(db, `users/${uid}/reminders`),     s => { reminders    = s.val() || {}; renderReminders(); updateReminderBadge(); });
@@ -3555,6 +3559,55 @@
     if (breakdownEl) {
       breakdownEl.innerHTML = ''; // integrated into cards above
     }
+  }
+
+  // ── REPLICACIÓN MENSUAL ──
+  async function checkMonthlyReplication() {
+    const now = new Date();
+    const today = now.getDate();
+    if (today !== 1) return; // solo el día 1
+
+    const thisMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonth = `${lastMonthDate.getFullYear()}-${String(lastMonthDate.getMonth()+1).padStart(2,'0')}`;
+
+    // Check if already replicated this month
+    const repKey = `replicado_${thisMonth}`;
+    const snap = await get(ref(db, `users/${uid}/meta/${repKey}`));
+    if (snap.exists()) return; // ya se replicó
+
+    // Get last month's transactions
+    const lastMonthTxs = Object.entries(transactions)
+      .filter(([,t]) => t.date?.startsWith(lastMonth));
+
+    if (!lastMonthTxs.length) return;
+
+    // Replicate each with amount = 0, date = 1st of this month
+    const batch = {};
+    lastMonthTxs.forEach(([,t]) => {
+      const newId = push(ref(db, `users/${uid}/transactions`)).key;
+      batch[`users/${uid}/transactions/${newId}`] = {
+        description: t.description,
+        amount: 0,
+        category: t.category,
+        type: t.type,
+        date: `${thisMonth}-01`,
+        variabilidad: t.variabilidad || 'fijo',
+        moneda: t.moneda || 'ARS',
+        tarjeta: t.tarjeta || false,
+        tarjetaRed: t.tarjetaRed || null,
+        tarjetaTipo: t.tarjetaTipo || null,
+        tarjetaNombre: t.tarjetaNombre || null,
+        replicado: true,
+        createdAt: Date.now()
+      };
+    });
+
+    // Mark as replicated
+    batch[`users/${uid}/meta/${repKey}`] = { fecha: now.toISOString(), cantidad: lastMonthTxs.length };
+
+    await update(ref(db), batch);
+    console.log(`Replicados ${lastMonthTxs.length} movimientos de ${lastMonth} a ${thisMonth}`);
   }
 
   // ── DARK MODE ──
