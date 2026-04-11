@@ -15,10 +15,14 @@ export default async function handler(req) {
     let data = {};
 
     if (source === 'dolar') {
-      const res = await fetch('https://criptoya.com/api/dolar', {
-        headers: { 'User-Agent': 'Mozilla/5.0' }
-      });
-      const raw = await res.json();
+      let raw = {};
+      try {
+        const res = await fetch('https://criptoya.com/api/dolar', {
+          headers: { 'User-Agent': 'Mozilla/5.0' },
+          signal: AbortSignal.timeout(5000)
+        });
+        if (res.ok) raw = await res.json();
+      } catch(e) { raw = {}; }
 
       // Try every possible path for MEP and CCL
       const mepVenta  = raw.mep?.al30?.ci?.ask   || raw.mep?.al30?.['24h']?.ask  || raw.mep?.al30d?.ask  || raw.mep?.ask  || null;
@@ -69,7 +73,8 @@ export default async function handler(req) {
       const symbols = ['AAPL','GOOGL','MSFT','AMZN','TSLA','META','NVDA','BRK-B','JPM','KO'];
       const res = await fetch(
         `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbols.join(',')}&fields=symbol,shortName,regularMarketPrice,regularMarketChangePercent`,
-        { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' } }
+        { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+          signal: AbortSignal.timeout(5000) }
       );
       if (res.ok) {
         const raw = await res.json();
@@ -111,7 +116,8 @@ export default async function handler(req) {
       const symbols = ['BTC-USD','ETH-USD','SOL-USD','BNB-USD'];
       const res = await fetch(
         `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbols.join(',')}&fields=symbol,shortName,regularMarketPrice,regularMarketChangePercent`,
-        { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' } }
+        { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+          signal: AbortSignal.timeout(5000) }
       );
       if (res.ok) {
         const raw = await res.json();
