@@ -398,6 +398,8 @@
     }
   </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hammerjs/2.0.8/hammer.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/2.0.1/chartjs-plugin-zoom.min.js"></script>
 </head>
 <body>
 <div class="ticker-bar" id="ticker-bar">
@@ -841,6 +843,11 @@
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
           <div style="font-size:0.68rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);">Evolución tipos de cambio</div>
           <div style="display:flex;gap:12px;font-size:0.72rem;flex-wrap:wrap;" id="dh-legend"></div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:6px;margin-bottom:8px;">
+          <button onclick="zoomDolarChart('in')" style="padding:4px 10px;border:1px solid var(--border);background:var(--surface2);color:var(--ink2);font-size:0.75rem;cursor:pointer;border-radius:3px;">+ Zoom</button>
+          <button onclick="zoomDolarChart('out')" style="padding:4px 10px;border:1px solid var(--border);background:var(--surface2);color:var(--ink2);font-size:0.75rem;cursor:pointer;border-radius:3px;">− Zoom</button>
+          <button onclick="resetDolarZoom()" style="padding:4px 10px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:0.75rem;cursor:pointer;border-radius:3px;">Reset</button>
         </div>
         <div style="position:relative;height:200px;"><canvas id="chart-dolar-historico"></canvas></div>
         <div id="dh-loading" style="text-align:center;padding:40px;color:var(--muted);font-size:0.82rem;display:none;">Cargando datos históricos...</div>
@@ -2030,6 +2037,14 @@ function renderDolarChart(data) {
           bodyColor: isDark ? '#ddd' : '#444',
           padding: 10,
           callbacks: { label: ctx => ' ' + ctx.dataset.label + ': $' + ctx.raw?.toLocaleString('es-AR') }
+        },
+        zoom: {
+          pan: { enabled: true, mode: 'x' },
+          zoom: {
+            wheel: { enabled: true },
+            pinch: { enabled: true },
+            mode: 'x',
+          }
         }
       },
       scales: {
@@ -2114,6 +2129,16 @@ const _origGoToInv = window.goTo;
 window.goTo = page => {
   if (_origGoToInv) _origGoToInv(page);
   if (window.innerWidth <= 900) closeMobileNav();
+};
+
+// TC Chart zoom controls
+window.zoomDolarChart = (dir) => {
+  if (!dolarHistChart) return;
+  if (dir === 'in') dolarHistChart.zoom(1.2);
+  else dolarHistChart.zoom(0.8);
+};
+window.resetDolarZoom = () => {
+  if (dolarHistChart) dolarHistChart.resetZoom();
 };
 
 // Dark mode sync
