@@ -1996,10 +1996,11 @@ function renderDolarChart(data) {
         label: s.label,
         data: s.data,
         borderColor: s.color,
-        backgroundColor: s.color + '15',
-        borderWidth: 2,
+        backgroundColor: 'transparent',
+        borderWidth: 1.5,
         pointRadius: 0,
-        tension: 0.3,
+        pointHoverRadius: 3,
+        tension: 0.4,
         fill: false,
       }))
     },
@@ -2009,14 +2010,18 @@ function renderDolarChart(data) {
       plugins: {
         legend: { display: false },
         tooltip: {
-          callbacks: {
-            label: ctx => ctx.dataset.label + ': $' + ctx.raw?.toLocaleString('es-AR')
-          }
+          backgroundColor: isDark ? '#1c1c1c' : '#fff',
+          borderColor: isDark ? '#2a2a2a' : '#e0ddd8',
+          borderWidth: 1,
+          titleColor: isDark ? '#aaa' : '#888',
+          bodyColor: isDark ? '#ddd' : '#444',
+          padding: 10,
+          callbacks: { label: ctx => ' ' + ctx.dataset.label + ': $' + ctx.raw?.toLocaleString('es-AR') }
         }
       },
       scales: {
-        x: { grid: { color: gridColor }, ticks: { color: textColor, maxRotation: 0, autoSkip: true, maxTicksLimit: 8 } },
-        y: { grid: { color: gridColor }, ticks: { color: textColor, callback: v => '$' + fmtNum(v) } }
+        x: { grid: { color: gridColor, lineWidth: 0.5 }, border: { display: false }, ticks: { color: textColor, maxRotation: 0, autoSkip: true, maxTicksLimit: 6, font: { size: 10 } } },
+        y: { grid: { color: gridColor, lineWidth: 0.5 }, border: { display: false }, ticks: { color: textColor, font: { size: 10 }, callback: v => '$' + fmtNum(v) } }
       }
     }
   });
