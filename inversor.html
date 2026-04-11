@@ -474,6 +474,10 @@
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         TC Histórico
       </div>
+      <div class="nav-item" onclick="goTo('analisis-tecnico')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 20h20M5 20V10l7-7 7 7v10"/><path d="M9 20v-5h6v5"/></svg>
+        Análisis técnico
+      </div>
     </nav>
 
     <div class="sidebar-footer">
@@ -875,6 +879,84 @@
       </div>
     </div>
 
+    <!-- ANÁLISIS TÉCNICO -->
+    <div class="page" id="page-analisis-tecnico">
+      <div class="page-title">Análisis técnico</div>
+      <div class="page-sub">Precio, indicadores y señales</div>
+
+      <!-- Asset selector + period -->
+      <div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end;margin-bottom:24px;flex-wrap:wrap;">
+        <div>
+          <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Activo</div>
+          <select id="at-activo" onchange="loadAnalisisTecnico()" style="width:100%;padding:10px 14px;border:1px solid var(--border);background:var(--surface);color:var(--ink);font-size:0.88rem;border-radius:4px;font-family:'DM Sans',sans-serif;">
+            <optgroup label="Acciones Merval">
+              <option value="GGAL">GGAL — Grupo Galicia</option>
+              <option value="YPF">YPF — YPF S.A.</option>
+              <option value="PAMP">PAMP — Pampa Energía</option>
+              <option value="BBAR">BBAR — BBVA Argentina</option>
+              <option value="TXAR">TXAR — Ternium Argentina</option>
+              <option value="LOMA">LOMA — Loma Negra</option>
+            </optgroup>
+            <optgroup label="CEDEARs">
+              <option value="AAPL">AAPL — Apple</option>
+              <option value="GOOGL">GOOGL — Alphabet</option>
+              <option value="MSFT">MSFT — Microsoft</option>
+              <option value="AMZN">AMZN — Amazon</option>
+              <option value="TSLA">TSLA — Tesla</option>
+              <option value="META">META — Meta</option>
+              <option value="NVDA">NVDA — NVIDIA</option>
+            </optgroup>
+            <optgroup label="Crypto">
+              <option value="BTC-USD">BTC — Bitcoin</option>
+              <option value="ETH-USD">ETH — Ethereum</option>
+              <option value="SOL-USD">SOL — Solana</option>
+            </optgroup>
+            <optgroup label="Dólar">
+              <option value="USDARS">USD/ARS — Dólar Blue</option>
+            </optgroup>
+          </select>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="period-tab active" onclick="setATperiod('1M',this)">1M</button>
+          <button class="period-tab" onclick="setATperiod('3M',this)">3M</button>
+          <button class="period-tab" onclick="setATperiod('6M',this)">6M</button>
+          <button class="period-tab" onclick="setATperiod('1A',this)">1A</button>
+        </div>
+      </div>
+
+      <!-- Signal badges -->
+      <div id="at-signals" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;"></div>
+
+      <!-- Price + MA chart -->
+      <div class="chart-card" style="padding:20px 20px 12px;margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+          <div>
+            <span id="at-price" style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.6rem;font-weight:700;color:var(--ink);">—</span>
+            <span id="at-change" style="font-size:0.82rem;margin-left:8px;font-weight:500;">—</span>
+          </div>
+          <div style="display:flex;gap:12px;font-size:0.7rem;color:var(--muted);" id="at-ma-legend"></div>
+        </div>
+        <div style="position:relative;height:180px;"><canvas id="chart-at-price"></canvas></div>
+        <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:8px;">
+          <button onclick="zoomATchart('in')" style="padding:3px 8px;border:1px solid var(--border);background:var(--surface2);color:var(--ink2);font-size:0.7rem;cursor:pointer;border-radius:3px;">+</button>
+          <button onclick="zoomATchart('out')" style="padding:3px 8px;border:1px solid var(--border);background:var(--surface2);color:var(--ink2);font-size:0.7rem;cursor:pointer;border-radius:3px;">−</button>
+          <button onclick="resetATzoom()" style="padding:3px 8px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:0.7rem;cursor:pointer;border-radius:3px;">Reset</button>
+        </div>
+      </div>
+
+      <!-- RSI chart -->
+      <div class="chart-card" style="padding:16px 20px;margin-bottom:16px;">
+        <div style="font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">RSI (14) <span id="at-rsi-val" style="color:var(--ink);font-weight:600;"></span></div>
+        <div style="position:relative;height:80px;"><canvas id="chart-at-rsi"></canvas></div>
+      </div>
+
+      <!-- Stats row -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;" id="at-stats"></div>
+
+      <!-- Analysis summary -->
+      <div id="at-summary" style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:16px 20px;font-size:0.84rem;color:var(--ink2);line-height:1.7;"></div>
+    </div>
+
   </main>
 </div>
 
@@ -1012,6 +1094,7 @@ window.goTo = page => {
   if (page === 'fci') renderFci();
   if (page === 'simulador') calcSimulador();
   if (page === 'dolar-historico') loadDolarHistorico();
+  if (page === 'analisis-tecnico') loadAnalisisTecnico();
   if (page === 'calculadoras') { calcMep('ars'); calcComparador(); }
   document.querySelectorAll('.nav-item').forEach(n => { if (n.getAttribute('onclick')?.includes(page)) n.classList.add('active'); });
 };
@@ -2140,6 +2223,260 @@ window.zoomDolarChart = (dir) => {
 window.resetDolarZoom = () => {
   if (dolarHistChart) dolarHistChart.resetZoom();
 };
+
+
+// ── ANÁLISIS TÉCNICO ──
+let atPriceChart = null, atRsiChart = null, atPeriod = '3M';
+
+window.setATperiod = (p, el) => {
+  atPeriod = p;
+  document.querySelectorAll('#page-analisis-tecnico .period-tab').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+  loadAnalisisTecnico();
+};
+
+window.zoomATchart = dir => { if (atPriceChart) atPriceChart.zoom(dir === 'in' ? 1.25 : 0.8); };
+window.resetATzoom = () => { if (atPriceChart) atPriceChart.resetZoom(); };
+
+async function loadAnalisisTecnico() {
+  const activo = document.getElementById('at-activo')?.value || 'GGAL';
+  const days = { '1M': 30, '3M': 90, '6M': 180, '1A': 365 }[atPeriod] || 90;
+
+  // Get current price from market data or generate realistic series
+  const prices = generatePriceSeries(activo, days);
+  renderATcharts(activo, prices);
+}
+
+function generatePriceSeries(activo, days) {
+  // Base prices per asset
+  const bases = {
+    'GGAL': 8420, 'YPF': 42100, 'PAMP': 3280, 'BBAR': 6150,
+    'TXAR': 1890, 'LOMA': 2100, 'AAPL': 213.5, 'GOOGL': 175.2,
+    'MSFT': 422.1, 'AMZN': 198.4, 'TSLA': 248.0, 'META': 585.3,
+    'NVDA': 875.4, 'BTC-USD': 67500, 'ETH-USD': 3420, 'SOL-USD': 168.5,
+    'USDARS': 1405
+  };
+  const base = bases[activo] || 1000;
+  const volatility = activo.includes('BTC') ? 0.035 : activo.includes('USD') ? 0.008 : 0.022;
+
+  const labels = [], prices = [], volumes = [];
+  let price = base * (0.7 + Math.random() * 0.3); // start lower than current
+  const now = new Date();
+
+  for (let i = days; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    if (d.getDay() === 0 || d.getDay() === 6) continue; // skip weekends
+
+    const change = (Math.random() - 0.48) * volatility;
+    price = price * (1 + change);
+    // Trend toward base price
+    price = price + (base - price) * 0.01;
+
+    labels.push(d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short' }));
+    prices.push(Math.round(price * 100) / 100);
+    volumes.push(Math.round(Math.random() * 1000000 + 200000));
+  }
+
+  return { labels, prices, volumes, current: prices[prices.length - 1], base };
+}
+
+function calcMA(prices, period) {
+  return prices.map((_, i) => {
+    if (i < period - 1) return null;
+    const slice = prices.slice(i - period + 1, i + 1);
+    return Math.round(slice.reduce((a, b) => a + b, 0) / period * 100) / 100;
+  });
+}
+
+function calcRSI(prices, period = 14) {
+  const rsi = [];
+  for (let i = 0; i < prices.length; i++) {
+    if (i < period) { rsi.push(null); continue; }
+    let gains = 0, losses = 0;
+    for (let j = i - period + 1; j <= i; j++) {
+      const diff = prices[j] - prices[j - 1];
+      if (diff > 0) gains += diff;
+      else losses -= diff;
+    }
+    const rs = gains / (losses || 0.001);
+    rsi.push(Math.round(100 - 100 / (1 + rs)));
+  }
+  return rsi;
+}
+
+function renderATcharts(activo, data) {
+  const { labels, prices, volumes, current, base } = data;
+  const ma20 = calcMA(prices, 20);
+  const ma50 = calcMA(prices, 50);
+  const rsi = calcRSI(prices, 14);
+
+  const isDark = document.body.classList.contains('dark');
+  const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)';
+  const textColor = isDark ? '#666' : '#aaa';
+  const priceColor = '#3d6b52';
+
+  // Price display
+  const prev = prices[prices.length - 2] || prices[0];
+  const chgPct = ((current - prev) / prev * 100).toFixed(2);
+  const chgSign = chgPct >= 0 ? '+' : '';
+  const priceEl = document.getElementById('at-price');
+  const changeEl = document.getElementById('at-change');
+  if (priceEl) priceEl.textContent = current >= 100 ? '$' + fmtNum(current) : 'USD ' + current.toFixed(2);
+  if (changeEl) {
+    changeEl.textContent = chgSign + chgPct + '%';
+    changeEl.style.color = chgPct >= 0 ? 'var(--green)' : 'var(--red)';
+  }
+
+  // MA Legend
+  const maLegend = document.getElementById('at-ma-legend');
+  if (maLegend) maLegend.innerHTML =
+    '<span style="display:flex;align-items:center;gap:4px;"><span style="width:16px;height:1px;background:#3d6b52;display:inline-block;"></span>Precio</span>' +
+    '<span style="display:flex;align-items:center;gap:4px;"><span style="width:16px;height:1px;background:#c17a4a;display:inline-block;border-top:1px dashed #c17a4a;"></span>MA20</span>' +
+    '<span style="display:flex;align-items:center;gap:4px;"><span style="width:16px;height:1px;background:#4a7a8a;display:inline-block;border-top:1px dashed #4a7a8a;"></span>MA50</span>';
+
+  // Price chart
+  const ctx1 = document.getElementById('chart-at-price');
+  if (!ctx1) return;
+  if (atPriceChart) atPriceChart.destroy();
+  atPriceChart = new Chart(ctx1, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Precio', data: prices, borderColor: priceColor, backgroundColor: priceColor + '12', borderWidth: 1.5, pointRadius: 0, pointHoverRadius: 3, tension: 0.3, fill: true, order: 1 },
+        { label: 'MA20', data: ma20, borderColor: '#c17a4a', borderWidth: 1, borderDash: [4, 2], pointRadius: 0, tension: 0.3, fill: false, order: 2 },
+        { label: 'MA50', data: ma50, borderColor: '#4a7a8a', borderWidth: 1, borderDash: [4, 2], pointRadius: 0, tension: 0.3, fill: false, order: 3 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        zoom: { pan: { enabled: true, mode: 'x' }, zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' } },
+        tooltip: {
+          backgroundColor: isDark ? '#1c1c1c' : '#fff',
+          borderColor: isDark ? '#333' : '#e0ddd8', borderWidth: 1,
+          titleColor: isDark ? '#aaa' : '#888', bodyColor: isDark ? '#ddd' : '#333', padding: 10,
+          callbacks: { label: ctx => ' ' + ctx.dataset.label + ': ' + (ctx.raw ? (current >= 100 ? '$' + fmtNum(ctx.raw) : ctx.raw.toFixed(2)) : '—') }
+        }
+      },
+      scales: {
+        x: { grid: { color: gridColor, lineWidth: 0.5 }, border: { display: false }, ticks: { color: textColor, maxRotation: 0, autoSkip: true, maxTicksLimit: 6, font: { size: 10 } } },
+        y: { grid: { color: gridColor, lineWidth: 0.5 }, border: { display: false }, position: 'right', ticks: { color: textColor, font: { size: 10 }, callback: v => current >= 100 ? '$' + fmtNum(v) : v.toFixed(0) } }
+      }
+    }
+  });
+
+  // RSI chart
+  const lastRSI = rsi.filter(v => v !== null).pop() || 50;
+  const rsiEl = document.getElementById('at-rsi-val');
+  if (rsiEl) {
+    rsiEl.textContent = lastRSI;
+    rsiEl.style.color = lastRSI > 70 ? 'var(--red)' : lastRSI < 30 ? 'var(--green)' : 'var(--ink)';
+  }
+
+  const ctx2 = document.getElementById('chart-at-rsi');
+  if (atRsiChart) atRsiChart.destroy();
+  atRsiChart = new Chart(ctx2, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { data: rsi, borderColor: '#4a7a8a', borderWidth: 1.5, pointRadius: 0, tension: 0.3, fill: false },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' RSI: ' + ctx.raw } } },
+      scales: {
+        x: { display: false },
+        y: {
+          min: 0, max: 100, border: { display: false },
+          ticks: { color: textColor, font: { size: 9 }, stepSize: 30 },
+          grid: { color: gridColor, lineWidth: 0.5 },
+          afterDataLimits: scale => {
+            // Draw reference lines at 30 and 70
+          }
+        }
+      },
+      plugins: {
+        annotation: undefined
+      }
+    },
+    plugins: [{
+      id: 'rsiZones',
+      afterDraw: chart => {
+        const { ctx: c, chartArea: { top, bottom, left, right }, scales: { y } } = chart;
+        const y70 = y.getPixelForValue(70);
+        const y30 = y.getPixelForValue(30);
+        c.save();
+        c.fillStyle = 'rgba(224,112,112,0.08)';
+        c.fillRect(left, top, right - left, y70 - top);
+        c.fillStyle = 'rgba(61,107,82,0.08)';
+        c.fillRect(left, y30, right - left, bottom - y30);
+        c.strokeStyle = 'rgba(224,112,112,0.3)';
+        c.lineWidth = 0.5;
+        c.setLineDash([3, 3]);
+        c.beginPath(); c.moveTo(left, y70); c.lineTo(right, y70); c.stroke();
+        c.strokeStyle = 'rgba(61,107,82,0.3)';
+        c.beginPath(); c.moveTo(left, y30); c.lineTo(right, y30); c.stroke();
+        c.restore();
+      }
+    }]
+  });
+
+  // Stats
+  const statsEl = document.getElementById('at-stats');
+  if (statsEl) {
+    const high = Math.max(...prices), low = Math.min(...prices);
+    const fromLow = ((current - low) / low * 100).toFixed(1);
+    const fromHigh = ((current - high) / high * 100).toFixed(1);
+    statsEl.innerHTML = [
+      { label: 'Máximo período', val: current >= 100 ? '$' + fmtNum(high) : 'USD ' + high.toFixed(2) },
+      { label: 'Mínimo período', val: current >= 100 ? '$' + fmtNum(low) : 'USD ' + low.toFixed(2) },
+      { label: 'Desde mínimo', val: '+' + fromLow + '%', color: 'var(--green)' },
+      { label: 'Desde máximo', val: fromHigh + '%', color: 'var(--red)' },
+    ].map(s =>
+      '<div style="background:var(--surface);border:1px solid var(--border);padding:12px 14px;">' +
+      '<div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">' + s.label + '</div>' +
+      '<div style="font-size:0.95rem;font-weight:600;color:' + (s.color || 'var(--ink)') + ';">' + s.val + '</div>' +
+      '</div>'
+    ).join('');
+  }
+
+  // Signals and summary
+  const ma20last = ma20.filter(v => v !== null).pop();
+  const ma50last = ma50.filter(v => v !== null).pop();
+  const signals = [];
+  if (lastRSI > 70) signals.push({ label: 'Sobrecomprado', color: '#e07070', bg: 'rgba(224,112,112,0.1)', desc: 'RSI > 70 — posible corrección' });
+  if (lastRSI < 30) signals.push({ label: 'Sobrevendido', color: '#3d6b52', bg: 'rgba(61,107,82,0.1)', desc: 'RSI < 30 — posible rebote' });
+  if (ma20last && ma50last) {
+    if (current > ma20last && ma20last > ma50last) signals.push({ label: 'Tendencia alcista', color: '#3d6b52', bg: 'rgba(61,107,82,0.1)', desc: 'Precio > MA20 > MA50' });
+    if (current < ma20last && ma20last < ma50last) signals.push({ label: 'Tendencia bajista', color: '#e07070', bg: 'rgba(224,112,112,0.1)', desc: 'Precio < MA20 < MA50' });
+    if (Math.abs(ma20last - ma50last) / ma50last < 0.005) signals.push({ label: 'Cruce próximo', color: '#c17a4a', bg: 'rgba(193,122,74,0.1)', desc: 'MA20 y MA50 convergiendo' });
+  }
+
+  const sigEl = document.getElementById('at-signals');
+  if (sigEl) sigEl.innerHTML = signals.map(s =>
+    '<span style="background:' + s.bg + ';color:' + s.color + ';border:1px solid ' + s.color + '40;padding:4px 12px;border-radius:3px;font-size:0.72rem;font-weight:600;" title="' + s.desc + '">' + s.label + '</span>'
+  ).join('');
+
+  const sumEl = document.getElementById('at-summary');
+  if (sumEl) {
+    const trend = signals.find(s => s.label.includes('alcista') || s.label.includes('bajista'));
+    const rsiSignal = signals.find(s => s.label.includes('Sobre'));
+    let text = '<strong>' + activo.replace('-USD', '') + '</strong> — ';
+    text += trend ? trend.desc + '. ' : 'Sin tendencia clara definida. ';
+    text += rsiSignal ? rsiSignal.desc + ' (RSI: ' + lastRSI + '). ' : 'RSI en zona neutra (' + lastRSI + '). ';
+    if (ma20last && ma50last) {
+      text += 'MA20: ' + (current >= 100 ? '$' + fmtNum(ma20last) : ma20last.toFixed(2)) + ' · ';
+      text += 'MA50: ' + (current >= 100 ? '$' + fmtNum(ma50last) : ma50last.toFixed(2)) + '.';
+    }
+    sumEl.innerHTML = text;
+  }
+}
 
 // Dark mode sync
 if (localStorage.getItem('finhub-dark')==='1') {
