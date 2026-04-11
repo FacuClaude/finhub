@@ -946,7 +946,13 @@
 
       <!-- RSI chart -->
       <div class="chart-card" style="padding:16px 20px;margin-bottom:16px;">
-        <div style="font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">RSI (14) <span id="at-rsi-val" style="color:var(--ink);font-weight:600;"></span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:4px;">
+          <div style="font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;">RSI (14) <span id="at-rsi-val" style="color:var(--ink);font-weight:600;"></span></div>
+          <div style="display:flex;gap:12px;font-size:0.62rem;">
+            <span style="color:rgba(224,112,112,0.8);">&#9632; &gt;70 sobrecomprado</span>
+            <span style="color:rgba(61,107,82,0.8);">&#9632; &lt;30 sobrevendido</span>
+          </div>
+        </div>
         <div style="position:relative;height:80px;"><canvas id="chart-at-rsi"></canvas></div>
       </div>
 
@@ -2383,25 +2389,30 @@ function renderATcharts(activo, data) {
     data: {
       labels,
       datasets: [
-        { data: rsi, borderColor: '#4a7a8a', borderWidth: 1.5, pointRadius: 0, tension: 0.3, fill: false },
+        { label: 'RSI', data: rsi, borderColor: '#4a7a8a', borderWidth: 1.5, pointRadius: 0, tension: 0.3, fill: false },
       ]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' RSI: ' + ctx.raw } } },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: isDark ? '#1c1c1c' : '#fff',
+          borderColor: isDark ? '#333' : '#e0ddd8', borderWidth: 1,
+          titleColor: isDark ? '#aaa' : '#888', bodyColor: isDark ? '#ddd' : '#333',
+          callbacks: {
+            title: () => '',
+            label: ctx => ctx.raw !== null ? ' RSI: ' + ctx.raw : ''
+          }
+        }
+      },
       scales: {
         x: { display: false },
         y: {
           min: 0, max: 100, border: { display: false },
-          ticks: { color: textColor, font: { size: 9 }, stepSize: 30 },
-          grid: { color: gridColor, lineWidth: 0.5 },
-          afterDataLimits: scale => {
-            // Draw reference lines at 30 and 70
-          }
+          ticks: { color: textColor, font: { size: 9 }, values: [0, 30, 70, 100] },
+          grid: { color: gridColor, lineWidth: 0.5 }
         }
-      },
-      plugins: {
-        annotation: undefined
       }
     },
     plugins: [{
