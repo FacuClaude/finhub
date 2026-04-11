@@ -146,7 +146,42 @@ export default async function handler(req) {
       }
     }
 
-    return new Response(JSON.stringify(data), { headers: CORS });
+    else if (source === 'history') {
+      const symbol = searchParams.get('symbol') || 'AAPL';
+      const period = searchParams.get('period') || '3mo'; // 1mo, 3mo, 6mo, 1y, 2y
+      const interval = period === '1mo' ? '1d' : period === '2y' ? '1wk' : '1d';
+
+      try {
+        const res = await fetch(
+          `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=${period}&interval=${interval}&includePrePost=false`,
+          { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+            signal: AbortSignal.timeout(6000) }
+        );
+        if (res.ok) {
+          const raw = await res.json();
+          const result = raw?.chart?.result?.[0];
+          if (result) {
+            const timestamps = result.timestamp || [];
+            const closes = result.indicators?.quote?.[0]?.close || [];
+            const volumes = result.indicators?.quote?.[0]?.volume || [];
+            const meta = result.meta || {};
+            data = {
+              symbol: meta.symbol,
+              currency: meta.currency,
+              currentPrice: meta.regularMarketPrice,
+              previousClose: meta.chartPreviousClose,
+              timestamps,
+              closes: closes.map(v => v ? Math.round(v * 100) / 100 : null),
+              volumes: volumes.map(v => v || 0),
+            };
+          }
+        }
+      } catch(e) {
+        data = { error: 'No historical data available', symbol };
+      }
+    }
+
+        return new Response(JSON.stringify(data), { headers: CORS });
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: CORS });
   }
