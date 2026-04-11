@@ -3474,14 +3474,22 @@
 
       cardsEl.innerHTML = Object.entries(byCard).map(([name, data]) => {
         const mesTotal = thisMonthByCard[name]?.total || 0;
+        const totalAcum = data.total;
         const color = redColors[data.red] || '#6b7280';
+        const fijaTotal = data.fija + data.variable > 0 ? data.fija : 0;
+        const varTotal  = data.fija + data.variable > 0 ? data.variable : 0;
+        const pctFija = totalAcum > 0 ? Math.round(fijaTotal/totalAcum*100) : 0;
+        const pctVar  = 100 - pctFija;
         return '<div style="background:var(--surface);border:1px solid var(--border);border-top:3px solid '+color+';padding:16px 18px;">' +
-          '<div style="font-size:0.62rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:'+color+';margin-bottom:6px;">'+name+'</div>' +
-          '<div style="font-family:sans-serif;font-size:1.3rem;font-weight:700;color:var(--ink);">'+fmt(mesTotal)+'</div>' +
-          '<div style="font-size:0.7rem;color:var(--muted);margin-top:4px;">este mes</div>' +
-          '<div style="display:flex;gap:12px;margin-top:10px;font-size:0.72rem;">' +
-            '<span style="color:#4a90c4;">Fija: '+fmt(data.fija)+'</span>' +
-            '<span style="color:var(--accent2);">Variable: '+fmt(data.variable)+'</span>' +
+          '<div style="font-size:0.62rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:'+color+';margin-bottom:8px;">'+name+'</div>' +
+          '<div style="font-size:1.2rem;font-weight:700;color:var(--ink);">'+fmt(mesTotal || totalAcum)+'</div>' +
+          '<div style="font-size:0.68rem;color:var(--muted);margin-top:2px;">'+(mesTotal > 0 ? 'este mes' : 'acumulado total')+'</div>' +
+          '<div style="height:4px;background:var(--border2);border-radius:2px;overflow:hidden;margin:10px 0 6px;">' +
+            '<div style="height:100%;width:'+pctFija+'%;background:#4a90c4;border-radius:2px;display:inline-block;"></div>' +
+          '</div>' +
+          '<div style="display:flex;justify-content:space-between;font-size:0.68rem;">' +
+            '<span style="color:#4a90c4;">Fija '+pctFija+'% ('+fmt(fijaTotal)+')</span>' +
+            '<span style="color:var(--accent2);">Variable '+pctVar+'% ('+fmt(varTotal)+')</span>' +
           '</div>' +
         '</div>';
       }).join('');
@@ -3545,21 +3553,7 @@
     // Fija vs Variable breakdown per card
     const breakdownEl = document.getElementById('dash-tarjetas-breakdown');
     if (breakdownEl) {
-      breakdownEl.innerHTML = Object.entries(byCard).map(([name, data]) => {
-        const total = data.fija + data.variable || 1;
-        const pctFija = Math.round((data.fija / total) * 100);
-        const pctVar = 100 - pctFija;
-        return '<div style="background:var(--surface);border:1px solid var(--border);padding:14px 16px;">' +
-          '<div style="font-size:0.65rem;font-weight:600;color:var(--ink);margin-bottom:10px;">'+name+'</div>' +
-          '<div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:8px;">' +
-            '<div style="height:100%;width:'+pctFija+'%;background:#4a90c4;border-radius:3px;"></div>' +
-          '</div>' +
-          '<div style="display:flex;justify-content:space-between;font-size:0.68rem;">' +
-            '<span style="color:#4a90c4;">Fija '+pctFija+'%</span>' +
-            '<span style="color:var(--accent2);">Variable '+pctVar+'%</span>' +
-          '</div>' +
-        '</div>';
-      }).join('');
+      breakdownEl.innerHTML = ''; // integrated into cards above
     }
   }
 
