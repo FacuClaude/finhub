@@ -841,8 +841,8 @@
           <div style="font-size:0.68rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);">Evolución tipos de cambio</div>
           <div style="display:flex;gap:12px;font-size:0.72rem;flex-wrap:wrap;" id="dh-legend"></div>
         </div>
-        <canvas id="chart-dolar-historico" height="280"></canvas>
-        <div id="dh-loading" style="text-align:center;padding:40px;color:var(--muted);font-size:0.82rem;">Cargando datos históricos...</div>
+        <canvas id="chart-dolar-historico" style="width:100%;height:280px;"></canvas>
+        <div id="dh-loading" style="text-align:center;padding:40px;color:var(--muted);font-size:0.82rem;display:none;">Cargando datos históricos...</div>
       </div>
 
       <!-- Brecha cambiaria -->
@@ -1882,7 +1882,7 @@ window.setDolarPeriod = (period, el) => {
 async function loadDolarHistorico() {
   const loading = document.getElementById('dh-loading');
   const canvas = document.getElementById('chart-dolar-historico');
-  if (loading) loading.style.display = 'block';
+  if (loading) { loading.style.display = 'block'; loading.textContent = 'Cargando datos históricos...'; }
   if (canvas) canvas.style.display = 'none';
 
   try {
@@ -1954,6 +1954,11 @@ function renderDolarChart(data) {
   const loading = document.getElementById('dh-loading');
   const canvas = document.getElementById('chart-dolar-historico');
   if (!canvas) return;
+  if (typeof Chart === 'undefined') {
+    if (loading) loading.textContent = 'Cargando librería de gráficos...';
+    setTimeout(() => renderDolarChart(data), 500);
+    return;
+  }
   if (loading) loading.style.display = 'none';
   canvas.style.display = 'block';
 
