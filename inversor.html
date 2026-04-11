@@ -478,6 +478,10 @@
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 20h20M5 20V10l7-7 7 7v10"/><path d="M9 20v-5h6v5"/></svg>
         Análisis técnico
       </div>
+      <div class="nav-item" onclick="goTo('dolar-costo')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        Dólar costo
+      </div>
     </nav>
 
     <div class="sidebar-footer">
@@ -966,6 +970,79 @@
       <div id="at-summary" style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:16px 20px;font-size:0.84rem;color:var(--ink2);line-height:1.7;"></div>
     </div>
 
+    <!-- DÓLAR COSTO -->
+    <div class="page" id="page-dolar-costo">
+      <div class="page-title">Dólar costo</div>
+      <div class="page-sub">¿Cuánto te sale realmente comprar algo?</div>
+
+      <!-- Input section -->
+      <div style="background:var(--surface);border:1px solid var(--border);padding:24px;margin-bottom:20px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+          <div>
+            <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Precio del producto</div>
+            <div style="display:flex;gap:0;">
+              <select id="dc-moneda" onchange="calcDolarCosto()" style="padding:10px 12px;border:1px solid var(--border);border-right:none;background:var(--bg);color:var(--ink);font-size:0.85rem;border-radius:4px 0 0 4px;font-family:'DM Sans',sans-serif;cursor:pointer;">
+                <option value="ARS">ARS $</option>
+                <option value="USD">USD $</option>
+              </select>
+              <input type="number" id="dc-precio" placeholder="0" oninput="calcDolarCosto()" style="flex:1;padding:10px 14px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-size:0.88rem;border-radius:0 4px 4px 0;font-family:'DM Sans',sans-serif;outline:none;">
+            </div>
+          </div>
+          <div>
+            <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Cuotas</div>
+            <select id="dc-cuotas" onchange="calcDolarCosto()" style="width:100%;padding:10px 14px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-size:0.85rem;border-radius:4px;font-family:'DM Sans',sans-serif;cursor:pointer;">
+              <option value="1">Contado (1 cuota)</option>
+              <option value="3">3 cuotas</option>
+              <option value="6">6 cuotas</option>
+              <option value="9">9 cuotas</option>
+              <option value="12">12 cuotas</option>
+              <option value="18">18 cuotas</option>
+              <option value="24">24 cuotas</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div>
+            <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Tipo de compra</div>
+            <select id="dc-tipo" onchange="calcDolarCosto()" style="width:100%;padding:10px 14px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-size:0.85rem;border-radius:4px;font-family:'DM Sans',sans-serif;cursor:pointer;">
+              <option value="nacional">Compra nacional (sin impuestos)</option>
+              <option value="extranjera">Compra en el exterior / online USD</option>
+              <option value="servicio">Servicio digital exterior (streaming, apps)</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Tasa financiera anual (TNA)</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input type="number" id="dc-tna" value="120" oninput="calcDolarCosto()" style="flex:1;padding:10px 14px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-size:0.88rem;border-radius:4px;font-family:'DM Sans',sans-serif;outline:none;">
+              <span style="font-size:0.85rem;color:var(--muted);">%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div id="dc-result" style="display:none;">
+
+        <!-- Verdict -->
+        <div id="dc-verdict" style="margin-bottom:16px;"></div>
+
+        <!-- Cost breakdown -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:20px;" id="dc-cards"></div>
+
+        <!-- Detail table -->
+        <div style="background:var(--surface);border:1px solid var(--border);padding:20px 24px;margin-bottom:20px;">
+          <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:16px;">Desglose impositivo</div>
+          <div id="dc-desglose"></div>
+        </div>
+
+        <!-- Comparison -->
+        <div style="background:var(--surface);border:1px solid var(--border);padding:20px 24px;">
+          <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:16px;">Comparativa de opciones</div>
+          <div id="dc-comparativa"></div>
+        </div>
+      </div>
+    </div>
+
   </main>
 </div>
 
@@ -1104,6 +1181,7 @@ window.goTo = page => {
   if (page === 'simulador') calcSimulador();
   if (page === 'dolar-historico') loadDolarHistorico();
   if (page === 'analisis-tecnico') loadAnalisisTecnico();
+  if (page === 'dolar-costo') { calcDolarCosto(); };
   if (page === 'calculadoras') { calcMep('ars'); calcComparador(); }
   document.querySelectorAll('.nav-item').forEach(n => { if (n.getAttribute('onclick')?.includes(page)) n.classList.add('active'); });
 };
@@ -2523,6 +2601,150 @@ function renderATcharts(activo, data) {
     sumEl.innerHTML = text;
   }
 }
+
+
+// ── DÓLAR COSTO ──
+window.calcDolarCosto = () => {
+  const precioRaw = parseFloat(document.getElementById('dc-precio')?.value) || 0;
+  const moneda    = document.getElementById('dc-moneda')?.value || 'ARS';
+  const cuotas    = parseInt(document.getElementById('dc-cuotas')?.value) || 1;
+  const tipo      = document.getElementById('dc-tipo')?.value || 'nacional';
+  const tna       = parseFloat(document.getElementById('dc-tna')?.value) || 120;
+
+  if (!precioRaw) { document.getElementById('dc-result').style.display = 'none'; return; }
+
+  const d = marketData.dolar;
+  const tcOficialVal = d?.oficial?.venta || 1415;
+  const tcBlue       = d?.blue?.venta    || 1405;
+  const tcMep        = d?.mep?.venta     || 1363;
+
+  // Convert to ARS base
+  const precioARS = moneda === 'USD' ? precioRaw * tcOficialVal : precioRaw;
+  const precioUSD = moneda === 'USD' ? precioRaw : precioRaw / tcOficialVal;
+
+  // Impuestos según tipo de compra
+  let pais = 0, percepcion = 0, descripcionImp = '';
+  if (tipo === 'extranjera') {
+    pais = 0.30;         // Impuesto PAIS 30%
+    percepcion = 0.45;   // Percepción AFIP 45%
+    descripcionImp = 'Impuesto PAIS 30% + Percepción AFIP 45%';
+  } else if (tipo === 'servicio') {
+    pais = 0.08;         // PAIS reducido para servicios digitales
+    percepcion = 0.08;   // Percepción reducida
+    descripcionImp = 'PAIS 8% + Percepción AFIP 8% (servicios digitales)';
+  } else {
+    descripcionImp = 'Sin impuestos adicionales (compra nacional)';
+  }
+
+  const factorImp = 1 + pais + percepcion;
+  const precioConImp = precioARS * factorImp;
+
+  // Costo financiero en cuotas
+  const tmn = tna / 100 / 12; // tasa mensual
+  let cuotaMensual, totalCuotas, costoFinanciero;
+  if (cuotas === 1 || tmn === 0) {
+    cuotaMensual = precioConImp;
+    totalCuotas = precioConImp;
+    costoFinanciero = 0;
+  } else {
+    // Sistema francés
+    cuotaMensual = precioConImp * (tmn * Math.pow(1 + tmn, cuotas)) / (Math.pow(1 + tmn, cuotas) - 1);
+    totalCuotas = cuotaMensual * cuotas;
+    costoFinanciero = totalCuotas - precioConImp;
+  }
+
+  // Dólar costo implícito (cuántos pesos vale cada USD real)
+  const dolarCostoImplicito = totalCuotas / precioUSD;
+
+  // Mostrar resultados
+  document.getElementById('dc-result').style.display = 'block';
+
+  // Cards
+  const cardsEl = document.getElementById('dc-cards');
+  const cards = [
+    { label: 'Precio base', val: fmt(precioARS), sub: moneda === 'USD' ? 'USD ' + precioRaw + ' × $' + fmtNum(tcOficialVal) : 'En pesos', color: 'var(--accent)' },
+    { label: 'Con impuestos', val: fmt(precioConImp), sub: descripcionImp.split('(')[0].trim(), color: pais > 0 ? '#c17a4a' : 'var(--accent)' },
+    { label: 'Total a pagar', val: fmt(totalCuotas), sub: cuotas > 1 ? cuotas + ' × ' + fmt(cuotaMensual) : 'Contado', color: '#4a7a8a' },
+    { label: 'Dólar costo', val: '$' + fmtNum(Math.round(dolarCostoImplicito)), sub: 'Pesos por USD real', color: dolarCostoImplicito > tcBlue ? '#c0392b' : 'var(--accent)' },
+  ];
+  if (cardsEl) {
+    cardsEl.innerHTML = cards.map(c =>
+      '<div style="background:var(--surface);border:1px solid var(--border);border-top:3px solid '+c.color+';padding:16px 18px;">' +
+        '<div style="font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">'+c.label+'</div>' +
+        '<div style="font-size:1.2rem;font-weight:700;color:'+c.color+';">'+c.val+'</div>' +
+        '<div style="font-size:0.68rem;color:var(--muted);margin-top:4px;">'+c.sub+'</div>' +
+      '</div>'
+    ).join('');
+  }
+
+  // Desglose
+  const desgloseEl = document.getElementById('dc-desglose');
+  if (desgloseEl) {
+    const rows = [
+      { label: 'Precio base', val: fmt(precioARS) },
+    ];
+    if (pais > 0) rows.push({ label: 'Impuesto PAIS ('+Math.round(pais*100)+'%)', val: '+'+fmt(precioARS * pais) });
+    if (percepcion > 0) rows.push({ label: 'Percepción AFIP ('+Math.round(percepcion*100)+'%)', val: '+'+fmt(precioARS * percepcion) });
+    rows.push({ label: 'Subtotal con impuestos', val: fmt(precioConImp), bold: true });
+    if (costoFinanciero > 0) {
+      rows.push({ label: 'Costo financiero (TNA '+tna+'%)', val: '+'+fmt(costoFinanciero) });
+      rows.push({ label: 'Total final en '+cuotas+' cuotas', val: fmt(totalCuotas), bold: true });
+    }
+    desgloseEl.innerHTML = rows.map(r =>
+      '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:0.84rem;'+(r.bold?'font-weight:600;':'')+'color:'+(r.bold?'var(--ink)':'var(--ink2)')+';">' +
+        '<span>'+r.label+'</span><span>'+r.val+'</span>' +
+      '</div>'
+    ).join('');
+  }
+
+  // Comparativa de opciones
+  const compEl = document.getElementById('dc-comparativa');
+  if (compEl) {
+    const opciones = [
+      { nombre: 'Contado ARS', total: precioConImp, dolarCosto: precioConImp / precioUSD, cuotaMsg: '1 pago de '+fmt(precioConImp) },
+      { nombre: cuotas+'x cuotas (TNA '+tna+'%)', total: totalCuotas, dolarCosto: dolarCostoImplicito, cuotaMsg: cuotas+' pagos de '+fmt(cuotaMensual) },
+      { nombre: 'Ahorro en MEP y compra USD', total: precioUSD * tcMep, dolarCosto: tcMep, cuotaMsg: 'Comprás USD '+precioRaw+' a $'+fmtNum(tcMep) },
+      { nombre: 'Ahorro en Blue y compra USD', total: precioUSD * tcBlue, dolarCosto: tcBlue, cuotaMsg: 'Comprás USD '+precioRaw+' a $'+fmtNum(tcBlue) },
+    ].sort((a,b) => a.total - b.total);
+
+    const minTotal = opciones[0].total;
+    compEl.innerHTML = opciones.map((op, i) => {
+      const esBest = i === 0;
+      const diff = op.total - minTotal;
+      const diffPct = minTotal > 0 ? ((diff / minTotal) * 100).toFixed(1) : 0;
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);gap:12px;flex-wrap:wrap;">' +
+        '<div style="display:flex;align-items:center;gap:10px;">' +
+          (esBest ? '<span style="background:var(--accent);color:white;font-size:0.55rem;font-weight:700;padding:2px 6px;border-radius:2px;letter-spacing:0.08em;">MEJOR</span>' : '<span style="width:42px;"></span>') +
+          '<div>' +
+            '<div style="font-size:0.84rem;font-weight:'+(esBest?'600':'400')+';color:var(--ink);">'+op.nombre+'</div>' +
+            '<div style="font-size:0.7rem;color:var(--muted);margin-top:2px;">'+op.cuotaMsg+'</div>' +
+          '</div>' +
+        '</div>' +
+        '<div style="text-align:right;">' +
+          '<div style="font-size:0.95rem;font-weight:600;color:'+(esBest?'var(--accent)':'var(--ink)')+' ;">'+fmt(op.total)+'</div>' +
+          '<div style="font-size:0.68rem;color:'+(diff>0?'var(--red)':'var(--muted)')+';margin-top:2px;">'+(diff>0?'+'+fmt(diff)+' (+'+diffPct+'%)':'más barato')+'</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  // Verdict
+  const verdictEl = document.getElementById('dc-verdict');
+  if (verdictEl) {
+    const mejor = dolarCostoImplicito <= tcMep
+      ? { txt: 'Conviene pagar en cuotas', color: 'var(--accent)', bg: 'rgba(61,107,82,0.08)', icon: '✓', desc: 'El dólar costo implícito ($'+fmtNum(Math.round(dolarCostoImplicito))+') es menor al MEP ($'+fmtNum(tcMep)+') — financiarte sale más barato.' }
+      : dolarCostoImplicito <= tcBlue
+      ? { txt: 'Costo similar al blue', color: '#c17a4a', bg: 'rgba(193,122,74,0.08)', icon: '~', desc: 'El dólar costo implícito ($'+fmtNum(Math.round(dolarCostoImplicito))+') es similar al blue ($'+fmtNum(tcBlue)+').' }
+      : { txt: 'Conviene ahorrar en USD y pagar', color: '#c0392b', bg: 'rgba(192,57,43,0.08)', icon: '!', desc: 'El dólar costo implícito ($'+fmtNum(Math.round(dolarCostoImplicito))+') supera el blue ($'+fmtNum(tcBlue)+') — sale más barato comprar dólares.' };
+
+    verdictEl.innerHTML =
+      '<div style="background:'+mejor.bg+';border:1px solid '+mejor.color+'40;padding:16px 20px;display:flex;align-items:center;gap:16px;">' +
+        '<div style="font-size:1.5rem;color:'+mejor.color+';font-weight:700;">'+mejor.icon+'</div>' +
+        '<div><div style="font-size:0.95rem;font-weight:700;color:'+mejor.color+';margin-bottom:3px;">'+mejor.txt+'</div>' +
+        '<div style="font-size:0.8rem;color:var(--ink2);">'+mejor.desc+'</div></div>' +
+      '</div>';
+  }
+};
 
 // Dark mode sync
 if (localStorage.getItem('finhub-dark')==='1') {
