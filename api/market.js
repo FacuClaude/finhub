@@ -234,45 +234,42 @@ export default async function handler(req) {
     // ── NOTICIAS ───────────────────────────────────────────────────
     else if (source === 'noticias') {
       const feeds = [
-        { url: 'https://www.ambito.com/rss/economia.xml',        fuente: 'Ámbito' },
+        { url: 'https://www.ambito.com/rss/economia.xml',                        fuente: 'Ámbito' },
         { url: 'https://www.cronista.com/arc/outboundfeeds/rss/?outputType=xml', fuente: 'El Cronista' },
-        { url: 'https://www.infobae.com/feeds/rss/economia/',    fuente: 'Infobae Economía' },
+        { url: 'https://www.infobae.com/feeds/rss/economia/',                    fuente: 'Infobae Economía' },
       ];
 
       const allNews = [];
+      const RSS2JSON = 'https://api.rss2json.com/v1/api.json?count=10&rss_url=';
 
       await Promise.allSettled(feeds.map(async ({ url, fuente }) => {
         try {
-          const res = await fetch(url, {
-            headers: { 'User-Agent': 'Mozilla/5.0 (compatible; finHub/1.0)' },
-            signal: AbortSignal.timeout(5000)
+          // Use rss2json as proxy - handles CORS and XML parsing
+          const res = await fetch(RSS2JSON + encodeURIComponent(url), {
+            signal: AbortSignal.timeout(6000)
           });
           if (!res.ok) return;
-          const xml = await res.text();
+          const raw = await res.json();
+          if (raw.status !== 'ok' || !raw.items?.length) return;
 
-          // Parse RSS items
-          const items = xml.match(/<item>([\s\S]*?)<\/item>/g) || [];
-          items.slice(0, 8).forEach(item => {
-            const title   = (item.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/) || item.match(/<title>(.*?)<\/title>/))?.[1]?.trim();
-            const link    = (item.match(/<link>(.*?)<\/link>/))?.[1]?.trim();
-            const pubDate = (item.match(/<pubDate>(.*?)<\/pubDate>/))?.[1]?.trim();
-            const desc    = (item.match(/<description><!\[CDATA\[(.*?)\]\]><\/description>/) || item.match(/<description>(.*?)<\/description>/))?.[1]?.trim();
-            if (title && link) {
-              allNews.push({
-                titulo: title.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/<[^>]+>/g,''),
-                link,
-                fuente,
-                fecha: pubDate ? new Date(pubDate).toISOString() : new Date().toISOString(),
-                descripcion: desc ? desc.replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').substring(0, 180) : ''
-              });
-            }
+          raw.items.forEach(item => {
+            if (!item.title || !item.link) return;
+            allNews.push({
+              titulo: item.title.replace(/<[^>]+>/g, '').trim(),
+              link: item.link,
+              fuente,
+              fecha: item.pubDate ? new Date(item.pubDate).toISOString() : new Date().toISOString(),
+              descripcion: item.description
+                ? item.description.replace(/<[^>]+>/g, '').replace(/&amp;/g,'&').substring(0, 200)
+                : (item.content || '').replace(/<[^>]+>/g,'').substring(0, 200),
+              imagen: item.thumbnail || item.enclosure?.link || null,
+            });
           });
         } catch(e) {}
       }));
 
-      // Sort by date descending
       allNews.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
-      data = { noticias: allNews.slice(0, 20), source: allNews.length ? 'rss' : 'unavailable' };
+      data = { noticias: allNews.slice(0, 24), source: allNews.length ? 'rss2json' : 'unavailable' };
     }
 
         return new Response(JSON.stringify(data), { headers: CORS });
