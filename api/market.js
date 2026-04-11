@@ -231,7 +231,51 @@ export default async function handler(req) {
       }
     }
 
-    return new Response(JSON.stringify(data), { headers: CORS });
+    // ── NOTICIAS ───────────────────────────────────────────────────
+    else if (source === 'noticias') {
+      const feeds = [
+        { url: 'https://www.ambito.com/rss/economia.xml',        fuente: 'Ámbito' },
+        { url: 'https://www.cronista.com/arc/outboundfeeds/rss/?outputType=xml', fuente: 'El Cronista' },
+        { url: 'https://www.infobae.com/feeds/rss/economia/',    fuente: 'Infobae Economía' },
+      ];
+
+      const allNews = [];
+
+      await Promise.allSettled(feeds.map(async ({ url, fuente }) => {
+        try {
+          const res = await fetch(url, {
+            headers: { 'User-Agent': 'Mozilla/5.0 (compatible; finHub/1.0)' },
+            signal: AbortSignal.timeout(5000)
+          });
+          if (!res.ok) return;
+          const xml = await res.text();
+
+          // Parse RSS items
+          const items = xml.match(/<item>([\s\S]*?)<\/item>/g) || [];
+          items.slice(0, 8).forEach(item => {
+            const title   = (item.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/) || item.match(/<title>(.*?)<\/title>/))?.[1]?.trim();
+            const link    = (item.match(/<link>(.*?)<\/link>/))?.[1]?.trim();
+            const pubDate = (item.match(/<pubDate>(.*?)<\/pubDate>/))?.[1]?.trim();
+            const desc    = (item.match(/<description><!\[CDATA\[(.*?)\]\]><\/description>/) || item.match(/<description>(.*?)<\/description>/))?.[1]?.trim();
+            if (title && link) {
+              allNews.push({
+                titulo: title.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/<[^>]+>/g,''),
+                link,
+                fuente,
+                fecha: pubDate ? new Date(pubDate).toISOString() : new Date().toISOString(),
+                descripcion: desc ? desc.replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').substring(0, 180) : ''
+              });
+            }
+          });
+        } catch(e) {}
+      }));
+
+      // Sort by date descending
+      allNews.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+      data = { noticias: allNews.slice(0, 20), source: allNews.length ? 'rss' : 'unavailable' };
+    }
+
+        return new Response(JSON.stringify(data), { headers: CORS });
 
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: CORS });
