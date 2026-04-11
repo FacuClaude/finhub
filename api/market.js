@@ -49,13 +49,21 @@ export default async function handler(req) {
     }
 
     else if (source === 'acciones') {
-      const res = await fetch('https://open.bymadata.com.ar/vanoms-be-core/rest/api/bymadata/free/index-data/leaders', {
-        headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' }
-      });
-      if (res.ok) {
-        const raw = await res.json();
-        data = { acciones: (raw.data || raw).slice(0, 10) };
-      } else {
+      let accionesOk = false;
+      try {
+        const res = await fetch('https://open.bymadata.com.ar/vanoms-be-core/rest/api/bymadata/free/index-data/leaders', {
+          headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' },
+          signal: AbortSignal.timeout(4000)
+        });
+        if (res.ok) {
+          const raw = await res.json();
+          if ((raw.data || raw)?.length) {
+            data = { acciones: (raw.data || raw).slice(0, 10) };
+            accionesOk = true;
+          }
+        }
+      } catch(e) {}
+      if (!accionesOk) {
         data = { acciones: [
           { symbol:'GGAL', description:'Grupo Galicia',  closePrice:8420,  changePercent:2.3  },
           { symbol:'YPF',  description:'YPF S.A.',       closePrice:42100, changePercent:-0.8 },
