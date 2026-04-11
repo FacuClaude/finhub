@@ -3288,24 +3288,58 @@ async function loadNoticias() {
   const subEl  = document.getElementById('noticias-sub');
   if (listEl) listEl.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--muted);font-size:0.85rem;">Cargando noticias...</div>';
 
-  try {
-    const base = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '';
-    const res = await fetch(base + '/api/market?source=noticias');
-    if (!res.ok) throw new Error('API error');
-    const raw = await res.json();
+  const feeds = [
+    { rss: 'https://www.ambito.com/rss/economia.xml',                        fuente: 'Ámbito' },
+    { rss: 'https://www.cronista.com/arc/outboundfeeds/rss/?outputType=xml', fuente: 'El Cronista' },
+    { rss: 'https://www.infobae.com/feeds/rss/economia/',                    fuente: 'Infobae Economía' },
+  ];
 
-    if (raw.source === 'unavailable' || !raw.noticias?.length) {
-      if (listEl) listEl.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--muted);font-size:0.85rem;">No se pudieron cargar las noticias en este momento.</div>';
-      return;
-    }
+  const allNews = [];
 
-    allNoticias = raw.noticias;
-    if (subEl) subEl.textContent = 'Mercados y economía · Actualizado ' + new Date().toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit'});
-    renderNoticias();
+  // Fetch via rss2json directly from browser (no server needed, CORS allowed)
+  await Promise.allSettled(feeds.map(async ({ rss, fuente }) => {
+    try {
+      const url = 'https://api.rss2json.com/v1/api.json?count=10&rss_url=' + encodeURIComponent(rss);
+      const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      if (!res.ok) return;
+      const raw = await res.json();
+      if (raw.status !== 'ok' || !raw.items?.length) return;
+      raw.items.forEach(item => {
+        if (!item.title || !item.link) return;
+        allNews.push({
+          titulo: item.title.replace(/<[^>]+>/g,'').trim(),
+          link: item.link,
+          fuente,
+          fecha: item.pubDate ? new Date(item.pubDate).toISOString() : new Date().toISOString(),
+          descripcion: (item.description || item.content || '')
+            .replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&nbsp;/g,' ').trim().substring(0, 200),
+        });
+      });
+    } catch(e) { console.log('Feed failed:', fuente, e.message); }
+  }));
 
-  } catch(e) {
-    if (listEl) listEl.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--muted);font-size:0.85rem;">Error cargando noticias. Verificá tu conexión.</div>';
+  if (!allNews.length) {
+    // Last resort: show curated links
+    if (listEl) listEl.innerHTML =
+      '<div style="padding:24px 20px;">' +
+      '<div style="font-size:0.75rem;color:var(--muted);margin-bottom:16px;">Las fuentes RSS no están disponibles en este momento. Accedé directamente:</div>' +
+      [
+        { n:'Ámbito Economía',   u:'https://www.ambito.com/economia', c:'#c17a4a' },
+        { n:'El Cronista',       u:'https://www.cronista.com',         c:'#3d6b52' },
+        { n:'Infobae Economía',  u:'https://www.infobae.com/economia', c:'#4a7a8a' },
+        { n:'iProfesional',      u:'https://www.iprofesional.com',     c:'#8a6b52' },
+      ].map(s =>
+        '<a href="'+s.u+'" target="_blank" style="display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--border);text-decoration:none;">' +
+        '<span style="width:8px;height:8px;border-radius:50%;background:'+s.c+';flex-shrink:0;"></span>' +
+        '<span style="font-size:0.88rem;color:var(--ink);">'+s.n+'</span>' +
+        '<span style="margin-left:auto;font-size:0.72rem;color:var(--muted);">→</span></a>'
+      ).join('') + '</div>';
+    return;
   }
+
+  allNoticias = allNews.sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
+  if (subEl) subEl.textContent = 'Mercados y economía · Actualizado ' + new Date().toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit'});
+  renderNoticias();
 }
 
 function renderNoticias() {
