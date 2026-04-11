@@ -1061,8 +1061,14 @@ YPE html>
 
       <!-- Add position button -->
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-        <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;">Mis posiciones</div>
-        <button onclick="ptOpenModal()" style="background:var(--accent);color:white;border:none;padding:8px 16px;font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;border-radius:3px;font-family:'DM Sans',sans-serif;">+ Agregar</button>
+        <div>
+          <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;">Mis posiciones</div>
+          <div style="font-size:0.62rem;color:var(--muted);margin-top:3px;" id="pt-last-update"></div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button onclick="window._ptPricesFetched=false;renderPortfolio()" style="background:transparent;color:var(--muted);border:1px solid var(--border);padding:8px 12px;font-size:0.72rem;cursor:pointer;border-radius:3px;font-family:'DM Sans',sans-serif;">↻ Actualizar</button>
+          <button onclick="ptOpenModal()" style="background:var(--accent);color:white;border:none;padding:8px 16px;font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;border-radius:3px;font-family:'DM Sans',sans-serif;">+ Agregar</button>
+        </div>
       </div>
 
       <!-- Positions table -->
@@ -1291,7 +1297,7 @@ window.goTo = page => {
   if (page === 'dolar-historico') loadDolarHistorico();
   if (page === 'analisis-tecnico') loadAnalisisTecnico();
   if (page === 'dolar-costo') { calcDolarCosto(); };
-  if (page === 'portfolio') renderPortfolio();
+  if (page === 'portfolio') { window._ptPricesFetched = false; renderPortfolio(); }
   if (page === 'calculadoras') { calcMep('ars'); calcComparador(); }
   document.querySelectorAll('.nav-item').forEach(n => { if (n.getAttribute('onclick')?.includes(page)) n.classList.add('active'); });
 };
@@ -2434,11 +2440,60 @@ window.resetATzoom = () => { if (atPriceChart) atPriceChart.resetZoom(); };
 
 window.loadAnalisisTecnico = async function() {
   const activo = document.getElementById('at-activo')?.value || 'GGAL';
-  const days = { '1M': 30, '3M': 90, '6M': 180, '1A': 365 }[atPeriod] || 90;
 
-  // Get current price from market data or generate realistic series
-  const prices = generatePriceSeries(activo, days);
-  renderATcharts(activo, prices);
+  // Map to Yahoo Finance symbols
+  const yahooMap = {
+    'GGAL': 'GGAL.BA', 'YPF': 'YPFD.BA', 'PAMP': 'PAMP.BA',
+    'BBAR': 'BBAR.BA', 'TXAR': 'TXAR.BA', 'LOMA': 'LOMA.BA',
+    'BTC-USD': 'BTC-USD', 'ETH-USD': 'ETH-USD', 'SOL-USD': 'SOL-USD',
+    'AAPL': 'AAPL', 'GOOGL': 'GOOGL', 'MSFT': 'MSFT',
+    'AMZN': 'AMZN', 'TSLA': 'TSLA', 'META': 'META', 'NVDA': 'NVDA',
+    'USDARS': null, // handled separately
+  };
+
+  const periodMap = { '1M': '1mo', '3M': '3mo', '6M': '6mo', '1A': '1y' };
+  const yahooSymbol = yahooMap[activo];
+  const yahooperiod = periodMap[atPeriod] || '3mo';
+
+  // Show loading state
+  const priceEl = document.getElementById('at-price');
+  if (priceEl) priceEl.textContent = 'Cargando...';
+
+  let priceData = null;
+
+  if (yahooSymbol) {
+    try {
+      const base = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '';
+      const res = await fetch(`${base}/api/market?source=history&symbol=${yahooSymbol}&period=${yahooperiod}`);
+      if (res.ok) {
+        const raw = await res.json();
+        if (raw.timestamps && raw.closes) {
+          const labels = [], prices = [], volumes = [];
+          raw.timestamps.forEach((ts, i) => {
+            if (raw.closes[i] === null) return;
+            const d = new Date(ts * 1000);
+            labels.push(d.toLocaleDateString('es-AR', { day:'2-digit', month:'short' }));
+            prices.push(raw.closes[i]);
+            volumes.push(raw.volumes[i] || 0);
+          });
+          priceData = { labels, prices, volumes, current: prices[prices.length-1] || 0, isReal: true };
+        }
+      }
+    } catch(e) { console.log('Historical fetch failed, using simulation'); }
+  }
+
+  // Fallback to simulation if API fails
+  if (!priceData) {
+    const days = { '1M': 30, '3M': 90, '6M': 180, '1A': 365 }[atPeriod] || 90;
+    priceData = generatePriceSeries(activo, days);
+    priceData.isReal = false;
+  }
+
+  // Add data source badge
+  const subEl = document.querySelector('#page-analisis-tecnico .page-sub');
+  if (subEl) subEl.textContent = priceData.isReal ? 'Datos reales · Yahoo Finance' : 'Datos de referencia simulados';
+
+  renderATcharts(activo, priceData);
 }
 
 function generatePriceSeries(activo, days) {
@@ -2931,28 +2986,74 @@ function getPrecioActual(pos) {
   const d = (typeof marketData !== 'undefined') ? marketData : {};
   const ticker = pos.ticker?.toUpperCase();
 
-  // Try market data
   if (pos.tipo === 'accion') {
-    const acc = (d.acciones || []).find(a => a.symbol === ticker || a.description?.includes(ticker));
-    if (acc) return acc.closePrice || acc.price || 0;
+    const acc = (d.acciones || []).find(a => (a.symbol||'').toUpperCase() === ticker);
+    if (acc?.closePrice) return acc.closePrice;
+    // Try description match
+    const acc2 = (d.acciones || []).find(a => (a.description||'').toUpperCase().includes(ticker));
+    if (acc2?.closePrice) return acc2.closePrice;
   }
   if (pos.tipo === 'cedear') {
-    const ced = (d.cedears || []).find(c => c.symbol === ticker);
-    if (ced) return ced.precio || 0;
+    const ced = (d.cedears || []).find(c => (c.symbol||'').toUpperCase() === ticker);
+    if (ced?.precio) return ced.precio;
   }
   if (pos.tipo === 'crypto') {
-    const cr = (d.crypto || []).find(c => c.symbol === ticker);
-    if (cr) return cr.precio || 0;
+    const cr = (d.crypto || []).find(c => (c.symbol||'').toUpperCase() === ticker);
+    if (cr?.precio) return cr.precio;
   }
   if (pos.tipo === 'dolar') {
     const dol = d.dolar || {};
-    if (ticker?.includes('Blue')) return dol.blue?.venta || 1405;
+    if (ticker?.includes('BLUE')) return dol.blue?.venta || 1405;
     if (ticker?.includes('MEP'))  return dol.mep?.venta  || 1363;
     if (ticker?.includes('CCL'))  return dol.ccl?.venta  || 1419;
     return dol.oficial?.venta || 1415;
   }
-  // Fallback: use entry price (no data)
-  return pos.precioActual || pos.precioEntrada;
+  // Use cached real price if available
+  if (pos.precioActualReal) return pos.precioActualReal;
+  return pos.precioEntrada;
+}
+
+async function fetchRealPricesForPortfolio() {
+  const base = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '';
+  const yahooMap = {
+    'GGAL':'GGAL.BA','YPF':'YPFD.BA','PAMP':'PAMP.BA','BBAR':'BBAR.BA',
+    'TXAR':'TXAR.BA','LOMA':'LOMA.BA','TECO2':'TECO2.BA',
+    'AAPL':'AAPL','GOOGL':'GOOGL','MSFT':'MSFT','AMZN':'AMZN',
+    'TSLA':'TSLA','META':'META','NVDA':'NVDA',
+    'BTC':'BTC-USD','ETH':'ETH-USD','SOL':'SOL-USD','BNB':'BNB-USD',
+  };
+
+  // Collect unique yahoo symbols needed
+  const needed = {};
+  ptPositions.forEach((pos, idx) => {
+    const y = yahooMap[pos.ticker?.toUpperCase()];
+    if (y && !['accion','dolar'].includes(pos.tipo)) needed[y] = idx;
+  });
+
+  const symbols = Object.keys(needed);
+  if (!symbols.length) { renderPortfolio(); return; }
+
+  try {
+    const res = await fetch(`${base}/api/market?source=cedears&symbols=${symbols.join(',')}`);
+    // Actually use quote endpoint for real-time
+    const res2 = await fetch(
+      `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbols.join(',')}&fields=symbol,regularMarketPrice`,
+      { headers: { 'User-Agent': 'Mozilla/5.0' } }
+    );
+    if (res2.ok) {
+      const raw = await res2.json();
+      const quotes = raw?.quoteResponse?.result || [];
+      quotes.forEach(q => {
+        const idx = ptPositions.findIndex(p => yahooMap[p.ticker?.toUpperCase()] === q.symbol);
+        if (idx >= 0 && q.regularMarketPrice) {
+          ptPositions[idx].precioActualReal = q.regularMarketPrice;
+        }
+      });
+    }
+  } catch(e) { console.log('Real price fetch failed'); }
+  const upd = document.getElementById('pt-last-update');
+  if (upd) upd.textContent = 'Actualizado ' + new Date().toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit'});
+  renderPortfolio();
 }
 
 function renderPortfolio() {
@@ -2964,6 +3065,13 @@ function renderPortfolio() {
     posEl.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);font-size:0.85rem;">Todavía no tenés posiciones. Agregá tu primera inversión.</div>';
     if (summEl) summEl.innerHTML = '';
     return;
+  }
+
+  // Fetch real prices in background on first render
+  if (!window._ptPricesFetched) {
+    window._ptPricesFetched = true;
+    fetchRealPricesForPortfolio();
+    return; // will re-render after fetch
   }
 
   const tcCCL = marketData?.dolar?.ccl?.venta || 1419;
@@ -2993,8 +3101,11 @@ function renderPortfolio() {
 
     return `<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 44px;padding:12px 16px;border-bottom:1px solid var(--border);align-items:center;font-size:0.82rem;gap:8px;">
       <div>
-        <div style="font-weight:600;color:var(--ink);">${pos.ticker || pos.nombre}</div>
-        <div style="font-size:0.68rem;color:var(--muted);margin-top:2px;">${pos.nombre !== pos.ticker ? pos.nombre : ''} · ${pos.cantidad} u. · ${pos.tipo}</div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="font-weight:600;color:var(--ink);">${pos.ticker || pos.nombre}</span>
+          ${pos.precioActualReal ? '<span style="font-size:0.55rem;background:rgba(61,107,82,0.1);color:var(--accent);padding:1px 5px;border-radius:2px;font-weight:600;">REAL</span>' : '<span style="font-size:0.55rem;background:var(--surface2);color:var(--muted);padding:1px 5px;border-radius:2px;">REF</span>'}
+        </div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:2px;">${pos.nombre !== pos.ticker ? pos.nombre + ' · ' : ''}${pos.cantidad} u. · ${pos.moneda}</div>
       </div>
       <div style="text-align:right;color:var(--ink2);">${fmt2(pos.precioEntrada)}</div>
       <div style="text-align:right;color:var(--ink);">${fmt2(precioActual)}</div>
