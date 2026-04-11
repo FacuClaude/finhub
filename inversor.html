@@ -1507,8 +1507,7 @@ function renderAcciones() {
       '<span class="cambio '+cambioClass+'">'+(cambio>=0?'+':'')+parseFloat(cambio).toFixed(2)+'%</span>'+
       '<span></span>'+
     '</div>';
-  });
-  listEl.innerHTML = items.join('');
+  }).join('');
   const st = document.getElementById('acciones-status');
   if (st) st.textContent = marketData.acciones.length ? 'actualizado' : 'datos de referencia';
 }
