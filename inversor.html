@@ -484,6 +484,10 @@ YPE html>
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
         Dólar costo
       </div>
+      <div class="nav-item" onclick="goTo('portfolio')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M7 8l3 3 4-4 3 3"/></svg>
+        Portfolio
+      </div>
     </nav>
 
     <div class="sidebar-footer">
@@ -1047,6 +1051,107 @@ YPE html>
       </div>
     </div>
 
+    <!-- PORTFOLIO TRACKER -->
+    <div class="page" id="page-portfolio">
+      <div class="page-title">Portfolio tracker</div>
+      <div class="page-sub">Tus posiciones en tiempo real</div>
+
+      <!-- Summary cards -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:24px;" id="pt-summary-cards"></div>
+
+      <!-- Add position button -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;">Mis posiciones</div>
+        <button onclick="ptOpenModal()" style="background:var(--accent);color:white;border:none;padding:8px 16px;font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;border-radius:3px;font-family:'DM Sans',sans-serif;">+ Agregar</button>
+      </div>
+
+      <!-- Positions table -->
+      <div style="background:var(--surface);border:1px solid var(--border);">
+        <div style="display:grid;grid-template-columns:1fr 90px 90px 100px 100px 36px;padding:10px 16px;border-bottom:1px solid var(--border);font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;">
+          <span>Activo</span>
+          <span style="text-align:right">Entrada</span>
+          <span style="text-align:right">Actual</span>
+          <span style="text-align:right">Valor</span>
+          <span style="text-align:right">P&L</span>
+          <span></span>
+        </div>
+        <div id="pt-positions"></div>
+      </div>
+
+      <!-- Allocation chart -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px;" id="pt-charts-row">
+        <div class="chart-card" style="padding:20px;">
+          <div style="font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;">Distribución por tipo</div>
+          <div style="position:relative;height:180px;"><canvas id="chart-pt-alloc"></canvas></div>
+        </div>
+        <div class="chart-card" style="padding:20px;">
+          <div style="font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;">P&L por posición</div>
+          <div style="position:relative;height:180px;"><canvas id="chart-pt-pnl"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL PORTFOLIO -->
+    <div class="overlay" id="modal-portfolio" onclick="ptCloseModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:500;display:none;align-items:center;justify-content:center;">
+      <div onclick="event.stopPropagation()" style="background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--accent);padding:28px;width:100%;max-width:420px;max-height:88vh;overflow-y:auto;border-radius:4px;margin:20px;">
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.2rem;font-weight:600;color:var(--ink);margin-bottom:20px;" id="pt-modal-title">Nueva posición</div>
+
+        <div style="margin-bottom:14px;">
+          <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Tipo de activo</div>
+          <select id="pt-tipo" onchange="ptUpdateTicker()" style="width:100%;padding:10px 14px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-size:0.85rem;border-radius:4px;font-family:'DM Sans',sans-serif;">
+            <option value="accion">Acción Merval</option>
+            <option value="cedear">CEDEAR</option>
+            <option value="crypto">Crypto</option>
+            <option value="bono">Bono</option>
+            <option value="fci">FCI</option>
+            <option value="dolar">Dólares</option>
+            <option value="otro">Otro</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Ticker / Nombre</div>
+          <select id="pt-ticker-sel" style="width:100%;padding:10px 14px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-size:0.85rem;border-radius:4px;font-family:'DM Sans',sans-serif;margin-bottom:6px;">
+            <option value="GGAL">GGAL — Grupo Galicia</option>
+            <option value="YPF">YPF — YPF S.A.</option>
+            <option value="PAMP">PAMP — Pampa Energía</option>
+            <option value="BBAR">BBAR — BBVA Argentina</option>
+            <option value="TXAR">TXAR — Ternium Argentina</option>
+            <option value="LOMA">LOMA — Loma Negra</option>
+          </select>
+          <input type="text" id="pt-nombre" placeholder="O escribí el nombre manualmente" style="width:100%;padding:10px 14px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-size:0.85rem;border-radius:4px;font-family:'DM Sans',sans-serif;box-sizing:border-box;">
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+          <div>
+            <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Precio de entrada</div>
+            <input type="number" id="pt-precio-entrada" placeholder="0" style="width:100%;padding:10px 14px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-size:0.88rem;border-radius:4px;font-family:'DM Sans',sans-serif;box-sizing:border-box;">
+          </div>
+          <div>
+            <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Cantidad</div>
+            <input type="number" id="pt-cantidad" placeholder="0" style="width:100%;padding:10px 14px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-size:0.88rem;border-radius:4px;font-family:'DM Sans',sans-serif;box-sizing:border-box;">
+          </div>
+        </div>
+
+        <div style="margin-bottom:20px;">
+          <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Moneda</div>
+          <div style="display:flex;gap:16px;">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.82rem;color:var(--ink2);">
+              <input type="radio" name="pt-moneda" value="ARS" checked style="accent-color:var(--accent);"> ARS
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.82rem;color:var(--ink2);">
+              <input type="radio" name="pt-moneda" value="USD" style="accent-color:var(--accent);"> USD
+            </label>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;">
+          <button onclick="ptCloseModal()" style="flex:1;padding:11px;border:1px solid var(--border);background:transparent;color:var(--ink2);font-size:0.78rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;border-radius:3px;font-family:'DM Sans',sans-serif;">Cancelar</button>
+          <button onclick="ptSavePosition()" style="flex:2;padding:11px;border:none;background:var(--accent);color:white;font-size:0.78rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;border-radius:3px;font-family:'DM Sans',sans-serif;">Guardar</button>
+        </div>
+      </div>
+    </div>
+
   </main>
 </div>
 
@@ -1186,6 +1291,7 @@ window.goTo = page => {
   if (page === 'dolar-historico') loadDolarHistorico();
   if (page === 'analisis-tecnico') loadAnalisisTecnico();
   if (page === 'dolar-costo') { calcDolarCosto(); };
+  if (page === 'portfolio') renderPortfolio();
   if (page === 'calculadoras') { calcMep('ars'); calcComparador(); }
   document.querySelectorAll('.nav-item').forEach(n => { if (n.getAttribute('onclick')?.includes(page)) n.classList.add('active'); });
 };
@@ -2733,6 +2839,250 @@ window.calcDolarCosto = () => {
         '<div><div style="font-size:0.95rem;font-weight:700;color:'+v.color+';margin-bottom:3px;">'+v.txt+'</div>'+
         '<div style="font-size:0.8rem;color:var(--ink2);">'+v.desc+'</div></div>'+
       '</div>';
+  }
+}
+
+
+// ── PORTFOLIO TRACKER ──
+let ptPositions = JSON.parse(localStorage.getItem('finhub-portfolio') || '[]');
+let ptEditIdx = null;
+let ptAllocChart = null, ptPnlChart = null;
+
+const PT_TICKERS = {
+  accion:  [{v:'GGAL',l:'GGAL — Galicia'},{v:'YPF',l:'YPF — YPF S.A.'},{v:'PAMP',l:'PAMP — Pampa'},{v:'BBAR',l:'BBAR — BBVA Arg'},{v:'TXAR',l:'TXAR — Ternium'},{v:'LOMA',l:'LOMA — Loma Negra'},{v:'TECO2',l:'TECO2 — Telecom'}],
+  cedear:  [{v:'AAPL',l:'AAPL — Apple'},{v:'GOOGL',l:'GOOGL — Alphabet'},{v:'MSFT',l:'MSFT — Microsoft'},{v:'AMZN',l:'AMZN — Amazon'},{v:'TSLA',l:'TSLA — Tesla'},{v:'META',l:'META — Meta'},{v:'NVDA',l:'NVDA — NVIDIA'}],
+  crypto:  [{v:'BTC',l:'BTC — Bitcoin'},{v:'ETH',l:'ETH — Ethereum'},{v:'SOL',l:'SOL — Solana'},{v:'BNB',l:'BNB — BNB'}],
+  bono:    [{v:'AL30',l:'AL30 — Bono 2030'},{v:'GD30',l:'GD30 — Global 2030'},{v:'AL35',l:'AL35 — Bono 2035'}],
+  fci:     [{v:'FCI',l:'Fondo común de inversión'}],
+  dolar:   [{v:'USD Blue',l:'Dólar Blue'},{v:'USD MEP',l:'Dólar MEP'},{v:'USD CCL',l:'Dólar CCL'}],
+  otro:    [{v:'OTRO',l:'Otro activo'}],
+};
+
+window.ptUpdateTicker = () => {
+  const tipo = document.getElementById('pt-tipo')?.value || 'accion';
+  const sel = document.getElementById('pt-ticker-sel');
+  if (!sel) return;
+  const opts = PT_TICKERS[tipo] || PT_TICKERS.otro;
+  sel.innerHTML = opts.map(o => `<option value="${o.v}">${o.l}</option>`).join('');
+};
+
+window.ptOpenModal = (idx = null) => {
+  ptEditIdx = idx;
+  const modal = document.getElementById('modal-portfolio');
+  if (!modal) return;
+  document.getElementById('pt-modal-title').textContent = idx !== null ? 'Editar posición' : 'Nueva posición';
+  if (idx !== null) {
+    const p = ptPositions[idx];
+    document.getElementById('pt-tipo').value = p.tipo || 'accion';
+    ptUpdateTicker();
+    document.getElementById('pt-ticker-sel').value = p.ticker || '';
+    document.getElementById('pt-nombre').value = p.nombre || '';
+    document.getElementById('pt-precio-entrada').value = p.precioEntrada || '';
+    document.getElementById('pt-cantidad').value = p.cantidad || '';
+    document.querySelector(`input[name="pt-moneda"][value="${p.moneda||'ARS'}"]`).checked = true;
+  } else {
+    document.getElementById('pt-tipo').value = 'accion';
+    ptUpdateTicker();
+    document.getElementById('pt-nombre').value = '';
+    document.getElementById('pt-precio-entrada').value = '';
+    document.getElementById('pt-cantidad').value = '';
+    document.querySelector('input[name="pt-moneda"][value="ARS"]').checked = true;
+  }
+  modal.style.display = 'flex';
+};
+
+window.ptCloseModal = () => {
+  const modal = document.getElementById('modal-portfolio');
+  if (modal) modal.style.display = 'none';
+  ptEditIdx = null;
+};
+
+window.ptSavePosition = () => {
+  const tipo   = document.getElementById('pt-tipo')?.value || 'otro';
+  const ticker = document.getElementById('pt-ticker-sel')?.value || '';
+  const nombre = document.getElementById('pt-nombre')?.value.trim() || ticker;
+  const precioEntrada = parseFloat(document.getElementById('pt-precio-entrada')?.value) || 0;
+  const cantidad      = parseFloat(document.getElementById('pt-cantidad')?.value) || 0;
+  const moneda = document.querySelector('input[name="pt-moneda"]:checked')?.value || 'ARS';
+
+  if (!nombre || !precioEntrada || !cantidad) {
+    alert('Completá nombre, precio de entrada y cantidad'); return;
+  }
+
+  const pos = { tipo, ticker, nombre, precioEntrada, cantidad, moneda, createdAt: Date.now() };
+  if (ptEditIdx !== null) {
+    ptPositions[ptEditIdx] = { ...ptPositions[ptEditIdx], ...pos };
+  } else {
+    ptPositions.push(pos);
+  }
+  localStorage.setItem('finhub-portfolio', JSON.stringify(ptPositions));
+  ptCloseModal();
+  renderPortfolio();
+};
+
+window.ptDeletePosition = (idx) => {
+  if (!confirm('¿Eliminar esta posición?')) return;
+  ptPositions.splice(idx, 1);
+  localStorage.setItem('finhub-portfolio', JSON.stringify(ptPositions));
+  renderPortfolio();
+};
+
+function getPrecioActual(pos) {
+  const d = (typeof marketData !== 'undefined') ? marketData : {};
+  const ticker = pos.ticker?.toUpperCase();
+
+  // Try market data
+  if (pos.tipo === 'accion') {
+    const acc = (d.acciones || []).find(a => a.symbol === ticker || a.description?.includes(ticker));
+    if (acc) return acc.closePrice || acc.price || 0;
+  }
+  if (pos.tipo === 'cedear') {
+    const ced = (d.cedears || []).find(c => c.symbol === ticker);
+    if (ced) return ced.precio || 0;
+  }
+  if (pos.tipo === 'crypto') {
+    const cr = (d.crypto || []).find(c => c.symbol === ticker);
+    if (cr) return cr.precio || 0;
+  }
+  if (pos.tipo === 'dolar') {
+    const dol = d.dolar || {};
+    if (ticker?.includes('Blue')) return dol.blue?.venta || 1405;
+    if (ticker?.includes('MEP'))  return dol.mep?.venta  || 1363;
+    if (ticker?.includes('CCL'))  return dol.ccl?.venta  || 1419;
+    return dol.oficial?.venta || 1415;
+  }
+  // Fallback: use entry price (no data)
+  return pos.precioActual || pos.precioEntrada;
+}
+
+function renderPortfolio() {
+  const posEl = document.getElementById('pt-positions');
+  const summEl = document.getElementById('pt-summary-cards');
+  if (!posEl) return;
+
+  if (!ptPositions.length) {
+    posEl.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);font-size:0.85rem;">Todavía no tenés posiciones. Agregá tu primera inversión.</div>';
+    if (summEl) summEl.innerHTML = '';
+    return;
+  }
+
+  const tcCCL = marketData?.dolar?.ccl?.venta || 1419;
+  const toARS = (val, moneda) => moneda === 'USD' ? val * tcCCL : val;
+
+  let totalInvertido = 0, totalActual = 0, totalPnl = 0;
+  const byTipo = {};
+
+  const rows = ptPositions.map((pos, idx) => {
+    const precioActual  = getPrecioActual(pos);
+    const valorEntrada  = pos.precioEntrada * pos.cantidad;
+    const valorActual   = precioActual * pos.cantidad;
+    const pnl           = valorActual - valorEntrada;
+    const pnlPct        = valorEntrada > 0 ? ((pnl / valorEntrada) * 100).toFixed(2) : 0;
+    const pnlColor      = pnl >= 0 ? 'var(--green)' : 'var(--red)';
+    const pnlSign       = pnl >= 0 ? '+' : '';
+
+    totalInvertido += toARS(valorEntrada, pos.moneda);
+    totalActual    += toARS(valorActual,  pos.moneda);
+    totalPnl       += toARS(pnl, pos.moneda);
+
+    if (!byTipo[pos.tipo]) byTipo[pos.tipo] = 0;
+    byTipo[pos.tipo] += toARS(valorActual, pos.moneda);
+
+    const prefix = pos.moneda === 'USD' ? 'USD ' : '$';
+    const fmt2 = v => pos.moneda === 'USD' ? 'USD ' + fmtNum(v) : fmt(v);
+
+    return `<div style="display:grid;grid-template-columns:1fr 90px 90px 100px 100px 36px;padding:12px 16px;border-bottom:1px solid var(--border);align-items:center;font-size:0.82rem;">
+      <div>
+        <div style="font-weight:600;color:var(--ink);">${pos.ticker || pos.nombre}</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:2px;">${pos.nombre !== pos.ticker ? pos.nombre : ''} · ${pos.cantidad} u. · ${pos.tipo}</div>
+      </div>
+      <div style="text-align:right;color:var(--ink2);">${fmt2(pos.precioEntrada)}</div>
+      <div style="text-align:right;color:var(--ink);">${fmt2(precioActual)}</div>
+      <div style="text-align:right;font-weight:500;color:var(--ink);">${fmt2(valorActual)}</div>
+      <div style="text-align:right;font-weight:600;color:${pnlColor};">${pnlSign}${fmt2(pnl)}<div style="font-size:0.68rem;">${pnlSign}${pnlPct}%</div></div>
+      <div style="text-align:center;">
+        <button onclick="ptOpenModal(${idx})" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:0.7rem;padding:2px 4px;" title="Editar">✎</button>
+        <button onclick="ptDeletePosition(${idx})" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:0.7rem;padding:2px 4px;" title="Eliminar">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  posEl.innerHTML = rows;
+
+  // Summary cards
+  const totalPnlPct = totalInvertido > 0 ? ((totalPnl / totalInvertido) * 100).toFixed(2) : 0;
+  const pnlColor = totalPnl >= 0 ? 'var(--green)' : 'var(--red)';
+  if (summEl) {
+    summEl.innerHTML = [
+      { l:'Valor actual', v: fmt(totalActual), sub:'Portafolio total en ARS', c:'var(--accent)' },
+      { l:'Invertido', v: fmt(totalInvertido), sub:'Capital total invertido', c:'var(--ink)' },
+      { l:'P&L total', v: (totalPnl>=0?'+':'')+fmt(totalPnl), sub:(totalPnl>=0?'+':'')+totalPnlPct+'% vs entrada', c:pnlColor },
+      { l:'Posiciones', v: ptPositions.length, sub: Object.keys(byTipo).length+' tipos de activo', c:'var(--ink)' },
+    ].map(c =>
+      `<div style="background:var(--surface);border:1px solid var(--border);border-top:3px solid ${c.c};padding:16px 18px;">
+        <div style="font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">${c.l}</div>
+        <div style="font-size:1.2rem;font-weight:700;color:${c.c};">${c.v}</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:4px;">${c.sub}</div>
+      </div>`
+    ).join('');
+  }
+
+  // Charts
+  renderPTcharts(byTipo, ptPositions, tcCCL);
+}
+
+function renderPTcharts(byTipo, positions, tcCCL) {
+  const isDark = document.body.classList.contains('dark');
+  const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)';
+  const textColor = isDark ? '#666' : '#aaa';
+  const palette = ['#3d6b52','#c17a4a','#4a7a8a','#8a6b52','#6b8a52','#7a526b','#8a8070'];
+
+  // Allocation donut
+  const allocCtx = document.getElementById('chart-pt-alloc');
+  if (allocCtx) {
+    if (ptAllocChart) ptAllocChart.destroy();
+    const labels = Object.keys(byTipo);
+    const vals   = Object.values(byTipo);
+    ptAllocChart = new Chart(allocCtx, {
+      type: 'doughnut',
+      data: { labels, datasets: [{ data: vals, backgroundColor: palette.slice(0,labels.length), borderWidth: 0 }] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { color: textColor, font: { size: 10 }, boxWidth: 8, boxHeight: 8 } },
+          tooltip: { callbacks: { label: ctx => ' ' + ctx.label + ': ' + fmt(ctx.raw) } }
+        }
+      }
+    });
+  }
+
+  // P&L bar
+  const pnlCtx = document.getElementById('chart-pt-pnl');
+  if (pnlCtx) {
+    if (ptPnlChart) ptPnlChart.destroy();
+    const toARS = (v, m) => m === 'USD' ? v * tcCCL : v;
+    const pnls = positions.map(p => {
+      const actual  = getPrecioActual(p) * p.cantidad;
+      const entrada = p.precioEntrada * p.cantidad;
+      return toARS(actual - entrada, p.moneda);
+    });
+    const labels = positions.map(p => p.ticker || p.nombre);
+    const colors = pnls.map(v => v >= 0 ? '#3d6b52aa' : '#c0392baa');
+    ptPnlChart = new Chart(pnlCtx, {
+      type: 'bar',
+      data: { labels, datasets: [{ data: pnls, backgroundColor: colors, borderRadius: 2, borderWidth: 0 }] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => ' P&L: ' + (ctx.raw>=0?'+':'') + fmt(ctx.raw) } }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: textColor, font: { size: 10 } } },
+          y: { grid: { color: gridColor, lineWidth: 0.5 }, border: { display: false }, ticks: { color: textColor, font: { size: 10 }, callback: v => fmt(v) } }
+        }
+      }
+    });
   }
 }
 
