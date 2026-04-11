@@ -888,7 +888,7 @@
       <div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end;margin-bottom:24px;flex-wrap:wrap;">
         <div>
           <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Activo</div>
-          <select id="at-activo" onchange="loadAnalisisTecnico()" style="width:100%;padding:10px 14px;border:1px solid var(--border);background:var(--surface);color:var(--ink);font-size:0.88rem;border-radius:4px;font-family:'DM Sans',sans-serif;">
+          <select id="at-activo" onchange="window.loadAnalisisTecnico ? loadAnalisisTecnico() : setTimeout(loadAnalisisTecnico,100)" style="width:100%;padding:10px 14px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-size:0.85rem;border-radius:4px;font-family:'DM Sans',sans-serif;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a8070' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px;">
             <optgroup label="Acciones Merval">
               <option value="GGAL">GGAL — Grupo Galicia</option>
               <option value="YPF">YPF — YPF S.A.</option>
@@ -952,6 +952,9 @@
 
       <!-- Stats row -->
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;" id="at-stats"></div>
+
+      <!-- Verdict -->
+      <div id="at-verdict" style="margin-bottom:12px;"></div>
 
       <!-- Analysis summary -->
       <div id="at-summary" style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:16px 20px;font-size:0.84rem;color:var(--ink2);line-height:1.7;"></div>
@@ -2031,11 +2034,7 @@ function generateHistoricalData(cur, period) {
 
     // Label
     const skip = days > 180 ? 30 : days > 90 ? 14 : 7;
-    if (i % skip === 0 || i === 0) {
-      labels.push(d.toLocaleDateString('es-AR', { day:'2-digit', month:'short' }));
-    } else {
-      labels.push('');
-    }
+    labels.push(d.toLocaleDateString('es-AR', { day:'2-digit', month:'short' }));
 
     // Oficial: crawling peg backwards
     const ofPast = oficial / Math.pow(1 + dailyOficial, i);
@@ -2238,7 +2237,7 @@ window.setATperiod = (p, el) => {
 window.zoomATchart = dir => { if (atPriceChart) atPriceChart.zoom(dir === 'in' ? 1.25 : 0.8); };
 window.resetATzoom = () => { if (atPriceChart) atPriceChart.resetZoom(); };
 
-async function loadAnalisisTecnico() {
+window.loadAnalisisTecnico = async function() {
   const activo = document.getElementById('at-activo')?.value || 'GGAL';
   const days = { '1M': 30, '3M': 90, '6M': 180, '1A': 365 }[atPeriod] || 90;
 
@@ -2462,6 +2461,42 @@ function renderATcharts(activo, data) {
   if (sigEl) sigEl.innerHTML = signals.map(s =>
     '<span style="background:' + s.bg + ';color:' + s.color + ';border:1px solid ' + s.color + '40;padding:4px 12px;border-radius:3px;font-size:0.72rem;font-weight:600;" title="' + s.desc + '">' + s.label + '</span>'
   ).join('');
+
+  // Verdict
+  const verdictEl = document.getElementById('at-verdict');
+  if (verdictEl) {
+    let verdict, vColor, vBg, vIcon, vDesc;
+    const isBull = signals.some(s => s.label === 'Tendencia alcista');
+    const isBear = signals.some(s => s.label === 'Tendencia bajista');
+    const isOverbought = lastRSI > 70;
+    const isOversold = lastRSI < 30;
+
+    if (isOversold && !isBear) {
+      verdict = 'Zona de compra'; vColor = '#3d6b52'; vBg = 'rgba(61,107,82,0.08)';
+      vIcon = '▲'; vDesc = 'RSI sobrevendido con señales de recuperación posible.';
+    } else if (isOverbought && !isBull) {
+      verdict = 'Zona de venta'; vColor = '#c0392b'; vBg = 'rgba(192,57,43,0.08)';
+      vIcon = '▼'; vDesc = 'RSI sobrecomprado. Considerar toma de ganancias.';
+    } else if (isBull && !isOverbought) {
+      verdict = 'Zona de compra'; vColor = '#3d6b52'; vBg = 'rgba(61,107,82,0.08)';
+      vIcon = '▲'; vDesc = 'Tendencia alcista confirmada por medias móviles.';
+    } else if (isBear && !isOversold) {
+      verdict = 'Zona de venta'; vColor = '#c0392b'; vBg = 'rgba(192,57,43,0.08)';
+      vIcon = '▼'; vDesc = 'Tendencia bajista. Esperar confirmación de reversión.';
+    } else {
+      verdict = 'Mantener posición'; vColor = '#c17a4a'; vBg = 'rgba(193,122,74,0.08)';
+      vIcon = '◆'; vDesc = 'Sin señales claras de entrada o salida. Zona neutra.';
+    }
+
+    verdictEl.innerHTML =
+      '<div style="background:' + vBg + ';border:1px solid ' + vColor + '40;padding:16px 20px;display:flex;align-items:center;gap:16px;">' +
+        '<div style="font-size:1.8rem;color:' + vColor + ';">' + vIcon + '</div>' +
+        '<div>' +
+          '<div style="font-size:1rem;font-weight:700;color:' + vColor + ';margin-bottom:4px;">' + verdict + '</div>' +
+          '<div style="font-size:0.8rem;color:var(--ink2);">' + vDesc + '</div>' +
+        '</div>' +
+      '</div>';
+  }
 
   const sumEl = document.getElementById('at-summary');
   if (sumEl) {
