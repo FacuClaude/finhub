@@ -78,19 +78,20 @@ YPE html>
 
     /* ── SIDEBAR ── */
     .sidebar::-webkit-scrollbar { display: none; }
+    body.dark .sidebar { background: #1e2420 !important; }
     .sidebar {
       background: #2d5240;
       border-right: none; scrollbar-width: none;
       padding: 40px 0;
       display: flex; flex-direction: column;
-      position: sticky; top: 0; height: 100vh; overflow-y: auto;
+      position: sticky; top: 0; height: 100vh; overflow: hidden;
     }
 
     .wordmark { padding: 0 32px 28px; border-bottom: 1px solid rgba(255,255,255,0.12); }
 
     .back-link {
       display: flex; align-items: center; gap: 8px;
-      font-size: 0.72rem; color: rgba(255,255,255,0.5); cursor: pointer;
+      font-size: 0.72rem; color: rgba(255,255,255,0.55); cursor: pointer;
       padding: 16px 32px 0;
       text-decoration: none;
       transition: color 0.2s;
@@ -103,7 +104,7 @@ YPE html>
       display: flex; align-items: center; gap: 12px;
       padding: 13px 32px;
       font-size: 0.78rem; font-weight: 400; letter-spacing: 0.06em;
-      color: var(--muted); cursor: pointer;
+      color: rgba(255,255,255,0.75); cursor: pointer;
       transition: color 0.2s, background 0.2s;
       border-left: 2px solid transparent;
     }
@@ -421,18 +422,18 @@ YPE html>
     <div class="wordmark">
       <div style="display:flex;align-items:center;gap:9px;">
         <svg width="30" height="25" viewBox="0 0 96 80" fill="none">
-          <rect x="0" y="52" width="20" height="28" rx="3" fill="#3d6b52" opacity="0.4"/>
-          <rect x="25" y="34" width="20" height="46" rx="3" fill="#3d6b52" opacity="0.65"/>
-          <rect x="50" y="8" width="20" height="72" rx="3" fill="#3d6b52"/>
-          <circle cx="60" cy="24" r="12" fill="white" stroke="#3d6b52" stroke-width="2"/>
-          <path d="M55 29 L60 19 L65 29" stroke="#3d6b52" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-          <line x1="60" y1="19" x2="60" y2="29" stroke="#3d6b52" stroke-width="2.5" stroke-linecap="round"/>
+          <rect x="0" y="52" width="20" height="28" rx="3" fill="white" opacity="0.4"/>
+          <rect x="25" y="34" width="20" height="46" rx="3" fill="white" opacity="0.65"/>
+          <rect x="50" y="8" width="20" height="72" rx="3" fill="white"/>
+          <circle cx="60" cy="24" r="12" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.6)" stroke-width="2"/>
+          <path d="M55 29 L60 19 L65 29" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <line x1="60" y1="19" x2="60" y2="29" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
         </svg>
         <span style="font-family:ui-sans-serif,-apple-system,sans-serif;font-size:1.45rem;font-weight:700;letter-spacing:-0.02em;line-height:1;">
-          <span style="color:#8a8070">fin</span><span style="color:#3d6b52">Hub.</span>
+          <span style="color:rgba(255,255,255,0.7)">fin</span><span style="color:white">Hub.</span>
         </span>
       </div>
-      <div style="font-size:0.65rem;color:#b4ac9e;margin-top:8px;">Finanzas simples, mente tranquila</div>
+      <div style="font-size:0.65rem;color:rgba(255,255,255,0.45);margin-top:8px;">Finanzas simples, mente tranquila</div>
     </div>
 
     <a class="back-link" href="app.html">
