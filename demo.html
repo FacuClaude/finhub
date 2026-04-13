@@ -11,7 +11,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { color-scheme: light only; scroll-behavior: smooth; }
+    html { color-scheme: light only; scroll-behavior: smooth; height: 100%; overflow: hidden; }
 
     :root {
       --bg:        #f5f3f0;
@@ -110,7 +110,8 @@
       font-family: 'DM Sans', sans-serif;
       font-weight: 300;
       font-size: 14px;
-      min-height: 100vh;
+      height: 100%;
+      overflow: hidden;
       transition: background 0.3s, color 0.3s;
     }
     body.dark { background: #141414 !important; color: #e0e0e0 !important; }
@@ -155,7 +156,7 @@
     }
 
     /* ── SHELL ── */
-    .shell { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; position: relative; z-index: 1; margin-top: 26px; max-width: 100vw; }
+    .shell { display: grid; grid-template-columns: 220px 1fr; height: calc(100vh - 26px); position: relative; z-index: 1; margin-top: 26px; max-width: 100vw; overflow: hidden; }
 
     /* ── SIDEBAR ── */
     .sidebar {
@@ -163,22 +164,23 @@
       border-right: none;
       padding: 40px 0;
       display: flex; flex-direction: column;
-      position: sticky; top: 0; height: 100vh;
-      overflow-y: auto;
+      height: 100%;
+      overflow: hidden;
+      overscroll-behavior: none;
     }
 
     .wordmark {
-      padding: 0 32px 28px;
-      border-bottom: 1px solid var(--border);
+      padding: 0 24px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
     }
 
-    nav { padding: 20px 0; flex: 1; }
+    nav { padding: 10px 0; flex: 1; }
 
     .nav-item {
-      display: flex; align-items: center; gap: 12px;
-      padding: 13px 32px; width: 100%;
+      display: flex; align-items: center; gap: 10px;
+      padding: 7px 20px; width: 100%;
       font-size: 0.78rem; font-weight: 400; letter-spacing: 0.06em;
-      color: var(--muted); cursor: pointer;
+      color: rgba(255,255,255,0.8); cursor: pointer;
       transition: color 0.2s, background 0.2s;
       border: none; border-left: 2px solid transparent;
       background: transparent; text-align: left;
@@ -186,7 +188,7 @@
     }
     .nav-item:hover { color: white; background: rgba(255,255,255,0.08); }
     .nav-item.active { color: white; border-left-color: white; background: rgba(255,255,255,0.12); font-weight: 500; }
-    .nav-icon { width: 16px; height: 16px; flex-shrink: 0; }
+    .nav-icon { width: 14px; height: 14px; flex-shrink: 0; }
 
     .nav-badge {
       margin-left: auto;
@@ -200,7 +202,7 @@
       text-align: center;
     }
 
-    .sidebar-footer { padding: 24px 32px 0; border-top: 1px solid var(--border); }
+    .sidebar-footer { padding: 14px 24px 16px; border-top: 1px solid rgba(255,255,255,0.12); }
     .user-email { font-size: 0.72rem; color: rgba(255,255,255,0.5); margin-bottom: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .btn-logout {
       font-family: 'DM Sans', sans-serif; font-size: 0.7rem; font-weight: 400;
@@ -211,7 +213,7 @@
     .btn-logout:hover { color: white; border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.08); }
 
     /* ── MAIN ── */
-    main { padding: 52px; animation: fadeIn 0.4s ease both; }
+    main { padding: 52px; animation: fadeIn 0.4s ease both; height: 100%; overflow-y: auto; overscroll-behavior: contain; }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     .page { display: none; }
     .page.active { display: block; }
@@ -231,6 +233,9 @@
     .alert-banner.show { display: block; }
     .alert-title { font-size: 0.72rem; font-weight: 500; color: var(--accent2); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
     .alert-items { font-size: 0.82rem; color: var(--ink2); line-height: 1.8; }
+    body.dark .alert-banner { background: rgba(61,107,82,0.12); border-color: rgba(61,107,82,0.5); border-left-color: var(--accent); }
+    body.dark .alert-title { color: var(--accent); }
+    body.dark .alert-items { color: var(--muted); }
 
     /* ── CARDS ── */
     .cards-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 36px; }
@@ -367,6 +372,10 @@
 
     /* ── FILTERS ── */
     .filters { display: flex; gap: 8px; }
+    #tx-search:focus { border-color: var(--accent); }
+    #tx-search::placeholder { color: var(--muted); }
+    .tx-search-empty { text-align:center; padding:40px 20px; color:var(--muted); font-size:0.85rem; }
+    .tx-search-highlight { background: rgba(61,107,82,0.15); border-radius: 2px; padding: 0 1px; }
     .filter-chip {
       font-family: 'DM Sans', sans-serif; font-size: 0.7rem; font-weight: 500;
       letter-spacing: 0.1em; text-transform: uppercase; padding: 7px 16px;
@@ -441,7 +450,7 @@
     /* ── MODAL ── */
     .overlay { display: none; position: fixed; inset: 0; background: rgba(26,26,20,0.4); backdrop-filter: blur(4px); z-index: 300; place-items: center; }
     .overlay.open { display: grid; }
-    .modal { background: var(--surface); border: 1px solid var(--border); padding: 44px; width: 100%; max-width: 440px; box-shadow: 0 24px 60px rgba(26,26,20,0.15); animation: slideUp 0.3s cubic-bezier(0.16,1,0.3,1) both; border-radius: 4px; }
+    .modal { background: var(--surface); border: 1px solid var(--border); padding: 28px; width: 100%; max-width: 440px; max-height: 88vh; overflow-y: auto; box-shadow: 0 24px 60px rgba(26,26,20,0.15); animation: slideUp 0.3s cubic-bezier(0.16,1,0.3,1) both; border-radius: 4px; }
     @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
     .modal-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.4rem; font-weight: 600; margin-bottom: 28px; color: var(--ink); }
     .field { margin-bottom: 18px; }
@@ -576,6 +585,11 @@
     .mobile-overlay.open { display: block; }
     @media (max-width: 900px) {
       .shell { grid-template-columns: 1fr; }
+      .section-header { flex-wrap: wrap; gap: 8px; }
+      .section-header > div:last-child { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; }
+      .section-header > div:last-child .btn-primary { flex: 1; }
+      .filter-row { flex-wrap: wrap; gap: 6px; }
+      #tx-summary-banner { grid-template-columns: 1fr 1fr 1fr !important; gap: 12px 8px !important; }
       .hamburger { display: flex !important; }
       .sidebar {
         position: fixed !important;
@@ -615,7 +629,7 @@
 
   <!-- SIDEBAR -->
   <aside class="sidebar">
-    <div class="wordmark">
+    <div class="wordmark" style="padding:16px 24px 12px;">
       <div style="display:flex;align-items:center;gap:11px;">
         <svg width="30" height="25" viewBox="0 0 96 80" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="0" y="52" width="20" height="28" rx="3" fill="white" opacity="0.4"/>
@@ -675,7 +689,7 @@
         Comparativa
       </button>
 
-      <button class="nav-item" onclick="alert('El módulo Inversor no está disponible en la versión demo. Registrate para acceder.')" style="border-top:1px solid rgba(255,255,255,0.12);margin-top:8px;padding-top:16px;opacity:0.5;cursor:not-allowed;pointer-events:auto;">
+      <button class="nav-item" onclick="alert(\'El módulo Inversor no está disponible en la versión demo. Registrate para acceder.\')" style="opacity:0.5;cursor:not-allowed;">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
         <span style="color:white;font-weight:500;">Inversor</span>
         <span style="font-size:0.55rem;background:rgba(255,255,255,0.2);color:white;padding:2px 5px;border-radius:3px;margin-left:auto;">NEW</span>
@@ -747,6 +761,23 @@
         </div>
       </div>
 
+      <!-- TARJETAS DE CRÉDITO -->
+      <div id="dash-tarjetas-section" style="margin-bottom:28px;display:none;">
+        <div class="section-header">
+          <div class="section-title">Tarjetas de crédito</div>
+          <div style="font-size:0.72rem;color:var(--muted);" id="dash-tarjetas-mes"></div>
+        </div>
+        <!-- Summary cards per tarjeta -->
+        <div id="dash-tarjetas-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:20px;"></div>
+        <!-- Stacked bar chart -->
+        <div class="chart-card" style="margin-bottom:16px;">
+          <div style="font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;">Evolución últimos 6 meses</div>
+          <canvas id="chart-tarjetas" height="200"></canvas>
+        </div>
+        <!-- Fija vs Variable breakdown -->
+        <div id="dash-tarjetas-breakdown" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;"></div>
+      </div>
+
       <div class="section-header">
         <div class="section-title">Últimos movimientos</div>
         <button class="btn-secondary" onclick="goTo('transactions')">Ver todos</button>
@@ -770,12 +801,19 @@
 
       <!-- Resumen fijo -->
       <div id="tx-summary-banner" style="background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--accent);padding:16px 20px;margin-bottom:20px;display:grid;grid-template-columns:repeat(6,1fr);gap:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;">
-        <div><div style="font-size:0.6rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Ingresos</div><div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.1rem;font-weight:600;color:var(--green);" id="txs-ingresos">$0</div></div>
-        <div><div style="font-size:0.6rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Gastos fijos</div><div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.1rem;font-weight:600;color:var(--ink);" id="txs-fijos">$0</div></div>
-        <div><div style="font-size:0.6rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Gastos variables</div><div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.1rem;font-weight:600;color:var(--accent2);" id="txs-variables">$0</div></div>
-        <div><div style="font-size:0.6rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Saldo</div><div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.1rem;font-weight:600;" id="txs-saldo">$0</div></div>
-        <div><div style="font-size:0.6rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Tasa ahorro</div><div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.1rem;font-weight:600;" id="txs-ahorro">0%</div></div>
+        <div><div style="font-size:0.6rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Ingresos</div><div style="font-family:sans-serif;font-size:1.1rem;font-weight:600;color:var(--green);" id="txs-ingresos">$0</div></div>
+        <div><div style="font-size:0.6rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Gastos fijos</div><div style="font-family:sans-serif;font-size:1.1rem;font-weight:600;color:var(--ink);" id="txs-fijos">$0</div></div>
+        <div><div style="font-size:0.6rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Gastos variables</div><div style="font-family:sans-serif;font-size:1.1rem;font-weight:600;color:var(--accent2);" id="txs-variables">$0</div></div>
+        <div><div style="font-size:0.6rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Saldo</div><div style="font-family:sans-serif;font-size:1.1rem;font-weight:600;" id="txs-saldo">$0</div></div>
+        <div><div style="font-size:0.6rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Tasa ahorro</div><div style="font-family:sans-serif;font-size:1.1rem;font-weight:600;" id="txs-ahorro">0%</div></div>
         <div><div style="font-size:0.6rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Mayor gasto</div><div style="font-size:0.78rem;font-weight:500;color:var(--ink2);margin-top:4px;line-height:1.3;" id="txs-mayor">&mdash;</div></div>
+      </div>
+
+      <!-- BUSCADOR -->
+      <div style="position:relative;margin-bottom:16px;">
+        <svg style="position:absolute;left:14px;top:50%;transform:translateY(-50%);opacity:0.4;" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="tx-search" placeholder="Buscar movimientos..." oninput="renderTxList()" style="width:100%;padding:10px 14px 10px 40px;border:1px solid var(--border);background:var(--surface);color:var(--ink);font-size:0.85rem;border-radius:4px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box;transition:border-color 0.2s;">
+        <button id="tx-search-clear" onclick="clearTxSearch()" style="display:none;position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);font-size:1rem;padding:2px 6px;">✕</button>
       </div>
 
       <div class="section-header">
@@ -784,7 +822,7 @@
           <button class="filter-chip" onclick="setFilter('income',this)">Ingresos</button>
           <button class="filter-chip" onclick="setFilter('expense',this)">Gastos</button>
         </div>
-        <div style="display:flex;gap:8px;align-items:center;">
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
           <button class="btn-export" onclick="expandAllMonths()">&#9660; Expandir</button>
           <button class="btn-export" onclick="collapseAllMonths()">&#9650; Colapsar</button>
           <button class="btn-export" onclick="openModal('import')">&#8679; Importar</button>
@@ -820,7 +858,7 @@
           </div>
           <div style="text-align:right">
             <div style="font-size:0.68rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">Disponible</div>
-            <div class="gb-remaining" id="gb-remaining" style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.6rem;">—</div>
+            <div class="gb-remaining" id="gb-remaining" style="font-family:sans-serif;font-size:1.6rem;">—</div>
           </div>
         </div>
         <div class="gb-bar">
@@ -898,16 +936,16 @@
       <!-- Net worth summary card -->
       <div style="background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--accent);padding:32px;margin-bottom:28px;">
         <div style="font-size:0.68rem;font-weight:500;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">Tu patrimonio neto</div>
-        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:3.2rem;font-weight:600;line-height:1;" id="nw-total">$0</div>
+        <div style="font-family:sans-serif;font-size:3.2rem;font-weight:600;line-height:1;" id="nw-total">$0</div>
         <div style="display:flex;gap:40px;margin-top:20px;">
           <div>
             <div style="font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">Activos</div>
-            <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.4rem;color:var(--green)" id="nw-assets">$0</div>
+            <div style="font-family:sans-serif;font-size:1.4rem;color:var(--green)" id="nw-assets">$0</div>
           </div>
           <div style="display:flex;align-items:center;font-size:1.5rem;color:var(--muted2)">−</div>
           <div>
             <div style="font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">Deudas</div>
-            <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.4rem;color:var(--red)" id="nw-debts">$0</div>
+            <div style="font-family:sans-serif;font-size:1.4rem;color:var(--red)" id="nw-debts">$0</div>
           </div>
         </div>
       </div>
@@ -1217,8 +1255,8 @@
     <input type="hidden" id="edit-tx-id" />
     <div class="field">
       <div class="type-toggle">
-        <button type="button" class="type-btn active-income" id="edit-type-income" data-type="income">Ingreso</button>
-        <button type="button" class="type-btn" id="edit-type-expense" data-type="expense">Gasto</button>
+        <button type="button" class="type-btn active-income" id="edit-type-income" onclick="window.setEditType('income')">Ingreso</button>
+        <button type="button" class="type-btn" id="edit-type-expense" onclick="window.setEditType('expense')">Gasto</button>
       </div>
     </div>
     <div class="field"><label>Descripción</label><input type="text" id="edit-tx-desc" placeholder="Ej: Sueldo, Supermercado…" /></div>
@@ -1255,6 +1293,36 @@
         </label>
       </div>
     </div>
+    <div class="field">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:400;text-transform:none;letter-spacing:0;font-size:0.85rem;color:var(--ink2);">
+        <input type="checkbox" id="edit-tx-tarjeta" style="accent-color:var(--accent);width:16px;height:16px;">
+        <span>Gasto con tarjeta de crédito</span>
+      </label>
+      <div id="edit-tx-tarjeta-tipo-wrap" style="display:none;margin-top:10px;padding:12px 14px;background:var(--surface2);border-radius:4px;flex-direction:column;gap:10px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div>
+            <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Red</div>
+            <select id="edit-tx-tarjeta-red" style="width:100%;padding:8px 10px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-size:0.82rem;border-radius:3px;font-family:'DM Sans',sans-serif;">
+              <option value="Visa">Visa</option>
+              <option value="Mastercard">Mastercard</option>
+              <option value="Amex">American Express</option>
+              <option value="Otra">Otra</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Tipo</div>
+            <select id="edit-tx-tarjeta-tipo-sel" style="width:100%;padding:8px 10px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-size:0.82rem;border-radius:3px;font-family:'DM Sans',sans-serif;">
+              <option value="fija">Fija</option>
+              <option value="variable">Variable</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Identificador</div>
+          <input type="text" id="edit-tx-tarjeta-nombre" placeholder="ej: Visa Galicia - Facundo" style="width:100%;padding:8px 10px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-size:0.82rem;border-radius:3px;font-family:'DM Sans',sans-serif;box-sizing:border-box;">
+        </div>
+      </div>
+    </div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal('edit-tx')" style="flex:1">Cancelar</button>
       <button class="btn-primary" onclick="saveEditTx()" style="flex:2">Guardar cambios</button>
@@ -1268,8 +1336,8 @@
     <div class="modal-title">Nueva transacción</div>
     <div class="field">
       <div class="type-toggle">
-        <button type="button" class="type-btn active-income" id="type-income" data-type="income">Ingreso</button>
-        <button type="button" class="type-btn" id="type-expense" data-type="expense">Gasto</button>
+        <button type="button" class="type-btn active-income" id="type-income" onclick="window.setType('income')">Ingreso</button>
+        <button type="button" class="type-btn" id="type-expense" onclick="window.setType('expense')">Gasto</button>
       </div>
     </div>
     <div class="field"><label>Descripción</label><input type="text" id="tx-desc" placeholder="Ej: Sueldo, Supermercado…" /></div>
@@ -1304,6 +1372,36 @@
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.85rem;font-weight:400;text-transform:none;letter-spacing:0;color:var(--ink2);">
           <input type="radio" name="tx-variabilidad" id="tx-variable" value="variable" style="accent-color:var(--accent);width:16px;height:16px;"> Variable
         </label>
+      </div>
+    </div>
+    <div class="field">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:400;text-transform:none;letter-spacing:0;font-size:0.85rem;color:var(--ink2);">
+        <input type="checkbox" id="tx-tarjeta" style="accent-color:var(--accent);width:16px;height:16px;">
+        <span>Gasto con tarjeta de crédito</span>
+      </label>
+      <div id="tx-tarjeta-tipo-wrap" style="display:none;margin-top:10px;padding:12px 14px;background:var(--surface2);border-radius:4px;flex-direction:column;gap:10px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div>
+            <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Red</div>
+            <select id="tx-tarjeta-red" style="width:100%;padding:8px 10px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-size:0.82rem;border-radius:3px;font-family:'DM Sans',sans-serif;">
+              <option value="Visa">Visa</option>
+              <option value="Mastercard">Mastercard</option>
+              <option value="Amex">American Express</option>
+              <option value="Otra">Otra</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Tipo</div>
+            <select id="tx-tarjeta-tipo-sel" style="width:100%;padding:8px 10px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-size:0.82rem;border-radius:3px;font-family:'DM Sans',sans-serif;">
+              <option value="fija">Fija</option>
+              <option value="variable">Variable</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Identificador (ej: Visa Galicia - Facundo)</div>
+          <input type="text" id="tx-tarjeta-nombre" placeholder="ej: Visa Galicia - Facundo" style="width:100%;padding:8px 10px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-size:0.82rem;border-radius:3px;font-family:'DM Sans',sans-serif;box-sizing:border-box;">
+        </div>
       </div>
     </div>
     <div class="modal-actions">
@@ -1398,7 +1496,7 @@
   import { initializeApp }     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getAuth, onAuthStateChanged, signOut }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  import { getDatabase, ref, push, set, remove, onValue }
+  import { getDatabase, ref, push, set, remove, onValue, get, update }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
   // ─── REEMPLAZÁ CON TU CONFIG ───
@@ -1425,18 +1523,7 @@
   let monthlyChart, catChart;
 
   // ── AUTH ──
-  // ── TYPE TOGGLE LISTENERS (immune to module scoping) ──
-  document.addEventListener('click', e => {
-    const btn = e.target.closest('[data-type]');
-    if (!btn) return;
-    const type = btn.dataset.type;
-    const isEdit = btn.id.startsWith('edit-');
-    if (isEdit) {
-      window.setEditType(type);
-    } else {
-      window.setType(type);
-    }
-  });
+  // ── TYPE TOGGLE ── (handled via onclick)
 
   // ── DEMO MODE ──
   (function() {
@@ -1491,6 +1578,7 @@
       document.getElementById('de').style.display = 'block';
     }
   };
+
   document.addEventListener('keydown', e => { if(e.key==='Enter' && document.getElementById('demo-ov')) demoLogin(); });
 
   window.logout = () => window.location.reload();
@@ -1532,9 +1620,14 @@
   }
 
   // ── SUBSCRIPTIONS ──
-  function subscribeAll() { return; // no-op in demo
-    if(false){
-    onValue(ref(db, `users/${uid}/transactions`), s => { transactions = s.val() || {}; renderAll(); });
+  function subscribeAll() { return; /* no-op in demo */
+  if(false) {
+    loadFinHubTicker();
+    onValue(ref(db, `users/${uid}/transactions`), s => {
+      transactions = s.val() || {};
+      renderAll();
+      checkMonthlyReplication();
+    });
     onValue(ref(db, `users/${uid}/budgets`),      s => { budgets      = s.val() || {}; renderBudgets(); });
     onValue(ref(db, `users/${uid}/goals`),         s => { goals        = s.val() || {}; renderGoals(); });
     onValue(ref(db, `users/${uid}/reminders`),     s => { reminders    = s.val() || {}; renderReminders(); updateReminderBadge(); });
@@ -1604,6 +1697,7 @@
     renderMonthlyChart(txArr);
     renderCatChart(expenses);
     renderDashAlert();
+    renderTarjetas();
   }
 
   function renderDashAlert() {
@@ -1678,13 +1772,37 @@
     renderTxList();
   };
 
-  function renderTxList() {
+  window.clearTxSearch = () => {
+    const inp = document.getElementById('tx-search');
+    if (inp) inp.value = '';
+    document.getElementById('tx-search-clear').style.display = 'none';
+    renderTxList();
+  };
+
+  window.renderTxList = function renderTxList() {
     const allTx = Object.entries(transactions).map(([id,t]) => ({id,...t}));
-    const txArr = allTx
+    const searchQ = (document.getElementById('tx-search')?.value || '').trim().toLowerCase();
+    const clearBtn = document.getElementById('tx-search-clear');
+    if (clearBtn) clearBtn.style.display = searchQ ? 'block' : 'none';
+    let txArr = allTx
       .filter(t => txFilter==='all'||t.type===txFilter)
       .sort((a,b) => new Date(b.date)-new Date(a.date));
+    if (searchQ) {
+      txArr = txArr.filter(t =>
+        (t.description    || '').toLowerCase().includes(searchQ) ||
+        (t.category       || '').toLowerCase().includes(searchQ) ||
+        (t.tarjetaNombre  || '').toLowerCase().includes(searchQ) ||
+        (t.tarjetaRed     || '').toLowerCase().includes(searchQ) ||
+        String(t.amount).includes(searchQ)
+      );
+    }
     renderTxSummaryBanner(allTx);
-    renderTxItems(document.getElementById('tx-list'), txArr, true);
+    const txListEl = document.getElementById('tx-list');
+    if (txArr.length === 0 && searchQ) {
+      txListEl.innerHTML = '<div class="tx-search-empty">Sin resultados para <strong>"' + esc(searchQ) + '"</strong></div>';
+    } else {
+      renderTxItems(txListEl, txArr, true);
+    }
   }
 
   function renderTxSummaryBanner(allTx) {
@@ -1768,7 +1886,7 @@
             <span style="font-size:0.55rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:${varColor};background:${varBg};padding:2px 7px;border-radius:3px;flex-shrink:0;">${varLabel}</span>
             ${isUSD ? '<span style="font-size:0.55rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#4a90c4;background:rgba(74,144,196,0.1);padding:2px 7px;border-radius:3px;flex-shrink:0;">USD</span>' : ''}
           </div>
-          <div class="tx-cat">${esc(t.category)}</div>
+          <div class="tx-cat">${esc(t.category)}${t.tarjeta ? (' &nbsp;<span style="font-size:0.55rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:'+(t.tarjetaTipo==='variable'?'var(--accent2)':'#4a90c4')+';background:'+(t.tarjetaTipo==='variable'?'rgba(193,122,74,0.1)':'rgba(74,144,196,0.1)')+';padding:1px 6px;border-radius:3px;">'+(t.tarjetaNombre||t.tarjetaRed||'TC')+' '+(t.tarjetaTipo==='variable'?'VAR':'FIJA')+'</span>') : ''}</div>
           <div class="tx-date">${fmtDate(t.date)}${showOrig ? ' &nbsp;·&nbsp; <span style="color:var(--muted2);font-size:0.65rem;">' + originalAmt + '</span>' : ''}</div>
         </div>
         <div class="tx-item-right">
@@ -1789,6 +1907,8 @@
       container.innerHTML = '<div class="tx-list">' + txArr.map(t => txItemHtml(t, false)).join('') + '</div>';
       return;
     }
+
+    const searchQ = (document.getElementById('tx-search')?.value || '').trim();
 
     // Group by month key YYYY-MM
     const groups = {};
@@ -1815,7 +1935,8 @@
       const label = d.toLocaleString('es-AR', {month:'long', year:'numeric'});
       const income  = items.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
       const expense = items.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
-      const isOpen  = hasState ? openMonths.has(key) : key === currentKey;
+      // Always open when searching
+      const isOpen  = searchQ ? true : (hasState ? openMonths.has(key) : key === currentKey);
 
       html += '<div class="tx-month-group" data-month-key="'+key+'">';
       html += '<div class="tx-month-header" onclick="toggleMonth(this)">';
@@ -1851,7 +1972,7 @@
     overlay.id = 'clear-tx-overlay';
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(20,20,14,0.6);backdrop-filter:blur(4px);z-index:500;display:flex;align-items:center;justify-content:center;';
     overlay.innerHTML = '<div style="background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--red);padding:36px;width:420px;border-radius:4px;">' +
-      '<div style="font-family:Plus Jakarta Sans,sans-serif;font-size:1.2rem;font-weight:700;color:var(--ink);margin-bottom:12px;">¿Eliminar todos los movimientos?</div>' +
+      '<div style="font-family:sans-serif;font-size:1.2rem;font-weight:700;color:var(--ink);margin-bottom:12px;">¿Eliminar todos los movimientos?</div>' +
       '<div style="font-size:0.85rem;color:var(--ink2);line-height:1.7;margin-bottom:24px;">Esta acción es <strong>irreversible</strong>. Todos los ingresos y gastos cargados hasta el momento se perderán permanentemente. Los presupuestos, metas y recordatorios no se verán afectados.</div>' +
       '<div style="display:flex;gap:10px;">' +
         '<button onclick="closeClearOverlay()" style="flex:1;padding:11px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:DM Sans,sans-serif;font-size:0.75rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;border-radius:4px;">Cancelar</button>' +
@@ -1872,7 +1993,7 @@
 
   window.deleteTx = async id => {
     if (!confirm('¿Eliminar este movimiento?')) return;
-    delete transactions[id];
+    delete transactions[id]; renderAll(); return;
   };
 
   // ── BUDGETS ──
@@ -2087,7 +2208,12 @@
       document.getElementById('tx-desc').value   = '';
       document.getElementById('tx-amount').value = '';
       document.getElementById('tx-date').value   = new Date().toISOString().split('T')[0];
-      window.setType('income'); window._txType = 'income';
+      document.getElementById('tx-tarjeta').checked = false;
+      document.getElementById('tx-tarjeta-tipo-wrap').style.display = 'none';
+      const tnReset = document.getElementById('tx-tarjeta-nombre'); if(tnReset) tnReset.value = '';
+      const trReset = document.getElementById('tx-tarjeta-red'); if(trReset) trReset.value = 'Visa';
+      const ttReset = document.getElementById('tx-tarjeta-tipo-sel'); if(ttReset) ttReset.value = 'fija';
+      window.setType('income');
     }
     if (name==='budget')        document.getElementById('budget-limit').value  = '';
     if (name==='global-budget') document.getElementById('gb-amount').value     = globalBudgets[budgetPeriod]?.amount || '';
@@ -2132,7 +2258,13 @@
     if (!date)            { alert('Seleccioná una fecha'); return; }
     const variabilidad = document.querySelector('input[name="tx-variabilidad"]:checked')?.value || 'fijo';
     const monedaTx = document.querySelector('input[name="tx-moneda"]:checked')?.value || 'ARS';
-    const nid='tx_'+Date.now(); transactions[nid]={description:desc,amount,category:cat,type:txType,date,variabilidad,moneda:monedaTx,createdAt:Date.now()}; dashMonthKey=date.substring(0,7); renderAll();
+    const esTarjeta = document.getElementById('tx-tarjeta')?.checked || false;
+    const tarjetaRed = esTarjeta ? (document.getElementById('tx-tarjeta-red')?.value || 'Visa') : null;
+    const tarjetaTipo = esTarjeta ? (document.getElementById('tx-tarjeta-tipo-sel')?.value || 'fija') : null;
+    const tarjetaNombre = esTarjeta ? (document.getElementById('tx-tarjeta-nombre')?.value.trim() || tarjetaRed) : null;
+    await push(ref(db,`users/${uid}/transactions`),{description:desc,amount,category:cat,type:txType,date,variabilidad,moneda:monedaTx,tarjeta:esTarjeta||false,tarjetaRed,tarjetaTipo,tarjetaNombre,createdAt:Date.now()});
+    // Point dashboard to the month of the new transaction
+    dashMonthKey = date.substring(0,7);
     closeModal('tx');
   };
 
@@ -2476,6 +2608,16 @@
     const monedaVal = t.moneda || 'ARS';
     document.getElementById('edit-tx-ars').checked = monedaVal === 'ARS';
     document.getElementById('edit-tx-usd').checked = monedaVal === 'USD';
+    const tarjetaEl = document.getElementById('edit-tx-tarjeta');
+    const tarjetaWrap = document.getElementById('edit-tx-tarjeta-tipo-wrap');
+    if (tarjetaEl) {
+      tarjetaEl.checked = t.tarjeta || false;
+      tarjetaWrap.style.display = t.tarjeta ? 'flex' : 'none';
+      if (t.tarjetaRed) { const sel = document.getElementById('edit-tx-tarjeta-red'); if(sel) sel.value = t.tarjetaRed; }
+      if (t.tarjetaTipo) { const sel = document.getElementById('edit-tx-tarjeta-tipo-sel'); if(sel) sel.value = t.tarjetaTipo; }
+      const tnEl = document.getElementById('edit-tx-tarjeta-nombre');
+      if (tnEl) tnEl.value = t.tarjetaNombre || '';
+    }
     openModal('edit-tx');
   };
 
@@ -2502,8 +2644,12 @@
     if (!date)            { alert('Seleccioná una fecha'); return; }
     const varEdit = document.querySelector('input[name="edit-tx-variabilidad"]:checked')?.value || 'fijo';
     const monedaEdit = document.querySelector('input[name="edit-tx-moneda"]:checked')?.value || 'ARS';
+    const esTarjetaEdit = document.getElementById('edit-tx-tarjeta')?.checked || false;
+    const tarjetaRedEdit = esTarjetaEdit ? (document.getElementById('edit-tx-tarjeta-red')?.value || 'Visa') : null;
+    const tarjetaTipoEdit = esTarjetaEdit ? (document.getElementById('edit-tx-tarjeta-tipo-sel')?.value || 'fija') : null;
+    const tarjetaNombreEdit = esTarjetaEdit ? (document.getElementById('edit-tx-tarjeta-nombre')?.value.trim() || tarjetaRedEdit) : null;
     await set(ref(db, 'users/'+uid+'/transactions/'+id), {
-      description: desc, amount, category: cat, type: editTxType, date, variabilidad: varEdit, moneda: monedaEdit, createdAt: transactions[id]?.createdAt || Date.now()
+      description: desc, amount, category: cat, type: editTxType, date, variabilidad: varEdit, moneda: monedaEdit, tarjeta: esTarjetaEdit, tarjetaRed: tarjetaRedEdit, tarjetaTipo: tarjetaTipoEdit, tarjetaNombre: tarjetaNombreEdit, createdAt: transactions[id]?.createdAt || Date.now()
     });
     dashMonthKey = date.substring(0,7);
     closeModal('edit-tx');
@@ -3403,6 +3549,196 @@
     _origGoTo(page);
     if (window.innerWidth <= 900) closeMobileNav();
   };
+
+  // ── TARJETA TOGGLE ──
+  document.addEventListener('change', e => {
+    if (e.target.id === 'tx-tarjeta') {
+      const w = document.getElementById('tx-tarjeta-tipo-wrap');
+      w.style.display = e.target.checked ? 'flex' : 'none';
+    }
+    if (e.target.id === 'edit-tx-tarjeta') {
+      const w = document.getElementById('edit-tx-tarjeta-tipo-wrap');
+      w.style.display = e.target.checked ? 'flex' : 'none';
+    }
+  });
+
+  // ── TARJETAS DE CRÉDITO ──
+  let chartTarjetas = null;
+
+  function renderTarjetas() {
+    const txArr = Object.entries(transactions).map(([id,t]) => ({id,...t}));
+    const tarjetaTxs = txArr.filter(t => t.tarjeta && t.type === 'expense');
+
+    const section = document.getElementById('dash-tarjetas-section');
+    if (!section) return;
+    if (!tarjetaTxs.length) { section.style.display = 'none'; return; }
+    section.style.display = 'block';
+
+    const { txs: thisMonth, key: activeKey } = getActiveMonth(txArr);
+    const mesLabel = getMonthLabel(activeKey);
+    const mesEl = document.getElementById('dash-tarjetas-mes');
+    if (mesEl) mesEl.textContent = mesLabel;
+
+    const toARS = t => (t.moneda === 'USD') ? t.amount * tcOficial : t.amount;
+
+    // Group by tarjetaNombre
+    const byCard = {};
+    tarjetaTxs.forEach(t => {
+      const key = t.tarjetaNombre || t.tarjetaRed || 'Sin identificar';
+      const red = t.tarjetaRed || 'Otra';
+      if (!byCard[key]) byCard[key] = { red, fija: 0, variable: 0, total: 0, txs: [] };
+      const amt = toARS(t);
+      byCard[key].total += amt;
+      byCard[key][t.tarjetaTipo === 'variable' ? 'variable' : 'fija'] += amt;
+      byCard[key].txs.push(t);
+    });
+
+    // Colors per card network
+    const redColors = { Visa: '#3d6b52', Mastercard: '#c17a4a', Amex: '#4a7a8a', Otra: '#8a8070' };
+
+    // Summary cards
+    const cardsEl = document.getElementById('dash-tarjetas-cards');
+    if (cardsEl) {
+      const thisMonthByCard = {};
+      thisMonth.filter(t => t.tarjeta && t.type === 'expense').forEach(t => {
+        const key = t.tarjetaNombre || t.tarjetaRed || 'Sin identificar';
+        if (!thisMonthByCard[key]) thisMonthByCard[key] = { red: t.tarjetaRed || 'Otra', total: 0 };
+        thisMonthByCard[key].total += toARS(t);
+      });
+
+      cardsEl.innerHTML = Object.entries(byCard).map(([name, data]) => {
+        const mesTotal = thisMonthByCard[name]?.total || 0;
+        const totalAcum = data.total;
+        const color = redColors[data.red] || '#6b7280';
+        const fijaTotal = data.fija + data.variable > 0 ? data.fija : 0;
+        const varTotal  = data.fija + data.variable > 0 ? data.variable : 0;
+        const pctFija = totalAcum > 0 ? Math.round(fijaTotal/totalAcum*100) : 0;
+        const pctVar  = 100 - pctFija;
+        return '<div style="background:var(--surface);border:1px solid var(--border);border-top:3px solid '+color+';padding:16px 18px;">' +
+          '<div style="font-size:0.62rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:'+color+';margin-bottom:8px;">'+name+'</div>' +
+          '<div style="font-size:1.2rem;font-weight:700;color:var(--ink);">'+fmt(mesTotal || totalAcum)+'</div>' +
+          '<div style="font-size:0.68rem;color:var(--muted);margin-top:2px;">'+(mesTotal > 0 ? 'este mes' : 'acumulado total')+'</div>' +
+          '<div style="height:4px;background:var(--border2);border-radius:2px;overflow:hidden;margin:10px 0 6px;">' +
+            '<div style="height:100%;width:'+pctFija+'%;background:#4a90c4;border-radius:2px;display:inline-block;"></div>' +
+          '</div>' +
+          '<div style="display:flex;justify-content:space-between;font-size:0.68rem;">' +
+            '<span style="color:#4a90c4;">Fija '+pctFija+'% ('+fmt(fijaTotal)+')</span>' +
+            '<span style="color:var(--accent2);">Variable '+pctVar+'% ('+fmt(varTotal)+')</span>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    // 6-month evolution chart
+    const now = new Date();
+    const months = [];
+    const labels = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push(d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'));
+      labels.push(d.toLocaleString('es-AR', {month: 'short'}));
+    }
+
+    const cardNames = Object.keys(byCard);
+    const palette = ['#3d6b52','#c17a4a','#4a7a8a','#8a6b52','#6b8a52','#7a526b'];
+    const datasets = cardNames.map((name, i) => ({
+      label: name,
+      data: months.map(mo => {
+        return tarjetaTxs
+          .filter(t => (t.tarjetaNombre || t.tarjetaRed || 'Sin identificar') === name && t.date?.startsWith(mo))
+          .reduce((s, t) => s + toARS(t), 0);
+      }),
+      backgroundColor: (palette[i] || '#888') + '99',
+      borderColor: palette[i] || '#888',
+      borderWidth: 0,
+      borderRadius: 2,
+    }));
+
+    const ctx = document.getElementById('chart-tarjetas');
+    if (!ctx) return;
+    if (chartTarjetas) chartTarjetas.destroy();
+    const isDark = document.body.classList.contains('dark');
+    const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+    const textColor = isDark ? '#888' : '#999';
+    chartTarjetas = new Chart(ctx, {
+      type: 'bar',
+      data: { labels, datasets },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom', labels: { color: textColor, font: { size: 10 }, boxWidth: 8, boxHeight: 8, padding: 12 } },
+          tooltip: {
+            backgroundColor: isDark ? '#1c1c1c' : '#fff',
+            borderColor: isDark ? '#2a2a2a' : '#e0ddd8',
+            borderWidth: 1,
+            titleColor: isDark ? '#aaa' : '#888',
+            bodyColor: isDark ? '#ddd' : '#444',
+            padding: 10,
+            callbacks: { label: ctx => ' ' + ctx.dataset.label + ': ' + fmt(ctx.raw) }
+          }
+        },
+        scales: {
+          x: { stacked: true, grid: { color: gridColor, lineWidth: 0.5 }, border: { display: false }, ticks: { color: textColor, font: { size: 10 } } },
+          y: { stacked: true, grid: { color: gridColor, lineWidth: 0.5 }, border: { display: false }, ticks: { color: textColor, font: { size: 10 }, callback: v => '$' + fmtNum(v) } }
+        }
+      }
+    });
+
+    // Fija vs Variable breakdown per card
+    const breakdownEl = document.getElementById('dash-tarjetas-breakdown');
+    if (breakdownEl) {
+      breakdownEl.innerHTML = ''; // integrated into cards above
+    }
+  }
+
+  // ── REPLICACIÓN MENSUAL ──
+  async function checkMonthlyReplication() {
+    const now = new Date();
+    const today = now.getDate();
+    if (today !== 1) return; // solo el día 1
+
+    const thisMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonth = `${lastMonthDate.getFullYear()}-${String(lastMonthDate.getMonth()+1).padStart(2,'0')}`;
+
+    // Check if already replicated this month
+    const repKey = `replicado_${thisMonth}`;
+    const snap = await get(ref(db, `users/${uid}/meta/${repKey}`));
+    if (snap.exists()) return; // ya se replicó
+
+    // Get last month's transactions
+    const lastMonthTxs = Object.entries(transactions)
+      .filter(([,t]) => t.date?.startsWith(lastMonth));
+
+    if (!lastMonthTxs.length) return;
+
+    // Replicate each with amount = 0, date = 1st of this month
+    const batch = {};
+    lastMonthTxs.forEach(([,t]) => {
+      const newId = push(ref(db, `users/${uid}/transactions`)).key;
+      batch[`users/${uid}/transactions/${newId}`] = {
+        description: t.description,
+        amount: 0,
+        category: t.category,
+        type: t.type,
+        date: `${thisMonth}-01`,
+        variabilidad: t.variabilidad || 'fijo',
+        moneda: t.moneda || 'ARS',
+        tarjeta: t.tarjeta || false,
+        tarjetaRed: t.tarjetaRed || null,
+        tarjetaTipo: t.tarjetaTipo || null,
+        tarjetaNombre: t.tarjetaNombre || null,
+        replicado: true,
+        createdAt: Date.now()
+      };
+    });
+
+    // Mark as replicated
+    batch[`users/${uid}/meta/${repKey}`] = { fecha: now.toISOString(), cantidad: lastMonthTxs.length };
+
+    await update(ref(db), batch);
+    console.log(`Replicados ${lastMonthTxs.length} movimientos de ${lastMonth} a ${thisMonth}`);
+  }
 
   // ── DARK MODE ──
   window.toggleDark = (on) => {
