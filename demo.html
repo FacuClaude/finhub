@@ -75,7 +75,7 @@
       font-size: 0.7rem;
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      color: var(--muted);
+      color: rgba(255,255,255,0.6);
     }
     .switch {
       position: relative;
@@ -190,7 +190,7 @@
 
     .nav-badge {
       margin-left: auto;
-      background: var(--red);
+      background: var(--accent2);
       color: white;
       font-size: 0.6rem;
       font-weight: 600;
@@ -201,14 +201,14 @@
     }
 
     .sidebar-footer { padding: 24px 32px 0; border-top: 1px solid var(--border); }
-    .user-email { font-size: 0.72rem; color: var(--muted); margin-bottom: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .user-email { font-size: 0.72rem; color: rgba(255,255,255,0.5); margin-bottom: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .btn-logout {
       font-family: 'DM Sans', sans-serif; font-size: 0.7rem; font-weight: 400;
-      letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);
-      background: none; border: 1px solid var(--border); padding: 8px 16px; cursor: pointer;
+      letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.7);
+      background: none; border: 1px solid rgba(255,255,255,0.2); padding: 8px 16px; cursor: pointer;
       transition: color 0.2s, border-color 0.2s;
     }
-    .btn-logout:hover { color: var(--red); border-color: var(--red); }
+    .btn-logout:hover { color: white; border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.08); }
 
     /* ── MAIN ── */
     main { padding: 52px; animation: fadeIn 0.4s ease both; }
@@ -618,15 +618,15 @@
     <div class="wordmark">
       <div style="display:flex;align-items:center;gap:11px;">
         <svg width="30" height="25" viewBox="0 0 96 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="0" y="52" width="20" height="28" rx="3" fill="#3d6b52" opacity="0.4"/>
-          <rect x="25" y="34" width="20" height="46" rx="3" fill="#3d6b52" opacity="0.65"/>
-          <rect x="50" y="8" width="20" height="72" rx="3" fill="#3d6b52"/>
-          <circle cx="60" cy="24" r="12" fill="white" stroke="#3d6b52" stroke-width="2"/>
-          <path d="M55 29 L60 19 L65 29" stroke="#3d6b52" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-          <line x1="60" y1="19" x2="60" y2="29" stroke="#3d6b52" stroke-width="2.5" stroke-linecap="round"/>
+          <rect x="0" y="52" width="20" height="28" rx="3" fill="white" opacity="0.4"/>
+          <rect x="25" y="34" width="20" height="46" rx="3" fill="white" opacity="0.65"/>
+          <rect x="50" y="8" width="20" height="72" rx="3" fill="white"/>
+          <circle cx="60" cy="24" r="12" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.6)" stroke-width="2"/>
+          <path d="M55 29 L60 19 L65 29" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <line x1="60" y1="19" x2="60" y2="29" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
         </svg>
         <span style="font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,sans-serif;font-size:1.45rem;font-weight:700;letter-spacing:-0.02em;line-height:1;">
-          <span style="color:#8a8070">fin</span><span style="color:#3d6b52">Hub.</span>
+          <span style="color:rgba(255,255,255,0.7)">fin</span><span style="color:white">Hub.</span>
         </span>
       </div>
       <div style="font-size:0.65rem;color:#b4ac9e;margin-top:8px;">Finanzas simples, mente tranquila</div>
@@ -675,10 +675,10 @@
         Comparativa
       </button>
 
-      <button class="nav-item" onclick="window.location.href='inversor.html'" style="border-top:1px solid var(--border);margin-top:8px;padding-top:16px;">
+      <button class="nav-item" onclick="alert('El módulo Inversor no está disponible en la versión demo. Registrate para acceder.')" style="border-top:1px solid rgba(255,255,255,0.12);margin-top:8px;padding-top:16px;opacity:0.5;cursor:not-allowed;pointer-events:auto;">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-        <span style="color:var(--accent);font-weight:500;">Inversor</span>
-        <span style="font-size:0.55rem;background:var(--accent);color:white;padding:2px 5px;border-radius:3px;margin-left:auto;">NEW</span>
+        <span style="color:white;font-weight:500;">Inversor</span>
+        <span style="font-size:0.55rem;background:rgba(255,255,255,0.2);color:white;padding:2px 5px;border-radius:3px;margin-left:auto;">NEW</span>
       </button>
     </nav>
     <div class="sidebar-footer">
