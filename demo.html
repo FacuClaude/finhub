@@ -158,7 +158,6 @@
     .shell { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; position: relative; z-index: 1; margin-top: 26px; max-width: 100vw; }
 
     /* ── SIDEBAR ── */
-    .sidebar::-webkit-scrollbar { display: none; }
     .sidebar {
       background: #2d5240;
       border-right: none;
@@ -185,8 +184,8 @@
       background: transparent; text-align: left;
       font-family: 'DM Sans', sans-serif;
     }
-    .nav-item:hover { color: var(--ink2); background: var(--surface2); }
-    .nav-item.active { color: var(--accent); border-left-color: var(--accent); background: var(--accent-bg); font-weight: 500; }
+    .nav-item:hover { color: white; background: rgba(255,255,255,0.08); }
+    .nav-item.active { color: white; border-left-color: white; background: rgba(255,255,255,0.12); font-weight: 500; }
     .nav-icon { width: 16px; height: 16px; flex-shrink: 0; }
 
     .nav-badge {
