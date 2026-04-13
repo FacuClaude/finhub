@@ -79,12 +79,13 @@ YPE html>
     /* ── SIDEBAR ── */
     .sidebar::-webkit-scrollbar { display: none; }
     body.dark .sidebar { background: #1e2420 !important; }
+    .sidebar::-webkit-scrollbar { display: none; }
     .sidebar {
       background: #2d5240;
       border-right: none; scrollbar-width: none;
       padding: 40px 0;
       display: flex; flex-direction: column;
-      position: sticky; top: 0; height: 100vh; overflow: hidden;
+      position: sticky; top: 0; height: 100vh; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none;
     }
 
     .wordmark { padding: 0 32px 28px; border-bottom: 1px solid rgba(255,255,255,0.12); }
