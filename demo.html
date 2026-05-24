@@ -604,6 +604,7 @@
       }
       .sidebar.mobile-open {
         left: 0 !important;
+        background: #2d5240 !important;
         box-shadow: 8px 0 40px rgba(0,0,0,0.25) !important;
       }
       main { padding: 20px 14px; overflow-x: hidden; }
@@ -3747,10 +3748,15 @@
   };
 
   // Restore preference on load
-  if (localStorage.getItem('finhub-dark') === '1') {
+  // Default to day mode - only go dark if user explicitly chose it
+  const _darkPref = localStorage.getItem('finhub-dark');
+  if (_darkPref === '1') {
     document.body.classList.add('dark');
     const toggle = document.getElementById('dark-toggle');
     if (toggle) toggle.checked = true;
+  } else if (_darkPref === null) {
+    // First visit - ensure day mode, clear any OS dark preference
+    localStorage.setItem('finhub-dark', '0');
   }
 
   // ── UTILS ──
