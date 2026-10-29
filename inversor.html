@@ -601,7 +601,10 @@ YPE html>
 
       <div class="section-header">
         <div class="section-title">Posiciones</div>
-        <button class="btn-primary" onclick="openModal('inversion')">+ Agregar</button>
+        <div style="display:flex;gap:8px;">
+          <button class="btn-secondary" onclick="openImportBalanz()" title="Importar Posición consolidada de Balanz (PDF)">⬇ Importar de Balanz</button>
+          <button class="btn-primary" onclick="openModal('inversion')">+ Agregar</button>
+        </div>
       </div>
       <div class="portfolio-list" id="portfolio-list">
         <div style="padding:48px;text-align:center;font-size:0.82rem;color:var(--muted);">Sin inversiones cargadas. Empezá agregando tu primera posición.</div>
@@ -1187,7 +1190,7 @@ YPE html>
 <!-- MODAL INVERSIÓN -->
 <div class="overlay" id="modal-inversion" onclick="closeModal('inversion')">
   <div class="modal" onclick="event.stopPropagation()">
-    <div class="modal-title">Nueva posición</div>
+    <div class="modal-title" id="inversion-modal-title">Nueva posición</div>
     <div class="field"><label>Instrumento / Ticker</label><input type="text" id="inv-ticker" placeholder="Ej: GGAL, AAPL, AL30, Plazo Fijo..." /></div>
     <div class="field"><label>Tipo</label>
       <select id="inv-tipo">
@@ -1214,6 +1217,28 @@ YPE html>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal('inversion')" style="flex:1">Cancelar</button>
       <button class="btn-primary" onclick="saveInversion()" style="flex:2">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL IMPORTAR BALANZ -->
+<div class="overlay" id="modal-import-balanz" onclick="closeModal('import-balanz')">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:560px;max-height:85vh;display:flex;flex-direction:column;">
+    <div class="modal-title">Importar de Balanz</div>
+    <div style="font-size:0.8rem;color:var(--ink2);margin-bottom:14px;line-height:1.5;">
+      Subí el PDF de <strong>Posición consolidada</strong> que descargás desde Balanz
+      (Reportes → Posición consolidada). Leemos tus tenencias y las agregás a tu cartera.
+    </div>
+    <div id="balanz-drop" style="border:1.5px dashed var(--border2);border-radius:6px;padding:28px;text-align:center;cursor:pointer;margin-bottom:14px;transition:border-color 0.2s;">
+      <input type="file" id="balanz-file" accept="application/pdf" style="display:none;">
+      <div style="font-size:0.85rem;color:var(--ink2);">📄 Tocá para elegir el PDF</div>
+      <div id="balanz-filename" style="font-size:0.72rem;color:var(--muted);margin-top:6px;"></div>
+    </div>
+    <div id="balanz-status" style="font-size:0.78rem;color:var(--muted);margin-bottom:10px;"></div>
+    <div id="balanz-preview" style="flex:1;overflow-y:auto;"></div>
+    <div class="modal-actions" style="margin-top:14px;">
+      <button class="btn-secondary" onclick="closeModal('import-balanz')" style="flex:1">Cancelar</button>
+      <button class="btn-primary" id="balanz-import-btn" style="flex:2;display:none;">Importar seleccionadas</button>
     </div>
   </div>
 </div>
@@ -1273,7 +1298,7 @@ YPE html>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getDatabase, ref, push, set, remove, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, push, set, remove, onValue, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey:            "AIzaSyDKzetZ189S7Q4DIu4jN3cS7RcWPmF2q-A",
@@ -1616,7 +1641,10 @@ function renderCartera() {
       '<div><div class="p-name">'+(inv.ticker||'—')+'</div><div class="p-type">'+tipoLabel+' · '+inv.moneda+'</div></div>'+
       '<span class="p-amount">'+montoDisplay+'</span>'+
       '<span class="p-gl neu">—</span>'+
-      '<button onclick="deleteInversion(\''+inv.id+'\')" style="background:none;border:none;color:var(--muted2);cursor:pointer;font-size:0.9rem;">&#x2715;</button>'+
+      '<span style="display:inline-flex;gap:4px;">'+
+        '<button onclick="editInversion(\''+inv.id+'\')" title="Editar" style="background:none;border:none;color:var(--muted2);cursor:pointer;font-size:0.9rem;padding:2px 4px;">&#x270E;</button>'+
+        '<button onclick="deleteInversion(\''+inv.id+'\')" title="Eliminar" style="background:none;border:none;color:var(--muted2);cursor:pointer;font-size:0.9rem;padding:2px 4px;">&#x2715;</button>'+
+      '</span>'+
     '</div>';
   }).join('');
 }
@@ -1625,6 +1653,201 @@ window.deleteInversion = async id => {
   if (!confirm('\u00bfEliminar esta posici\u00f3n?')) return;
   await remove(ref(db, 'users/'+uid+'/inversiones/'+id));
 };
+
+let editingInversionId = null;
+window.editInversion = id => {
+  const inv = inversiones[id];
+  if (!inv) return;
+  editingInversionId = id;
+  document.getElementById('inv-ticker').value        = inv.ticker || '';
+  document.getElementById('inv-tipo').value           = inv.tipo || 'accion';
+  document.getElementById('inv-moneda').value         = inv.moneda || 'ARS';
+  document.getElementById('inv-monto').value          = inv.monto || '';
+  document.getElementById('inv-precio-compra').value  = inv.precioCompra || '';
+  document.getElementById('inv-cantidad').value       = inv.cantidad || '';
+  document.getElementById('inv-fecha').value          = inv.fecha || new Date().toISOString().split('T')[0];
+  const t = document.getElementById('inversion-modal-title');
+  if (t) t.textContent = 'Editar posici\u00f3n';
+  document.getElementById('modal-inversion').classList.add('open');
+};
+
+// \u2500\u2500 IMPORTAR BALANZ (PDF Posici\u00f3n consolidada) \u2500\u2500
+let balanzParsed = [];
+
+window.openImportBalanz = () => {
+  balanzParsed = [];
+  document.getElementById('balanz-filename').textContent = '';
+  document.getElementById('balanz-status').textContent = '';
+  document.getElementById('balanz-preview').innerHTML = '';
+  document.getElementById('balanz-import-btn').style.display = 'none';
+  document.getElementById('modal-import-balanz').classList.add('open');
+};
+
+// Carga pdf.js una sola vez
+function ensurePdfJs() {
+  return new Promise((resolve, reject) => {
+    if (window.pdfjsLib) return resolve(window.pdfjsLib);
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    s.onload = () => {
+      try { window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; } catch(e){}
+      resolve(window.pdfjsLib);
+    };
+    s.onerror = () => reject(new Error('No se pudo cargar el lector de PDF'));
+    document.head.appendChild(s);
+  });
+}
+
+// Convierte "24.069.296" o "255,61" (formato AR) a n\u00famero
+function parseARNum(s) {
+  if (s == null) return null;
+  const n = parseFloat(String(s).replace(/\./g, '').replace(',', '.'));
+  return isNaN(n) ? null : n;
+}
+
+// Extrae tenencias del texto plano de la Posici\u00f3n consolidada de Balanz
+function parseBalanzText(fullText) {
+  const lines = fullText.split('\n').map(l => l.trim()).filter(Boolean);
+  const out = [];
+  // Una fila de tenencia: TICKER  descripci\u00f3n...  cantidad  garant\u00eda  $ precio  $ valor
+  // Capturamos el ticker (1er token alfanum\u00e9rico en may.) y los n\u00fameros finales.
+  const re = /^([A-Z0-9][A-Z0-9.\-]{1,14})\s+(.+?)\s+([\d.]+,\d+|\d+(?:\.\d{3})*)\s+([\d.]+(?:,\d+)?)\s+\$?\s*([\d.]+,\d+|\d+(?:\.\d{3})*)\s+\$?\s*([\d.]+,\d+|\d+(?:\.\d{3})*)\s*$/;
+  for (const line of lines) {
+    // Saltar encabezados conocidos
+    if (/^(Especie|Total|Instrumentos|Monedas|Fondos|Distribuci|Cuenta|BALANZ|Informaci|Posici|Tipo de cambio|La informaci)/i.test(line)) continue;
+    const m = line.match(re);
+    if (!m) continue;
+    const ticker = m[1];
+    const desc = m[2].trim();
+    const cantidad = parseARNum(m[3]);
+    const precio = parseARNum(m[5]);
+    const valor = parseARNum(m[6]);
+    if (!valor || valor <= 0) continue;
+    // Clasificar tipo tentativo
+    let tipo = 'otro';
+    const u = (desc + ' ' + ticker).toUpperCase();
+    if (/FCI|FONDO|AHORRO|BALANCED|RENTA|MONEY|PERFORMANCE|CAPITAL|CRECIMIENTO|EXCALIBUR/.test(u)) tipo = 'fci';
+    else if (/BONO|BONAR|GLOBAL|AL\d|GD\d|TX|TZX|S\d\d/.test(u)) tipo = 'bono';
+    else if (ticker.length <= 4) tipo = 'accion';
+    out.push({ ticker, desc, cantidad, precio, valor, tipo, moneda: 'ARS', include: true });
+  }
+  return out;
+}
+
+async function handleBalanzFile(file) {
+  const statusEl = document.getElementById('balanz-status');
+  const previewEl = document.getElementById('balanz-preview');
+  const importBtn = document.getElementById('balanz-import-btn');
+  document.getElementById('balanz-filename').textContent = file.name;
+  statusEl.textContent = 'Leyendo PDF...';
+  previewEl.innerHTML = '';
+  importBtn.style.display = 'none';
+  balanzParsed = [];
+
+  try {
+    const pdfjsLib = await ensurePdfJs();
+    const buf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+    let fullText = '';
+    for (let p = 1; p <= pdf.numPages; p++) {
+      const page = await pdf.getPage(p);
+      const content = await page.getTextContent();
+      // Reagrupar por l\u00ednea usando la coordenada Y
+      const rowsByY = {};
+      content.items.forEach(it => {
+        const y = Math.round(it.transform[5]);
+        (rowsByY[y] = rowsByY[y] || []).push(it);
+      });
+      Object.keys(rowsByY).sort((a, b) => b - a).forEach(y => {
+        const lineText = rowsByY[y].sort((a, b) => a.transform[4] - b.transform[4]).map(i => i.str).join(' ').replace(/\s+/g, ' ').trim();
+        if (lineText) fullText += lineText + '\n';
+      });
+    }
+
+    balanzParsed = parseBalanzText(fullText);
+
+    if (!balanzParsed.length) {
+      statusEl.innerHTML = '<span style="color:var(--red)">No se detectaron tenencias. \u00bfEs el reporte "Posici\u00f3n consolidada"? Si el formato cambi\u00f3, avis\u00e1 y lo ajustamos.</span>';
+      return;
+    }
+
+    statusEl.innerHTML = '<span style="color:var(--green)">Se detectaron ' + balanzParsed.length + ' tenencia' + (balanzParsed.length !== 1 ? 's' : '') + '. Revis\u00e1 y confirm\u00e1:</span>';
+    renderBalanzPreview();
+    importBtn.style.display = 'block';
+  } catch (e) {
+    console.error(e);
+    statusEl.innerHTML = '<span style="color:var(--red)">Error al leer el PDF: ' + esc(e.message || 'desconocido') + '</span>';
+  }
+}
+
+function renderBalanzPreview() {
+  const previewEl = document.getElementById('balanz-preview');
+  const tipos = { accion:'Acci\u00f3n', cedear:'CEDEAR', bono:'Bono', lecap:'Lecap', plazo:'Plazo Fijo', fci:'FCI', crypto:'Crypto', otro:'Otro' };
+  const tipoOpts = (sel) => Object.entries(tipos).map(([k,v]) => '<option value="'+k+'"'+(k===sel?' selected':'')+'>'+v+'</option>').join('');
+  previewEl.innerHTML = '<div style="border:1px solid var(--border);border-radius:6px;overflow:hidden;">' +
+    balanzParsed.map((r, i) =>
+      '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border);">' +
+        '<input type="checkbox" class="bz-chk" data-idx="'+i+'" '+(r.include?'checked':'')+' onchange="balanzToggle('+i+',this.checked)" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div style="font-size:0.85rem;color:var(--ink);font-weight:600;">'+esc(r.ticker)+'</div>' +
+          '<div style="font-size:0.68rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+esc(r.desc)+'</div>' +
+        '</div>' +
+        '<select onchange="balanzSetTipo('+i+',this.value)" style="font-size:0.68rem;padding:4px;border:1px solid var(--border);background:var(--surface);color:var(--ink);border-radius:4px;">'+tipoOpts(r.tipo)+'</select>' +
+        '<div style="font-size:0.85rem;color:var(--ink);font-weight:600;white-space:nowrap;">$'+fmtNum(r.valor)+'</div>' +
+      '</div>'
+    ).join('') + '</div>';
+}
+
+window.balanzToggle = (i, val) => { if (balanzParsed[i]) balanzParsed[i].include = val; };
+window.balanzSetTipo = (i, val) => { if (balanzParsed[i]) balanzParsed[i].tipo = val; };
+
+async function importBalanzSelected() {
+  const chosen = balanzParsed.filter(r => r.include);
+  if (!chosen.length) { alert('No seleccionaste ninguna tenencia.'); return; }
+  const btn = document.getElementById('balanz-import-btn');
+  btn.textContent = 'Importando...'; btn.disabled = true;
+  const hoy = new Date().toISOString().split('T')[0];
+  try {
+    for (const r of chosen) {
+      await push(ref(db, 'users/'+uid+'/inversiones'), {
+        ticker: r.ticker,
+        tipo: r.tipo,
+        moneda: r.moneda || 'ARS',
+        monto: r.valor,
+        precioCompra: r.precio || null,
+        cantidad: r.cantidad || null,
+        fecha: hoy,
+        origen: 'balanz',
+        descripcion: r.desc || null,
+        createdAt: Date.now()
+      });
+    }
+    closeModal('import-balanz');
+    alert('Se importaron ' + chosen.length + ' tenencia' + (chosen.length !== 1 ? 's' : '') + ' a tu cartera.');
+  } catch (e) {
+    alert('Error al importar: ' + (e.message || 'desconocido'));
+  } finally {
+    btn.textContent = 'Importar seleccionadas'; btn.disabled = false;
+  }
+}
+
+// Wiring de inputs del importador (una vez)
+(function wireBalanzImport() {
+  function wire() {
+    const drop = document.getElementById('balanz-drop');
+    const input = document.getElementById('balanz-file');
+    const importBtn = document.getElementById('balanz-import-btn');
+    if (!drop || !input || !importBtn) return;
+    drop.onclick = () => input.click();
+    input.onchange = (e) => { const f = e.target.files[0]; if (f) handleBalanzFile(f); };
+    drop.ondragover = (e) => { e.preventDefault(); drop.style.borderColor = 'var(--accent)'; };
+    drop.ondragleave = () => { drop.style.borderColor = 'var(--border2)'; };
+    drop.ondrop = (e) => { e.preventDefault(); drop.style.borderColor = 'var(--border2)'; const f = e.dataTransfer.files[0]; if (f && f.type === 'application/pdf') handleBalanzFile(f); };
+    importBtn.onclick = importBalanzSelected;
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
+  else wire();
+})();
 
 // ── ASESOR ──
 window.selectProfile = profile => {
@@ -1866,7 +2089,7 @@ document.getElementById('chat-input')?.addEventListener('keydown', e => {
 
 // ── MODALS ──
 window.openModal = name => {
-  if (name==='inversion') { ['inv-ticker','inv-monto','inv-precio-compra','inv-cantidad'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';}); document.getElementById('inv-fecha').value=new Date().toISOString().split('T')[0]; }
+  if (name==='inversion') { editingInversionId=null; ['inv-ticker','inv-monto','inv-precio-compra','inv-cantidad'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';}); document.getElementById('inv-fecha').value=new Date().toISOString().split('T')[0]; const t=document.getElementById('inversion-modal-title'); if(t)t.textContent='Nueva posición'; }
   if (name==='asset') { ['pat-asset-name','pat-asset-value'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';}); }
   if (name==='debt')  { ['pat-debt-name','pat-debt-value'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';}); }
   document.getElementById('modal-'+name).classList.add('open');
@@ -1883,7 +2106,13 @@ window.saveInversion = async () => {
   const fecha  = document.getElementById('inv-fecha').value;
   if (!ticker) { alert('Ingres\u00e1 el ticker o nombre'); return; }
   if (!monto||monto<=0) { alert('Ingres\u00e1 un monto v\u00e1lido'); return; }
-  await push(ref(db,'users/'+uid+'/inversiones'), {ticker,tipo,moneda,monto,precioCompra,cantidad,fecha,createdAt:Date.now()});
+  if (editingInversionId) {
+    const prev = inversiones[editingInversionId] || {};
+    await update(ref(db,'users/'+uid+'/inversiones/'+editingInversionId), {ticker,tipo,moneda,monto,precioCompra,cantidad,fecha,createdAt:prev.createdAt||Date.now()});
+    editingInversionId = null;
+  } else {
+    await push(ref(db,'users/'+uid+'/inversiones'), {ticker,tipo,moneda,monto,precioCompra,cantidad,fecha,createdAt:Date.now()});
+  }
   closeModal('inversion');
 };
 
