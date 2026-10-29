@@ -347,6 +347,16 @@
     .tx-btn-del:hover { background: var(--red); border-color: var(--red); }
     .tx-delete { display: none; }
 
+    /* ── ACCIONES DEL MES ── */
+    .tx-month-actions { padding: 10px 24px; border-bottom: 1px solid var(--border); background: var(--surface); }
+    .tx-replicate-btn {
+      background: transparent; color: var(--accent); border: 1px solid var(--accent);
+      padding: 7px 14px; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em;
+      cursor: pointer; border-radius: 4px; font-family: 'DM Sans', sans-serif;
+      transition: all 0.2s;
+    }
+    .tx-replicate-btn:hover { background: var(--accent); color: white; }
+
     /* ── MES COLAPSABLE ── */
     .tx-month-group { margin-bottom: 8px; }
     .tx-month-header {
@@ -417,10 +427,20 @@
     /* ── REMINDERS ── */
     .reminder-list { background: var(--surface); border: 1px solid var(--border); }
     .reminder-item {
-      display: grid; grid-template-columns: auto 1fr auto auto auto;
+      display: grid; grid-template-columns: auto 1fr auto auto auto auto;
       align-items: center; gap: 16px; padding: 16px 24px;
       border-bottom: 1px solid var(--border); transition: background 0.15s;
     }
+    .reminder-item .tx-delete,
+    .reminder-item .tx-edit-rem {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px; border: 1px solid var(--border);
+      background: transparent; border-radius: 4px; cursor: pointer;
+      font-size: 0.85rem; color: var(--muted2); transition: all 0.2s;
+      font-family: inherit; line-height: 1;
+    }
+    .reminder-item .tx-edit-rem:hover { border-color: var(--accent); color: var(--accent); }
+    .reminder-item .tx-delete:hover   { border-color: var(--red); color: var(--red); }
     .reminder-item:last-child { border-bottom: none; }
     .reminder-item:hover { background: var(--surface2); }
 
@@ -1475,7 +1495,7 @@
 <!-- MODAL RECORDATORIO -->
 <div class="overlay" id="modal-reminder" onclick="closeModal('reminder')">
   <div class="modal" onclick="event.stopPropagation()">
-    <div class="modal-title">Nuevo recordatorio</div>
+    <div class="modal-title" id="reminder-modal-title">Nuevo recordatorio</div>
     <div class="field"><label>Nombre del pago</label><input type="text" id="rem-name" placeholder="Ej: Alquiler, Netflix, Tarjeta…" /></div>
     <div class="field"><label>Monto ($)</label><input type="number" id="rem-amount" placeholder="0.00" min="0" step="0.01" /></div>
     <div class="field">
@@ -1864,6 +1884,14 @@
       html += '</span></div>';
       html += '<div class="tx-month-body' + (isOpen ? '' : ' hidden') + '">';
 
+      // Barra de acciones del mes
+      if (showDelete) {
+        html += '<div class="tx-month-actions">' +
+          '<button class="tx-replicate-btn" onclick="event.stopPropagation();replicateMonth(\'' + key + '\')" title="Copiar estos movimientos al mes siguiente">' +
+          '&#8631; Replicar al mes siguiente</button>' +
+        '</div>';
+      }
+
       // Split by type: incomes first, then expenses
       const incomes  = items.filter(t=>t.type==='income').sort((a,b)=>new Date(b.date)-new Date(a.date));
       const expenses = items.filter(t=>t.type==='expense').sort((a,b)=>new Date(b.date)-new Date(a.date));
@@ -1910,6 +1938,104 @@
   window.deleteTx = async id => {
     if (!confirm('¿Eliminar este movimiento?')) return;
     await remove(ref(db,`users/${uid}/transactions/${id}`));
+  };
+
+  // ── REPLICAR MES ──
+  // Devuelve la key YYYY-MM del mes siguiente
+  function nextMonthKey(key) {
+    const [y, m] = key.split('-').map(Number);
+    const d = new Date(y, m, 1); // m ya apunta al mes siguiente (0-indexed)
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  }
+  // Ajusta el día de un movimiento al mes destino (clamp a fin de mes)
+  function remapDate(dateStr, destKey) {
+    const [dY, dM] = destKey.split('-').map(Number);
+    const origDay = parseInt((dateStr || '').slice(8, 10)) || 1;
+    const lastDay = new Date(dY, dM, 0).getDate(); // último día del mes destino
+    const day = Math.min(origDay, lastDay);
+    return destKey + '-' + String(day).padStart(2, '0');
+  }
+
+  window.replicateMonth = (srcKey) => {
+    const destKey = nextMonthKey(srcKey);
+    const srcItems = Object.entries(transactions)
+      .map(([id, t]) => ({ id, ...t }))
+      .filter(t => t.date && t.date.slice(0, 7) === srcKey)
+      .sort((a, b) => (a.type === b.type ? 0 : a.type === 'income' ? -1 : 1));
+
+    if (!srcItems.length) { alert('Este mes no tiene movimientos para replicar.'); return; }
+
+    const destCount = Object.values(transactions).filter(t => t.date && t.date.slice(0, 7) === destKey).length;
+    const lbl = k => { const [y, m] = k.split('-'); return new Date(+y, +m - 1, 1).toLocaleString('es-AR', { month: 'long', year: 'numeric' }); };
+
+    // Construir overlay de preview
+    const overlay = document.createElement('div');
+    overlay.className = 'overlay open';
+    overlay.id = 'replicate-overlay';
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+    const rows = srcItems.map((t, i) => {
+      const isFijo = (t.variabilidad || 'fijo') !== 'variable';
+      const sign = t.type === 'income' ? '+' : '−';
+      const col = t.type === 'income' ? 'var(--green)' : 'var(--red)';
+      return '<label style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer;">' +
+        '<input type="checkbox" class="rep-chk" data-idx="' + i + '" ' + (isFijo ? 'checked' : '') + ' style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div style="font-size:0.85rem;color:var(--ink);">' + esc(t.description) + '</div>' +
+          '<div style="font-size:0.68rem;color:var(--muted);">' + esc(t.category) + ' · ' + (isFijo ? 'Fijo' : 'Variable') + (t.moneda === 'USD' ? ' · USD' : '') + '</div>' +
+        '</div>' +
+        '<div style="font-size:0.9rem;color:' + col + ';font-weight:600;white-space:nowrap;">' + sign + fmtTxAmount(t) + '</div>' +
+      '</label>';
+    }).join('');
+
+    overlay.innerHTML =
+      '<div class="modal" onclick="event.stopPropagation()" style="max-width:520px;max-height:85vh;display:flex;flex-direction:column;">' +
+        '<div class="modal-title">Replicar a ' + lbl(destKey) + '</div>' +
+        '<div style="font-size:0.8rem;color:var(--ink2);margin-bottom:8px;">Se copiarán los movimientos tildados de <strong>' + lbl(srcKey) + '</strong> al mes siguiente. Por defecto se marcan solo los <strong>fijos</strong>.</div>' +
+        (destCount ? '<div style="font-size:0.75rem;color:var(--warn);background:rgba(193,122,74,0.1);padding:8px 12px;border-radius:4px;margin-bottom:12px;">⚠️ ' + lbl(destKey) + ' ya tiene ' + destCount + ' movimiento' + (destCount !== 1 ? 's' : '') + '. Los nuevos se agregan, no reemplazan.</div>' : '') +
+        '<div style="display:flex;gap:10px;margin-bottom:10px;">' +
+          '<button onclick="repToggleAll(true)" style="flex:1;background:transparent;border:1px solid var(--border);color:var(--ink2);padding:6px;font-size:0.72rem;cursor:pointer;border-radius:4px;font-family:inherit;">Marcar todos</button>' +
+          '<button onclick="repToggleAll(false)" style="flex:1;background:transparent;border:1px solid var(--border);color:var(--ink2);padding:6px;font-size:0.72rem;cursor:pointer;border-radius:4px;font-family:inherit;">Desmarcar todos</button>' +
+        '</div>' +
+        '<div style="flex:1;overflow-y:auto;border:1px solid var(--border);border-radius:4px;margin-bottom:16px;">' + rows + '</div>' +
+        '<div class="modal-actions">' +
+          '<button class="btn-secondary" onclick="document.getElementById(\'replicate-overlay\').remove()" style="flex:1">Cancelar</button>' +
+          '<button class="btn-primary" id="rep-confirm-btn" style="flex:2">Replicar</button>' +
+        '</div>' +
+      '</div>';
+
+    document.body.appendChild(overlay);
+
+    window.repToggleAll = (val) => { overlay.querySelectorAll('.rep-chk').forEach(c => c.checked = val); };
+
+    document.getElementById('rep-confirm-btn').onclick = async () => {
+      const chosen = [];
+      overlay.querySelectorAll('.rep-chk:checked').forEach(c => chosen.push(srcItems[parseInt(c.dataset.idx)]));
+      if (!chosen.length) { alert('No seleccionaste ningún movimiento.'); return; }
+      const btn = document.getElementById('rep-confirm-btn');
+      btn.textContent = 'Replicando...'; btn.disabled = true;
+      for (const t of chosen) {
+        await push(ref(db, `users/${uid}/transactions`), {
+          description: t.description,
+          amount: t.amount,
+          category: t.category,
+          type: t.type,
+          date: remapDate(t.date, destKey),
+          variabilidad: t.variabilidad || 'fijo',
+          moneda: t.moneda || 'ARS',
+          tarjeta: t.tarjeta || false,
+          tarjetaRed: t.tarjetaRed || null,
+          tarjetaTipo: t.tarjetaTipo || null,
+          tarjetaNombre: t.tarjetaNombre || null,
+          createdAt: Date.now(),
+          replicatedFrom: srcKey
+        });
+      }
+      overlay.remove();
+      dashMonthKey = destKey;
+      renderAll();
+      alert('Se replicaron ' + chosen.length + ' movimiento' + (chosen.length !== 1 ? 's' : '') + ' a ' + lbl(destKey) + '.');
+    };
   };
 
   // ── BUDGETS ──
@@ -2071,7 +2197,8 @@
           </div>
           <div class="reminder-due ${dueClass}">${dueLabel}</div>
           <div class="reminder-amount">${fmt(r.amount)}</div>
-          <button class="tx-delete" onclick="deleteReminder('${r.id}')">✕</button>
+          <button class="tx-edit-rem" onclick="editReminder('${r.id}')" title="Editar">✎</button>
+          <button class="tx-delete" onclick="deleteReminder('${r.id}')" title="Eliminar">✕</button>
         </div>`;
     }).join('');
   }
@@ -2118,6 +2245,20 @@
     await remove(ref(db,`users/${uid}/reminders/${id}`));
   };
 
+  let editingReminderId = null;
+  window.editReminder = id => {
+    const r = reminders[id];
+    if (!r) return;
+    editingReminderId = id;
+    document.getElementById('rem-name').value   = r.name || '';
+    document.getElementById('rem-amount').value = r.amount || '';
+    document.getElementById('rem-cat').value    = r.category || 'Otros';
+    document.getElementById('rem-day').value    = r.day || '';
+    const t = document.getElementById('reminder-modal-title');
+    if (t) t.textContent = 'Editar recordatorio';
+    document.getElementById('modal-reminder').classList.add('open');
+  };
+
   // ── MODALS ──
   window.openModal = name => {
     if (name==='tx') {
@@ -2138,7 +2279,10 @@
       document.getElementById('goal-current').value = '0';
     }
     if (name==='reminder') {
+      editingReminderId = null;
       ['rem-name','rem-amount','rem-day'].forEach(id => document.getElementById(id).value='');
+      const t = document.getElementById('reminder-modal-title');
+      if (t) t.textContent = 'Nuevo recordatorio';
     }
     if (name==='import') { resetImport(); }
     if (name==='asset') {
@@ -2218,7 +2362,14 @@
     if (!name)              { alert('Agregá un nombre'); return; }
     if (!amount||amount<=0) { alert('Ingresá un monto válido'); return; }
     if (!day||day<1||day>31){ alert('Ingresá un día válido (1-31)'); return; }
-    await push(ref(db,`users/${uid}/reminders`),{name,amount,category:cat,day,paidMonth:null});
+    if (editingReminderId) {
+      // Conservar el estado de pago del mes al editar
+      const prev = reminders[editingReminderId] || {};
+      await update(ref(db,`users/${uid}/reminders/${editingReminderId}`),{name,amount,category:cat,day,paidMonth:prev.paidMonth ?? null});
+      editingReminderId = null;
+    } else {
+      await push(ref(db,`users/${uid}/reminders`),{name,amount,category:cat,day,paidMonth:null});
+    }
     closeModal('reminder');
   };
 
@@ -3248,7 +3399,7 @@
       });
     } else if (ctx) {
       if (patHistChart) { patHistChart.destroy(); patHistChart = null; }
-      ctx.parentElement.innerHTML += '<div style="padding:40px;text-align:center;font-size:0.82rem;color:var(--muted);">Hacé clic en "+ Registrar snapshot hoy" para empezar a guardar el historial.</div>';
+      ctx.parentElement.innerHTML += '<div style="padding:40px;text-align:center;font-size:0.82rem;color:var(--muted);">Hacé clic en "+ Registrar snapshot hoy" para empezar a guardar el historial.</div>';
     }
 
     const list = document.getElementById('ph-snapshots-list');
