@@ -847,6 +847,7 @@
           <button class="btn-export" onclick="expandAllMonths()">&#9660; Expandir</button>
           <button class="btn-export" onclick="collapseAllMonths()">&#9650; Colapsar</button>
           <button class="btn-export" onclick="openModal('import')">&#8679; Importar</button>
+          <button class="btn-export" onclick="openBankImport()" title="Importar resumen de tarjeta BBVA o cuenta Mercado Pago (PDF)">&#127974; Resumen banco</button>
           <button class="btn-export" onclick="exportSection('transactions')">&#8681; Excel</button>
           <button class="btn-export" onclick="confirmClearTx()" style="border-color:var(--red);color:var(--red);">&#128465; Limpiar</button>
           <button class="btn-primary" onclick="openModal('tx')">+ Agregar</button>
@@ -1219,6 +1220,28 @@
     <div class="modal-actions" style="margin-top:24px;">
       <button class="btn-secondary" onclick="closeModal('import');resetImport();" style="flex:1">Cancelar</button>
       <button class="btn-primary" id="import-action-btn" onclick="runImportStep()" style="flex:2;display:none;">Siguiente</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL IMPORTAR RESUMEN BANCARIO (PDF) -->
+<div class="overlay" id="modal-bank-import" onclick="closeModal('bank-import')">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:640px;max-height:88vh;display:flex;flex-direction:column;">
+    <div class="modal-title">Importar resumen bancario</div>
+    <div style="font-size:0.8rem;color:var(--ink2);margin-bottom:12px;line-height:1.5;">
+      Subí el PDF del <strong>resumen de tarjeta BBVA</strong> o del <strong>resumen de cuenta de Mercado Pago</strong>.
+      Detectamos el formato, extraemos los gastos y los revisás antes de importar.
+    </div>
+    <div id="bank-drop" style="border:1.5px dashed var(--border2);border-radius:6px;padding:26px;text-align:center;cursor:pointer;margin-bottom:12px;transition:border-color 0.2s;">
+      <input type="file" id="bank-file" accept="application/pdf" style="display:none;">
+      <div style="font-size:0.85rem;color:var(--ink2);">📄 Tocá para elegir el PDF</div>
+      <div id="bank-filename" style="font-size:0.72rem;color:var(--muted);margin-top:6px;"></div>
+    </div>
+    <div id="bank-status" style="font-size:0.78rem;color:var(--muted);margin-bottom:8px;"></div>
+    <div id="bank-preview" style="flex:1;overflow-y:auto;"></div>
+    <div class="modal-actions" style="margin-top:12px;">
+      <button class="btn-secondary" onclick="closeModal('bank-import')" style="flex:1">Cancelar</button>
+      <button class="btn-primary" id="bank-import-btn" style="flex:2;display:none;">Importar seleccionados</button>
     </div>
   </div>
 </div>
@@ -2037,6 +2060,246 @@
       alert('Se replicaron ' + chosen.length + ' movimiento' + (chosen.length !== 1 ? 's' : '') + ' a ' + lbl(destKey) + '.');
     };
   };
+
+  // ── IMPORTAR RESUMEN BANCARIO (BBVA / Mercado Pago) ──
+  let bankParsed = [];
+
+  window.openBankImport = () => {
+    bankParsed = [];
+    document.getElementById('bank-filename').textContent = '';
+    document.getElementById('bank-status').textContent = '';
+    document.getElementById('bank-preview').innerHTML = '';
+    document.getElementById('bank-import-btn').style.display = 'none';
+    document.getElementById('modal-bank-import').classList.add('open');
+  };
+
+  function ensurePdfJsApp() {
+    return new Promise((resolve, reject) => {
+      if (window.pdfjsLib) return resolve(window.pdfjsLib);
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+      s.onload = () => { try { window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; } catch(e){} resolve(window.pdfjsLib); };
+      s.onerror = () => reject(new Error('No se pudo cargar el lector de PDF'));
+      document.head.appendChild(s);
+    });
+  }
+
+  function parseARnum(s) { const n = parseFloat(String(s).replace(/\./g,'').replace(',','.')); return isNaN(n) ? null : n; }
+
+  // Autocategorización por nombre de comercio → categorías existentes de la app
+  const CAT_RULES = [
+    [/YPF|SHELL|AXION|PUMA|GNC|LIPOWER|ESTACION|DEL ?SUR ?BUS|DELSURBUS|EMOVA|SUBE|CABIFY|UBER|DIDI|PEAJE|MASGO|MEPA/i, 'Transporte'],
+    [/FARMACITY|FARMACIA|SEGUROS|SUDAM|\bACE\b|CHUBB|SANATORIO|HOSPITAL|MEDIC|SWISS|OSDE|GALENO/i, 'Salud'],
+    [/PEDIDOSYA|RAPPI|MCDONALD|BURGER|CAFE|CAFÉ|RESTO|\bRES\b|SOHO|QUINTA PATA|DELI ?OFFICE|CRISAR|CRIS ?MARKET|EDITH|SAN MIGUEL/i, 'Alimentación'],
+    [/DISCO|COTO|CARREFOUR|JUMBO|\bDIA\b|ALFONSIN|SUPER|MARKET|KINDERLAND|VENDING|ALMAC|FARM\b/i, 'Alimentación'],
+    [/NETFLIX|DISNEY|SPOTIFY|APPLE|HBO|PARAMOUNT|YOUTUBE|PRIME|STEAM|XBOX|OPEN ?25/i, 'Entretenimiento'],
+    [/PERSONAL|MOVISTAR|CLARO|FIBERTEL|TELECENTRO|FLOW|EDENOR|EDESUR|METROGAS|AYSA|PERSFLOW/i, 'Servicios'],
+    [/ROPA|ZARA|NIKE|ADIDAS|INDUMENT|SHOP/i, 'Ropa'],
+  ];
+  function autoCat(desc) {
+    const u = String(desc || '');
+    for (const [re, cat] of CAT_RULES) if (re.test(u)) return cat;
+    return 'Otros';
+  }
+
+  function cleanMerchant(desc) {
+    let d = String(desc || '').replace(/^(MERPAGO\*|MEPA\*|DLO\*|PVS\*|MP\*)/i, '').trim();
+    let cuota = null;
+    const mc = d.match(/C\.(\d{2})\/(\d{2})/);
+    if (mc) { cuota = parseInt(mc[1]) + '/' + parseInt(mc[2]); d = d.replace(/\s*C\.\d{2}\/\d{2}/, '').trim(); }
+    return { desc: d, cuota };
+  }
+
+  // Reconstruye filas de una página agrupando items por banda Y (tolerancia 2.5pt)
+  function reconstructRows(items) {
+    const arr = items.slice().sort((a,b) => b.y - a.y || a.x - b.x);
+    const rows = []; let cur = null, lastY = null;
+    for (const it of arr) {
+      if (lastY === null || Math.abs(it.y - lastY) > 2.5) { cur = []; rows.push(cur); lastY = it.y; }
+      cur.push(it); lastY = (lastY + it.y) / 2;
+    }
+    return rows.map(r => r.sort((a,b) => a.x - b.x));
+  }
+
+  // Detecta y parsea BBVA (resumen tarjeta) usando coordenadas X/Y (robusto al desorden del PDF)
+  function parseBBVA(pagesData) {
+    const MESES = { ene:1,feb:2,mar:3,abr:4,may:5,jun:6,jul:7,ago:8,sep:9,oct:10,nov:11,dic:12 };
+    const EXCL_CONCEPTO = /INTERES|IVA|IIBB|PERCEP|DB\.?RG|DB RG|RG \d|SU PAGO|TRANSFERENCIA DEUDA|SALDO|TOTAL|AJUSTE|IMPUESTO|SELLOS|COMISION|COM CUENTA/i;
+    const out = [];
+    for (const pg of pagesData) {
+      const flat = pg.items.map(i => i.s).join(' ');
+      // Solo páginas que contienen el detalle de consumos
+      if (!/Consumos|FECHA\s+DESCRIP/i.test(flat)) continue;
+      const rows = reconstructRows(pg.items);
+      for (const row of rows) {
+        if (!row.length) continue;
+        const first = row[0];
+        const mf = first.s.match(/^(\d{2})-([A-Za-z]{3})-(\d{2})$/);
+        if (!mf) continue;                 // la fila empieza con una fecha en la columna izquierda
+        const yy = 2000 + parseInt(mf[3]); const mm = MESES[mf[2].toLowerCase()] || 0; const dd = parseInt(mf[1]);
+        if (!mm) continue;
+        // Descartar filas de cabecera/resumen: tienen más de una fecha en la misma fila
+        const fechaCount = row.filter(i => /^\d{2}-[A-Za-z]{3}-\d{2}$/.test(i.s)).length;
+        if (fechaCount > 1) continue;
+        // Columnas por X: descripción (100–395), monto (>440)
+        const descRaw = row.filter(i => i.x >= 100 && i.x < 396).map(i => i.s).join(' ').replace(/\s+/g,' ').trim();
+        const montoToks = row.filter(i => i.x >= 440).map(i => i.s);
+        if (!descRaw || !montoToks.length) continue;
+        // La descripción debe tener texto (no ser solo números/fechas/saldos de cabecera)
+        if (!/[A-Za-z]{3}/.test(descRaw.replace(/USD/g,''))) continue;
+        if (EXCL_CONCEPTO.test(descRaw)) continue;  // saltar impuestos/pagos/intereses
+        let moneda = 'ARS', val = parseARnum(montoToks[montoToks.length - 1]);
+        let descForCat = descRaw;
+        const mu = descRaw.match(/\bUSD\s+([\d.]+,\d+)/);
+        if (mu) { moneda = 'USD'; val = parseARnum(mu[1]); descForCat = descRaw.slice(0, mu.index).trim(); }
+        if (!val || val <= 0) continue;
+        const cm = cleanMerchant(descForCat);
+        const fecha = yy + '-' + String(mm).padStart(2,'0') + '-' + String(dd).padStart(2,'0');
+        const d = cm.desc + (cm.cuota ? ' (cuota ' + cm.cuota + ')' : '');
+        out.push({ fecha, desc: d, amount: val, moneda, category: autoCat(cm.desc), include: true, tarjeta: true, tarjetaRed: 'Mastercard', tarjetaNombre: 'BBVA' });
+      }
+    }
+    return out;
+  }
+
+  // Detecta y parsea Mercado Pago (resumen cuenta)
+  function parseMP(lines) {
+    const out = [];
+    const EXCL = /rendimiento|ingreso de dinero|ingreso programado|pago de tarjeta|dinero en cuenta|reintegro|devoluc|^transferencia enviada balanz|inversi/i;
+    const re = /^(\d{2})-(\d{2})-(\d{4})\s+(.*?)\s+(\d{6,})\s+\$\s*(-?[\d.]+,\d{2})\s+\$\s*(-?[\d.]+,\d{2})$/;
+    for (const raw of lines) {
+      const m = raw.trim().match(re);
+      if (!m) continue;
+      const dd = m[1], mm = m[2], yyyy = m[3];
+      const desc = (m[4] || '').trim();
+      const val = parseARnum(m[6]);
+      if (val == null || val >= 0) continue;              // solo salidas
+      if (!desc) continue;                                 // sin descripción = transf. a CBU (puente)
+      if (EXCL.test(desc)) continue;                       // excluir no-gastos
+      const fecha = yyyy + '-' + mm + '-' + dd;
+      out.push({ fecha, desc, amount: Math.abs(val), moneda: 'ARS', category: autoCat(desc), include: true, tarjeta: false });
+    }
+    return out;
+  }
+
+  async function handleBankFile(file) {
+    const statusEl = document.getElementById('bank-status');
+    const previewEl = document.getElementById('bank-preview');
+    const importBtn = document.getElementById('bank-import-btn');
+    document.getElementById('bank-filename').textContent = file.name;
+    statusEl.textContent = 'Leyendo PDF...';
+    previewEl.innerHTML = ''; importBtn.style.display = 'none'; bankParsed = [];
+    try {
+      const pdfjsLib = await ensurePdfJsApp();
+      const buf = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+      const pagesData = [];   // [{items:[{s,x,y}], lines:[...]}]
+      const lines = [];       // texto por línea (para MP y detección)
+      let probe = '';
+      for (let p = 1; p <= pdf.numPages; p++) {
+        const page = await pdf.getPage(p);
+        const content = await page.getTextContent();
+        const items = content.items
+          .filter(it => it.str && it.str.trim())
+          .map(it => ({ s: it.str.trim(), x: Math.round(it.transform[4] * 10) / 10, y: Math.round(it.transform[5] * 10) / 10 }));
+        pagesData.push({ items });
+        // reconstruir líneas por banda Y para MP / detección
+        const rowsByY = {};
+        items.forEach(it => { const yk = Math.round(it.y); (rowsByY[yk] = rowsByY[yk] || []).push(it); });
+        Object.keys(rowsByY).sort((a,b) => b - a).forEach(yk => {
+          const t = rowsByY[yk].sort((a,b) => a.x - b.x).map(i => i.s).join(' ').replace(/\s+/g,' ').trim();
+          if (t) { lines.push(t); probe += t + '\n'; }
+        });
+      }
+      // Detección de formato
+      let fuente = null;
+      if (/Mercado Pago|RESUMEN DE CUENTA EN PESOS|CVU:/i.test(probe)) fuente = 'MP';
+      else if (/BBVA|Mastercard|Resumen con|Consumos/i.test(probe)) fuente = 'BBVA';
+
+      if (fuente === 'BBVA') bankParsed = parseBBVA(pagesData);
+      else if (fuente === 'MP') bankParsed = parseMP(lines);
+      else { statusEl.innerHTML = '<span style="color:var(--red)">No pude reconocer el tipo de resumen. ¿Es BBVA o Mercado Pago?</span>'; return; }
+
+      if (!bankParsed.length) {
+        statusEl.innerHTML = '<span style="color:var(--red)">Reconocí el formato (' + fuente + ') pero no encontré gastos. Si cambió el formato, avisá y lo ajusto.</span>';
+        return;
+      }
+      const totARS = bankParsed.filter(r => r.moneda==='ARS').reduce((s,r)=>s+r.amount,0);
+      const nUSD = bankParsed.filter(r => r.moneda==='USD').length;
+      statusEl.innerHTML = '<span style="color:var(--green)">' + fuente + ': ' + bankParsed.length + ' gasto' + (bankParsed.length!==1?'s':'') + ' detectado' + (bankParsed.length!==1?'s':'') + '</span> · $' + fmt(totARS).replace('$ ','') + (nUSD ? ' + ' + nUSD + ' en USD' : '') + '. Revisá y confirmá:';
+      renderBankPreview();
+      importBtn.style.display = 'block';
+    } catch (e) {
+      console.error(e);
+      statusEl.innerHTML = '<span style="color:var(--red)">Error al leer el PDF: ' + esc(e.message || 'desconocido') + '</span>';
+    }
+  }
+
+  const APP_CATS = ['Alimentación','Transporte','Vivienda','Salud','Entretenimiento','Ropa','Educación','Servicios','Otros'];
+  function renderBankPreview() {
+    const previewEl = document.getElementById('bank-preview');
+    const catOpts = (sel) => APP_CATS.map(c => '<option'+(c===sel?' selected':'')+'>'+c+'</option>').join('');
+    previewEl.innerHTML = '<div style="border:1px solid var(--border);border-radius:6px;overflow:hidden;">' +
+      bankParsed.map((r,i) =>
+        '<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--border);">' +
+          '<input type="checkbox" class="bk-chk" '+(r.include?'checked':'')+' onchange="bankToggle('+i+',this.checked)" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">' +
+          '<div style="flex:1;min-width:0;">' +
+            '<div style="font-size:0.82rem;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+esc(r.desc)+'</div>' +
+            '<div style="font-size:0.66rem;color:var(--muted);">'+fmtDate(r.fecha)+(r.tarjeta?' · tarjeta':'')+'</div>' +
+          '</div>' +
+          '<select onchange="bankSetCat('+i+',this.value)" style="font-size:0.66rem;padding:3px;border:1px solid var(--border);background:var(--surface);color:var(--ink);border-radius:4px;">'+catOpts(r.category)+'</select>' +
+          '<div style="font-size:0.82rem;color:var(--red);font-weight:600;white-space:nowrap;">−'+(r.moneda==='USD'?'USD ':'$')+fmtNum(r.amount)+'</div>' +
+        '</div>'
+      ).join('') + '</div>';
+  }
+  window.bankToggle = (i,v) => { if (bankParsed[i]) bankParsed[i].include = v; };
+  window.bankSetCat = (i,v) => { if (bankParsed[i]) bankParsed[i].category = v; };
+
+  async function importBankSelected() {
+    const chosen = bankParsed.filter(r => r.include);
+    if (!chosen.length) { alert('No seleccionaste ningún gasto.'); return; }
+    // Anti-duplicados: huella fecha|monto|desc contra lo ya cargado
+    const existing = new Set(Object.values(transactions).map(t => (t.date||'')+'|'+(t.amount||0).toFixed(2)+'|'+String(t.description||'').toLowerCase().slice(0,20)));
+    const btn = document.getElementById('bank-import-btn');
+    btn.textContent = 'Importando...'; btn.disabled = true;
+    let added = 0, skipped = 0;
+    try {
+      for (const r of chosen) {
+        const fp = (r.fecha||'')+'|'+r.amount.toFixed(2)+'|'+String(r.desc||'').toLowerCase().slice(0,20);
+        if (existing.has(fp)) { skipped++; continue; }
+        await push(ref(db,`users/${uid}/transactions`), {
+          description: r.desc, amount: r.amount, category: r.category, type: 'expense',
+          date: r.fecha, variabilidad: 'variable', moneda: r.moneda || 'ARS',
+          tarjeta: r.tarjeta || false, tarjetaRed: r.tarjetaRed || null, tarjetaTipo: r.tarjeta ? 'variable' : null,
+          tarjetaNombre: r.tarjetaNombre || null, createdAt: Date.now(), origen: 'resumen'
+        });
+        existing.add(fp); added++;
+      }
+      closeModal('bank-import');
+      renderAll();
+      alert('Importados: ' + added + (skipped ? ' · Omitidos por duplicado: ' + skipped : '') + '.');
+    } catch (e) {
+      alert('Error al importar: ' + (e.message || 'desconocido'));
+    } finally { btn.textContent = 'Importar seleccionados'; btn.disabled = false; }
+  }
+
+  // Wiring del importador bancario
+  (function wireBankImport() {
+    function wire() {
+      const drop = document.getElementById('bank-drop');
+      const input = document.getElementById('bank-file');
+      const importBtn = document.getElementById('bank-import-btn');
+      if (!drop || !input || !importBtn) return;
+      drop.onclick = () => input.click();
+      input.onchange = (e) => { const f = e.target.files[0]; if (f) handleBankFile(f); };
+      drop.ondragover = (e) => { e.preventDefault(); drop.style.borderColor = 'var(--accent)'; };
+      drop.ondragleave = () => { drop.style.borderColor = 'var(--border2)'; };
+      drop.ondrop = (e) => { e.preventDefault(); drop.style.borderColor = 'var(--border2)'; const f = e.dataTransfer.files[0]; if (f && f.type === 'application/pdf') handleBankFile(f); };
+      importBtn.onclick = importBankSelected;
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
+    else wire();
+  })();
 
   // ── BUDGETS ──
   window.setBudgetPeriod = (period, el) => {
